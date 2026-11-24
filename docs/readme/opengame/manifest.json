@@ -1,0 +1,350 @@
+{
+  "repository": "OpenDesignHQ/opengame",
+  "sourceRevision": "45694bb06becd0de1565fe1c0d4296f009997c96",
+  "capturedOn": "2026-11-24",
+  "timezone": "Asia/Shanghai",
+  "locale": "en-US",
+  "files": [
+    {
+      "file": "docs/readme/opengame/harbor-skirmish.webp",
+      "bytes": 29422,
+      "sha256": "a31d2f2b720d0ce3e9631b0b8831f81b1d0beb4e1c561e0c7abd05e936b30e08",
+      "source": "templates/games/harbor-skirmish/index.html",
+      "sourceSha256": "4c1df80a003c1f6143e7499ff7aa9bc8ebeedc678a5cbb2921b2a2ea2c86d9cd",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "startSelector": "#playBtn",
+      "pageErrors": []
+    },
+    {
+      "file": "docs/readme/opengame/rooftop-roast.webp",
+      "bytes": 29194,
+      "sha256": "4dd1f0222d2d60ca72852f60e7d4617762fe98832791a091b486ba82a05ded96",
+      "source": "templates/games/rooftop-roast/index.html",
+      "sourceSha256": "67ae8eded057eb6a6905544b57579750714af82bef43529302ca247a92f17e0d",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "startSelector": "#start",
+      "pageErrors": []
+    },
+    {
+      "file": "docs/readme/opengame/drift-dash.webp",
+      "bytes": 16332,
+      "sha256": "efabec95e6aad72610f8bfa2e1419213f50125c26a8fc13ea77b5287be4ef794",
+      "source": "templates/games/drift-dash/index.html",
+      "sourceSha256": "3bf09e21dfc4bdbbb0b42b09e86ca1f28f1b9adeb28d5fd3eeb02886ac2d0974",
+      "viewport": {
+        "width": 450,
+        "height": 800
+      },
+      "startSelector": null,
+      "pageErrors": []
+    },
+    {
+      "file": "docs/readme/opengame/sort-stack.webp",
+      "bytes": 15802,
+      "sha256": "16cc23793fdd044af754e5bdf81230bfc03fc43f9f69b6b15d456326c68b9a23",
+      "source": "templates/games/sort-stack/index.html",
+      "sourceSha256": "cc90e6b1bc34e688e75cbd1c5699ce44ad92d918bd11e1781698169d700a820d",
+      "viewport": {
+        "width": 450,
+        "height": 800
+      },
+      "startSelector": null,
+      "pageErrors": []
+    },
+    {
+      "file": "docs/readme/opengame/pin-rescue.webp",
+      "bytes": 46580,
+      "sha256": "f44b4b57c46f1e25fec25371449354e74620b054a74dce2a22d1f8d49f13fa82",
+      "source": "templates/games/pin-rescue/index.html",
+      "sourceSha256": "7ec2807691c82f38976d4e6cfd038a160520b49b3a28b984212ae467e9d4ac84",
+      "viewport": {
+        "width": 450,
+        "height": 800
+      },
+      "startSelector": null,
+      "pageErrors": []
+    },
+    {
+      "file": "docs/readme/opengame/tilt-temple.webp",
+      "bytes": 17996,
+      "sha256": "6c27fc57686aaa8e551dc8227992737fea0461ba301558804d320ff933d43bff",
+      "source": "templates/games/tilt-temple/index.html",
+      "sourceSha256": "f4a4d62e2e45389c3725fcdbffdb41e6d4f7eb2bdb1bb059d0088d42f0a5bacb",
+      "viewport": {
+        "width": 450,
+        "height": 800
+      },
+      "startSelector": null,
+      "pageErrors": []
+    },
+    {
+      "file": "docs/readme/opengame/cover.webp",
+      "bytes": 131328,
+      "sha256": "6eb5a21f77399890653344f93d8a314e67723f9f64c07c84c0ad7ae2c46ee1ff",
+      "kind": "editorial-layout-with-real-studio-capture",
+      "viewport": {
+        "width": 1309,
+        "height": 964
+      },
+      "display": true,
+      "source": "docs/readme/opengame/cover.html",
+      "sourceSha256": "913985d04a0eb2cef83beb5babb0e6816163b7a157213b8a11657a11a383d13f"
+    },
+    {
+      "file": "docs/readme/opengame/hero-world.webp",
+      "bytes": 79278,
+      "sha256": "bd3e68ba1fae9aa706b575326e0e8aa2ca2d94a551a8c05c7c35d0d961673b2c",
+      "kind": "generated-editorial-background",
+      "viewport": {
+        "width": 1586,
+        "height": 992
+      },
+      "display": false
+    },
+    {
+      "file": "docs/readme/opengame/studio-create.webp",
+      "bytes": 61584,
+      "sha256": "1b4a28f895221b162ab740a131ba3cdff4be7e43cbfc2ddcd8ad125223c72301",
+      "kind": "real-studio-screenshot",
+      "viewport": {
+        "width": 1309,
+        "height": 955
+      },
+      "display": true,
+      "source": "studio/src/motion/game/GameStudio.tsx",
+      "sourceSha256": "fca29189882080375cae2e44123bb1670c80328a6daee25e6a378d2bda7b9893"
+    },
+    {
+      "file": "docs/readme/opengame/studio-play.webp",
+      "bytes": 103318,
+      "sha256": "fed7ef21b6c58b00af842e3baf467504d32ccb249798751ae2533b24aa8368a7",
+      "kind": "real-studio-screenshot",
+      "viewport": {
+        "width": 1309,
+        "height": 955
+      },
+      "display": true,
+      "source": "studio/src/super-agent/ArtifactBrowserPane.tsx",
+      "sourceSha256": "9d880c20a3294a5d1afffde6c0594f7386ba778ec973ca79a1a71ef50779d4ac"
+    },
+    {
+      "file": "docs/readme/opengame/studio-code.webp",
+      "bytes": 129190,
+      "sha256": "58fc8729e4602efc2f30e844fceb7735f9190ead1bcf23da3ac6e05c8a976835",
+      "kind": "real-studio-screenshot",
+      "viewport": {
+        "width": 1309,
+        "height": 955
+      },
+      "display": true,
+      "source": "studio/src/super-agent/ArtifactBrowserPane.tsx",
+      "sourceSha256": "9d880c20a3294a5d1afffde6c0594f7386ba778ec973ca79a1a71ef50779d4ac"
+    },
+    {
+      "file": "packages/design-system/brand/opengame-logo.svg",
+      "kind": "shared-brand-vector",
+      "display": true,
+      "source": "packages/design-system/brand/openmotion-logo.svg",
+      "viewport": {
+        "width": 133.678,
+        "height": 24
+      },
+      "bytes": 6641,
+      "sha256": "2d695c78029739fb8104acc87dedaf1e8439e3d7b6eb506c99c5f6b5f24309a9",
+      "sourceSha256": "68afb0101d8588831bfab0ee7016fb96e0b02a07f1179ce3acc7b2a3e7f8d902"
+    },
+    {
+      "file": "docs/readme/opengame/agents.webp",
+      "kind": "source-derived-identity-gallery",
+      "viewport": {
+        "width": 1309,
+        "height": 350
+      },
+      "display": true,
+      "source": "docs/readme/opengame/agents.html",
+      "bytes": 28472,
+      "sha256": "8cc77b2a37bd81c1cd2698d43a924a9f0241083d64b39837f572d8870cf36974",
+      "sourceSha256": "d9a7fbc0df67c6abef92c6975f0d9c5c4c90c5f26b0872627c35001347449694"
+    },
+    {
+      "file": "docs/readme/opengame/models.webp",
+      "kind": "source-derived-identity-gallery",
+      "viewport": {
+        "width": 1309,
+        "height": 220
+      },
+      "display": false,
+      "source": "docs/readme/opengame/models.html",
+      "bytes": 14526,
+      "sha256": "51406aa941b47ece247d9fc29908f405df59c2f0d182d2b21ce3cb54cf17c260",
+      "sourceSha256": "9d2cd1de5b652bd62ca68c745058c48c4e592beb7839998d3195c41f091e5f52"
+    },
+    {
+      "file": "docs/readme/opengame/agents.mobile.webp",
+      "kind": "source-derived-identity-gallery",
+      "viewport": {
+        "width": 650,
+        "height": 1000
+      },
+      "display": false,
+      "source": "docs/readme/opengame/agents.mobile.html",
+      "bytes": 41196,
+      "sha256": "814efb4769700574977e90e3756eed153aafde715a4e1724548bd20a20ea023d",
+      "sourceSha256": "d3ca4fba85a390e90c67b757695935eed10758fc687df1cd0a0f44e85f6a7d5f"
+    },
+    {
+      "file": "docs/readme/opengame/models.mobile.webp",
+      "kind": "source-derived-identity-gallery",
+      "viewport": {
+        "width": 650,
+        "height": 590
+      },
+      "display": false,
+      "source": "docs/readme/opengame/models.mobile.html",
+      "bytes": 17428,
+      "sha256": "d4b371b2626688136919c6aee4d8bd50229359484fd00e0d028d51ccc71b3df8",
+      "sourceSha256": "4689b4864418cf4dd577660446d4b5144025cfdeba4d01734b1dd658bd9bb0d8"
+    },
+    {
+      "file": "docs/readme/opengame/diagrams/creation-stack.ja.svg",
+      "kind": "source-derived-architecture-diagram",
+      "display": false,
+      "locale": "ja",
+      "source": "docs/readme/opengame/diagrams/generate.py",
+      "bytes": 4235,
+      "sha256": "340592265322147392780431d2d5bbecbf4a065bb9c161660f38a7f6e9153243",
+      "sourceSha256": "daa0994dd4a9bc8eb14887745d88ba0ee1d9ed4ec47a71ce9f14fea1c859c3a8"
+    },
+    {
+      "file": "docs/readme/opengame/diagrams/creation-stack.svg",
+      "kind": "source-derived-architecture-diagram",
+      "display": false,
+      "locale": "en",
+      "source": "docs/readme/opengame/diagrams/generate.py",
+      "bytes": 4098,
+      "sha256": "bd919e766dc226c51f719e59a3a03e37778386d34b0e7cb4f8f26fd307bc22d5",
+      "sourceSha256": "daa0994dd4a9bc8eb14887745d88ba0ee1d9ed4ec47a71ce9f14fea1c859c3a8"
+    },
+    {
+      "file": "docs/readme/opengame/diagrams/creation-stack.zh-CN.svg",
+      "kind": "source-derived-architecture-diagram",
+      "display": false,
+      "locale": "zh-CN",
+      "source": "docs/readme/opengame/diagrams/generate.py",
+      "bytes": 4146,
+      "sha256": "6c9f6b3e8f5ecc89213d6e18969a421c3848835c96f10239c30519ff51c0b05c",
+      "sourceSha256": "daa0994dd4a9bc8eb14887745d88ba0ee1d9ed4ec47a71ce9f14fea1c859c3a8"
+    },
+    {
+      "file": "docs/readme/opengame/diagrams/project-context.ja.svg",
+      "kind": "source-derived-architecture-diagram",
+      "display": false,
+      "locale": "ja",
+      "source": "docs/readme/opengame/diagrams/generate.py",
+      "bytes": 3153,
+      "sha256": "95c3882eb795f41d85f3f86ab1c07b2d6ea861a4fe73d175509909226c8ca3b3",
+      "sourceSha256": "daa0994dd4a9bc8eb14887745d88ba0ee1d9ed4ec47a71ce9f14fea1c859c3a8"
+    },
+    {
+      "file": "docs/readme/opengame/diagrams/project-context.svg",
+      "kind": "source-derived-architecture-diagram",
+      "display": false,
+      "locale": "en",
+      "source": "docs/readme/opengame/diagrams/generate.py",
+      "bytes": 3045,
+      "sha256": "4d7d6d84e497126d92a9f9b208ace0857da36d0fc101880dd5bf5b73efac4618",
+      "sourceSha256": "daa0994dd4a9bc8eb14887745d88ba0ee1d9ed4ec47a71ce9f14fea1c859c3a8"
+    },
+    {
+      "file": "docs/readme/opengame/diagrams/project-context.zh-CN.svg",
+      "kind": "source-derived-architecture-diagram",
+      "display": false,
+      "locale": "zh-CN",
+      "source": "docs/readme/opengame/diagrams/generate.py",
+      "bytes": 3054,
+      "sha256": "90c17d30a94fdb71c32eaff92700bf32266937c82258eb3e8be97872317e95f1",
+      "sourceSha256": "daa0994dd4a9bc8eb14887745d88ba0ee1d9ed4ec47a71ce9f14fea1c859c3a8"
+    },
+    {
+      "file": "docs/readme/opengame/diagrams/runtime-architecture.ja.svg",
+      "kind": "source-derived-architecture-diagram",
+      "display": false,
+      "locale": "ja",
+      "source": "docs/readme/opengame/diagrams/generate.py",
+      "bytes": 4767,
+      "sha256": "d33bacdf89f2110f3c6a7be7bd5ef81716039a871f328df4511e3dbc96421663",
+      "sourceSha256": "daa0994dd4a9bc8eb14887745d88ba0ee1d9ed4ec47a71ce9f14fea1c859c3a8"
+    },
+    {
+      "file": "docs/readme/opengame/diagrams/runtime-architecture.svg",
+      "kind": "source-derived-architecture-diagram",
+      "display": false,
+      "locale": "en",
+      "source": "docs/readme/opengame/diagrams/generate.py",
+      "bytes": 4556,
+      "sha256": "ce97171dcce8f8e1cd6634e053cf06d85e40b17d0b92f934bb2db322b73c0f9d",
+      "sourceSha256": "daa0994dd4a9bc8eb14887745d88ba0ee1d9ed4ec47a71ce9f14fea1c859c3a8"
+    },
+    {
+      "file": "docs/readme/opengame/diagrams/runtime-architecture.zh-CN.svg",
+      "kind": "source-derived-architecture-diagram",
+      "display": false,
+      "locale": "zh-CN",
+      "source": "docs/readme/opengame/diagrams/generate.py",
+      "bytes": 4533,
+      "sha256": "623512013942080505417515647dcd65156d95da3039827d303a4ac4a59cbf58",
+      "sourceSha256": "daa0994dd4a9bc8eb14887745d88ba0ee1d9ed4ec47a71ce9f14fea1c859c3a8"
+    },
+    {
+      "file": "docs/readme/opengame/badges/stars.svg",
+      "kind": "readme-vector-badge",
+      "display": true,
+      "source": "docs/readme/badges/stars.svg",
+      "bytes": 2051,
+      "sha256": "5d638fc4ac6f9eb7d4afc9f08a7ca76b15da095bdffc5005478611815606ecf8",
+      "sourceSha256": "3e9041ae8d8978dfc40ff92bf4feff7f0cb87c65254c5d6165f83669538d0e38"
+    },
+    {
+      "file": "docs/readme/opengame/badges/project.svg",
+      "kind": "readme-vector-badge",
+      "display": true,
+      "source": "docs/readme/badges/website.svg",
+      "bytes": 568,
+      "sha256": "3be287e9a8887c0a88f5c01ab1f9560a8928627d5808483ac520c5354fc7c564",
+      "sourceSha256": "0fb27871001b3e867ac879976a18580dbe8b5bc1745cb1350688a2f9ecc33246"
+    },
+    {
+      "file": "docs/readme/opengame/models/gpt-image.svg",
+      "kind": "readme-vector-badge",
+      "display": true,
+      "source": "packages/design-system/providers/openai.svg",
+      "bytes": 1967,
+      "sha256": "899734c141277180875051566fd78ca08b24b749afc4e0a6657d042fce8e46f8",
+      "sourceSha256": "a595df6b423920c67a7f8f73c063e4bfb72d415948097b6cac063a2366bb5186"
+    },
+    {
+      "file": "docs/readme/opengame/models/seedream.svg",
+      "kind": "readme-vector-badge",
+      "display": true,
+      "source": "docs/readme/models/seedance.svg",
+      "bytes": 1268,
+      "sha256": "f058b021869c0e795f68a25be3f928d85b357e90301e6c4e6244950b88d9c0bd",
+      "sourceSha256": "6e37ccca9e96f4ce0c58af0e5058ae28f206d211494969f4a5342f4a7fdc1b26"
+    },
+    {
+      "file": "docs/readme/opengame/models/byteplus.svg",
+      "kind": "readme-vector-badge",
+      "display": true,
+      "source": "docs/readme/models/seedance.svg",
+      "bytes": 1286,
+      "sha256": "576c80f35a78a23971ca5cb75b0a0b09449dcc0d87f4f3ee458b9b806daface3",
+      "sourceSha256": "6e37ccca9e96f4ce0c58af0e5058ae28f206d211494969f4a5342f4a7fdc1b26"
+    }
+  ]
+}

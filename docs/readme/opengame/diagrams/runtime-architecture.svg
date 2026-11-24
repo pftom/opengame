@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="780" viewBox="0 0 1200 780" role="img" aria-labelledby="title desc"><title id="title">One game workspace, shared by Studio and agents</title><desc id="desc">Source-checkout architecture · shared local services and game files</desc><defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L6 4L1 7" fill="none" stroke="#087c62" stroke-width="1.5"/></marker></defs><rect width="1200" height="780" rx="14" fill="#fafaf2"/><g font-family="Arial, Helvetica, PingFang SC, Hiragino Sans, Microsoft YaHei, sans-serif" text-anchor="middle">
+<text x="600" y="64" font-size="32" font-weight="700" fill="#202322">One game workspace, shared by Studio and agents</text>
+<text x="600" y="99" font-size="17" font-weight="400" fill="#46615c">Source-checkout architecture · shared local services and game files</text>
+<rect x="90" y="132" width="450" height="88" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="315.0" y="166" font-size="23" font-weight="700" fill="#202322">Your coding agent</text>
+<text x="315.0" y="197" font-size="16" font-weight="400" fill="#46615c">Local runtime adapters / external MCP</text>
+<rect x="660" y="132" width="450" height="88" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="885.0" y="166" font-size="23" font-weight="700" fill="#202322">Game Studio</text>
+<text x="885.0" y="197" font-size="16" font-weight="400" fill="#46615c">Create · Preview · Code · Share</text>
+<text x="315" y="249" font-size="17" font-weight="400" fill="#46615c">12 game tools / stdio MCP</text>
+<text x="885" y="249" font-size="17" font-weight="400" fill="#46615c">Local HTTP + agent handoff</text>
+<path d="M315 261V285H600" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M885 261V285H600" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M600 285V309" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="190" y="319" width="820" height="94" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="600.0" y="353" font-size="23" font-weight="700" fill="#202322">Shared local application</text>
+<text x="600.0" y="384" font-size="16" font-weight="400" fill="#46615c">Node.js + TypeScript · GameProjects · project lifecycle</text>
+<path d="M600 413V437" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M210 437H990" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M210 437V461" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M600 437V461" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M990 437V461" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="40" y="471" width="340" height="100" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="210.0" y="505" font-size="23" font-weight="700" fill="#202322">Model Gateway</text>
+<text x="210.0" y="536" font-size="16" font-weight="400" fill="#46615c">Catalogs · jobs · provider adapters</text>
+<rect x="430" y="471" width="340" height="100" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="600.0" y="505" font-size="23" font-weight="700" fill="#202322">Owned game project</text>
+<text x="600.0" y="536" font-size="16" font-weight="400" fill="#46615c">HTML / CSS / JS + assets + game.json</text>
+<rect x="820" y="471" width="340" height="100" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="990.0" y="505" font-size="23" font-weight="700" fill="#202322">Validate &amp; play-test</text>
+<text x="990.0" y="536" font-size="16" font-weight="400" fill="#46615c">Rule simulation + isolated Chrome</text>
+<path d="M210 571V605H600V571" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="320" y="630" font-size="16" font-weight="400" fill="#46615c">Reusable media assets</text>
+<path d="M990 571V605H600" fill="none" stroke="#087c62" stroke-width="2"/>
+<text x="900" y="630" font-size="16" font-weight="400" fill="#46615c">Checks + screenshots</text>
+<path d="M600 605V653" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="600" y="687" font-size="27" font-weight="700" fill="#202322">Local play · Web snapshot · Gameplay trailer</text>
+<text x="600" y="718" font-size="18" font-weight="400" fill="#46615c">Same source project; separate publish and export actions</text>
+<text x="600" y="757" font-size="14" font-weight="400" fill="#46615c">TikTok / WeChat / Douyin release integrations are product delivery paths, not local MCP game-publish actions.</text>
+</g></svg>

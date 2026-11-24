@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 export const resourceDocuments = [
   'README.md', 'README.zh-CN.md', 'README.REVERSE-ENGINEERING.md', 'docs/README.zh-CN.md', 'docs/README.ja.md',
+  'docs/opengame-setup.md', 'docs/opengame-architecture.md', 'docs/readme/opengame/ASSETS.md',
   'docs/examples.md', 'docs/examples.zh-CN.md',
   'docs/motion-design-examples.md', 'docs/motion-design-examples.zh-CN.md',
   'docs/collections/README.md', 'docs/collections/README.zh-CN.md',
@@ -43,6 +44,7 @@ export async function verifyResources(root = fileURLToPath(new URL('../', import
   const mediaSizes = new Map(optional.files.map(file => [file.url, file.bytes]));
   for (const doc of resourceDocuments) links += await checkDocument(path.join(root, doc), mediaURLs, mediaSizes);
   const manifests = [
+    ['docs/readme/opengame/manifest.json', '', 'files'],
     ['docs/readme/live-product/manifest.json', '', 'files'],
     ['docs/readme/live-templates/manifest.json', '', 'files'],
     ['docs/readme/media/manifest.json', '', 'entries'],

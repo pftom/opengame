@@ -1,5 +1,12 @@
 # 公开变更记录
 
+## 2026-11-24: Present OpenGame with game-specific documentation and real product captures
+
+- Replace the inherited video-studio README with English, Simplified Chinese and Japanese OpenGame documentation, using the Super Game Agent positioning and a consistent navigation, showcase, feature and architecture structure.
+- Add the shared-symbol OpenGame wordmark, a gaming hero with a real Game Studio capture, six playable source examples, 29-agent identities, compact media-model badges and three localized product/technical diagrams. Keep editable asset sources, provenance and checksums with the imagery.
+- Document source setup, the existing 12 game tools, project ownership, model/asset services, verification and delivery. Preserve runtime connection identifiers and distinguish the bundled source snapshot from the wider product collection.
+- Register the documentation resources for distribution and validate localized links, section anchors and asset inclusion. Runtime behavior, dependencies and release identifiers are unchanged.
+
 ## 2026-11-23: Sync redacted Codex host-session AI traces to PostHog
 
 - Problem & scope (`OPEND-5406`): Tool-level events alone could not reconstruct multi-turn creation context, skill routing decisions, pre-call storyboard turns, or post-call user feedback inside host Agent sessions. Target persona and commercialization tiers are unchanged (internal quality evaluation and bad-case attribution under user consent).

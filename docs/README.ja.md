@@ -1,33 +1,27 @@
-<p align="center"><img src="readme/openmotion-logo.svg" width="420" alt="OpenMotion"></p>
+<p align="center"><img src="../packages/design-system/brand/opengame-logo.svg" width="420" alt="OpenGame"></p>
 
-<p align="center"><strong>Claude Motion と CapCut に代わるオープンソースの動画スタジオ</strong></p>
+<p align="center"><strong>The Open-source Super Game Agent</strong><br>誰もが、収益を生むゲームを作れる世界へ。</p>
 
-<p align="center">
-  <picture>
-    <source type="image/webp" srcset="readme/capcut-claude-motion-cover.ja.webp">
-    <source media="(max-width: 600px)" srcset="https://releases.open-design.ai/open-motion/media/sha256/1b567187bc527cc99f8ef2c91c41c9adf5fa91fa9bbc5f8e2f579ad9c7837a46.jpg">
-    <img src="https://releases.open-design.ai/open-motion/media/sha256/1b567187bc527cc99f8ef2c91c41c9adf5fa91fa9bbc5f8e2f579ad9c7837a46.jpg" width="100%" alt="Dan Martell の元動画と Riya の素材で再現した映像。白い太字字幕の間に手書きのキーワードが入り、下に Studio の字幕タイムラインが見える。">
-  </picture>
-</p>
+<p align="center"><img src="readme/opengame/cover.webp" width="100%" alt="OpenGame — The Open-source Super Game Agent. Make games. Make money. 100+ viral games, 29 agents, 11+ media models and 3+ publishing platforms, with the real Game Studio interface."></p>
 
 <p align="center">
-  <a href="https://github.com/nexu-io/openmotion"><img src="readme/badges/stars.ja.svg" alt="GitHub スター · 9.5k（2026-11-09）"></a>
+  <a href="https://github.com/OpenDesignHQ/opengame"><img src="readme/opengame/badges/stars.svg" alt="GitHub Stars · 3 (2026-11-24)"></a>
   <a href="../package.json"><img src="readme/badges/node.svg" alt="Node.js 22.18+"></a>
-  <a href="../LICENSE"><img src="readme/badges/license.ja.svg" alt="Apache 2.0 ライセンス"></a>
-  <a href="https://github.com/nexu-io/open-design"><img src="readme/badges/built-by-opendesign.ja.svg" alt="開発元 OpenDesign"></a>
+  <a href="../LICENSE"><img src="readme/badges/license.svg" alt="Apache 2.0 license"></a>
+  <a href="https://github.com/OpenDesignHQ"><img src="readme/badges/built-by-opendesign.svg" alt="Built by OpenDesign"></a>
 </p>
 
 <p align="center">
-  <a href="https://open-design.ai/ja/motion/"><img src="readme/badges/website.ja.svg" alt="OpenMotion 公式サイト" /></a>
-  <a href="https://go.open-design.ai/?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=openmotion&amp;utm_content=readme_ja"><img src="readme/badges/opendesign-go.svg" alt="OpenDesign Go のモデル利用プラン" /></a>
-  <a href="https://discord.com/invite/M7NnHS9gNa"><img src="readme/badges/discord.svg" alt="OpenMotion の Discord コミュニティに参加" /></a>
-  <a href="https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=b6cs46dc-acb2-48ed-941d-c45642ead841"><img src="readme/badges/feishu.svg" alt="OpenMotion の Feishu グループに参加" /></a>
-  <a href="https://x.com/OpenDesignHQ"><img src="readme/badges/x-opendesignhq.svg" alt="OpenDesign の公式 X アカウント @OpenDesignHQ" /></a>
-  <a href="https://x.com/OpenDesignDevs"><img src="readme/badges/x-opendesigndevs.svg" alt="OpenDesign 開発チームの X アカウント @OpenDesignDevs" /></a>
-  <a href="https://www.youtube.com/channel/UChtshixMhvtgBWzoD9R_Qfg"><img src="readme/badges/youtube.svg" alt="OpenDesign の YouTube チャンネル" /></a>
+  <a href="https://github.com/OpenDesignHQ/opengame"><img src="readme/opengame/badges/project.svg" alt="OpenGame on GitHub"></a>
+  <a href="https://go.open-design.ai/?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=opengame&amp;utm_content=readme_ja"><img src="readme/badges/opendesign-go.svg" alt="OpenDesign Go model subscriptions"></a>
+  <a href="https://discord.com/invite/M7NnHS9gNa"><img src="readme/badges/discord.svg" alt="Join the OpenDesign Discord"></a>
+  <a href="https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=b6cs46dc-acb2-48ed-941d-c45642ead841"><img src="readme/badges/feishu.svg" alt="Join the OpenDesign Feishu group"></a>
+  <a href="https://x.com/OpenDesignHQ"><img src="readme/badges/x-opendesignhq.svg" alt="OpenDesign on X (@OpenDesignHQ)"></a>
+  <a href="https://x.com/OpenDesignDevs"><img src="readme/badges/x-opendesigndevs.svg" alt="OpenDesign Developers on X (@OpenDesignDevs)"></a>
+  <a href="https://www.youtube.com/channel/UChtshixMhvtgBWzoD9R_Qfg"><img src="readme/badges/youtube.svg" alt="OpenDesign on YouTube"></a>
 </p>
 
-<p align="center"><a href="#quick-start">インストール</a> · <a href="#agent-wall">対応エージェント</a> · <a href="#showcase">用途と再現例</a> · <a href="#features">OpenMotion の特長</a> · <a href="#technical-guide">セットアップと技術資料</a> · <a href="#community">コミュニティ・貢献</a></p>
+<p align="center"><a href="#quick-start">導入</a> · <a href="#agent-wall">Agents</a> · <a href="#showcase">ゲーム・Remix</a> · <a href="#features">OpenGame を使う理由</a> · <a href="#technical-guide">設定・構成</a> · <a href="#community">コミュニティ</a></p>
 
 <div align="center">
 
@@ -35,732 +29,560 @@
 
 </div>
 
-# OpenMotion
+# OpenGame
 
-OpenMotion は、**AI エージェントが動画制作の全工程を担うフルスタックの動画スタジオ**であり、**Claude Motion と CapCut に代わるオープンソースの選択肢**です。参考動画をアップロードするか SNS の動画リンクを貼り付けると、**自分のブランドキットとコピーで元の演出を再現できます**。
+OpenGame は **The Open-source Super Game Agent**。アイデアや好きなゲームを出発点に、Agent と仕組み、世界、報酬を作り込み、自分の遊べる作品へ育てるオープンソースのゲーム制作 Agent です。
 
-- 🎬 **動画の分析から再現・書き出しまで。** エージェントが参考動画を分析し、カットとトランジションを HTML で組み直し、足りない素材を生成します。同じプロジェクトを Studio で開き、間合いを調整して MP4 に書き出せます。
-- 🔑 **BYOA（自分のエージェント）と BYOK（自分の API キー）。** OpenMotion は無料のオープンソースソフトウェアです。[使い慣れたローカルエージェント](#agent-wall)で動画を再現し、各工程に自分の API キーを使えます。
-- 🧩 **Motion.md** は、OpenMotion が定義した Markdown 形式です。カットの順番、尺、トランジションを記録し、ブランド動画の演出をプロジェクトと一緒に共有できます。
-- 🎛️ **画像・動画・音楽・音声。** GPT Image 2.6 で画像を、Seedance 2.5 で追加カットを作成。Suno で音楽を付け、Eleven v4 でナレーションを生成できます。[モデルと接続方法を見る](#model-wall)
+**私たちの使命は、誰もが収益を生むゲームを作れるようにすること。**
 
-<a id="快速开始"></a> <a id="quick-start"></a>
+アイデアと判断はあなたから。OpenGame は企画、Remix、アートと音、実装、試遊、公開準備をつなぎ、最初の一本からゲームビジネスへの道を支えます。
 
-### ChatGPT Marketplace からインストール
+- 🎮 **Remix Any Game** ワンクリックで Remix を開始。参考作品や同梱ゲームの仕組みを、自分のテーマ、ルール、体験へ変えます。
+- 🌍 **TikTok・WeChat・Douyin のプレイヤーへ** TikTok、WeChat、Douyin などへ公開。ひとつのアイデアを複数の市場へ届け、ゲームビジネスにつなげます。
+- 🔥 **100+ TOP Viral Games** 商業的に実績のあるゲーム形式を集めた 100 本以上の人気ゲームを初公開。ソースを学び、実行し、自分の作品へ Remix できます。
+- 🔑 **29 の Agent に対応。** 自分の Agent とモデルキーで、使い慣れた制作方法とソースを保持。[Agent を選ぶ](#choose-agent)。
+- 🎨 **11+ メディアモデル。** ゲームのアート、音楽、声を制作。[モデルを見る](#model-wall)。
 
-**ワンクリックでインストール。手動設定は不要です。** インストール後は、会話の中でモーション動画をゼロから作成したり、参考動画を再現したり、テンプレートから制作を始めたりできます。
+**Remix → 制作 → 試遊 → 公開 → 収益化。** 面白さを見つけ、自分の作品にし、また遊びたくなる理由を磨きましょう。
 
-**[ChatGPT に OpenMotion をインストール →](https://chatgpt.com/plugins/plugins_6a742d13e88481919b42002864b1bb26)**
+<a id="quick-start"></a>
 
-<a id="start-in-codex"></a>
+## 🚀 まず遊んで、次に作る
 
-### エージェントでインストール
+### ソースから起動
 
-次の指示をコピーしてローカルエージェントに送り、OpenMotion をソースからセットアップします：
-
-```text
-https://github.com/nexu-io/openmotion/blob/main/docs/install.md を読み、手順に従って現在のエージェントに OpenMotion をインストールして接続してください。
-```
-
-セットアップ後、エージェントがローカルのテンプレートライブラリを開き、テンプレートを提案します。選択を確認してからプロジェクトを作成します。[ソースインストールガイド](install.md)
-
-### 公開 npm アプリをインストール（任意）
-
-上記のソースセットアップがリポジトリインストールの既定です。ビルド済み Studio と設定済みのオンラインテンプレートライブラリを含む公開アプリを明示的に選ぶ場合は、次の指示をローカルエージェントにコピーしてください：
-
-```text
-https://releases.open-design.ai/motion を読み、手順に従って現在のエージェントに公開 npm アプリをインストールして接続してください。
-```
-
-[公開アプリのインストールとチャネルの選択](install.md)。公開バージョンはこのチェックアウトより古い場合があります。
-
-### リポジトリをローカルで起動する
-
-Git、npm、Node.js 26.11.1 が必要です：
+Git、npm、CI 固定版の **Node.js 26.11.1** を用意してください。宣言されている最低実行バージョンは 22.18.0 です。
 
 ```sh
-git -c filter.lfs.process= -c filter.lfs.smudge= -c filter.lfs.required=false clone --depth 1 --single-branch --branch main https://github.com/nexu-io/openmotion.git
-cd openmotion
+git -c filter.lfs.process= -c filter.lfs.smudge= -c filter.lfs.required=false clone --depth 1 --single-branch --branch main https://github.com/OpenDesignHQ/opengame.git
+cd opengame
 npm ci
 npm run build:studio
-npm start
 ```
 
-起動時に表示される実際の `studioUrl` または `previewUrl` を開き、**テンプレートライブラリ**を選択します。Studio と MCP はこのチェックアウトのテンプレートを読み込みます。同じソースにエージェントを接続するには、[ソースと MCP の設定](#agent-setup)を参照してください。[クローン容量と任意のメディア](repository-storage.md)
+macOS / Linux では、専用のワークスペースで起動します。
 
+```sh
+MOTION_DATA_DIR="$HOME/.opengame/workspace" npm start
+```
 
-### 既存のプロジェクトから始める
+起動結果の `previewUrl` を開き、**Game Studio**（`/game`）に進みます。同梱ゲームの閲覧と試遊は Agent 接続前でも可能です。制作や Remix では Agent を選び、変更したい内容を伝えます。統合 Studio の制作入口は、選択した Agent に直接タスクを渡す場合があります。
 
-**HyperFrames のプロジェクト ZIP を OpenMotion にインポート**して、既存のアニメーションとローカル素材を引き続き編集できます。プロジェクトフォルダーを ZIP に圧縮し、**すべてのプロジェクト → プロジェクトをインポート**で選択します。追加されたコピーを開き、Studio またはエージェントで編集を続けてください。インポートでは独立したコピーが作成され、対応するネイティブプロジェクト構造が必要です。
+[Windows、手動 MCP 設定、トラブルシューティング →](opengame-setup.md)
 
-[インポート手順・必要なファイル・互換性](project-archives.md#import-from-hyperframes)
+### 最初の Remix
+
+1. **面白さを探す。** ゲームを開いて操作し、残したい仕組みを一つ選びます。
+2. **コピーを作る。** 同梱ゲームの **Remix** から、独立した編集可能な下書きを作ります。
+3. **一つの変更を磨く。** テーマ、ルール、ステージなど、具体的な変更を Agent に伝えます。
+4. **もう一度遊ぶ。** 結果を確かめ、手触りを調整してから共有します。
+
+接続した Agent への最初の指示例：
+
+```text
+Drift Dash を月面バギーレースに Remix してください。
+縦画面の操作を維持し、街を月面基地に変え、ドリフトで
+チャージするブーストを追加してください。最初は同梱素材か
+手続き型グラフィックスを使い、検証と試遊後に開いてください。
+```
 
 <a id="agent-wall"></a>
 
-**22 種類のローカルエージェントに対応** · [エージェントを選ぶ](#choose-agent)
+**29 のローカル Agent** · [Agent を選ぶ](#choose-agent)
 
-<p align="center"><a href="#choose-agent"><picture><source media="(max-width: 600px)" srcset="readme/agents/local-agents.mobile.png"><img src="readme/agents/local-agents.png" width="100%" alt="WorkBuddy, Codex CLI, Claude Code, OpenCode, Hermes, Antigravity, Gemini CLI, Grok Build, Kimi CLI, Cursor Agent, Qwen Code, Qoder CLI, GitHub Copilot, Pi, Kiro CLI, Kilo, Mistral Vibe, DeepSeek TUI, Reasonix, Aider, Devin, Trae CLI"></picture></a></p>
+<p align="center"><a href="#choose-agent"><picture><source media="(max-width: 600px)" srcset="readme/opengame/agents.mobile.webp"><img src="readme/opengame/agents.webp" width="100%" alt="29 agents: Codex, Claude Code, OpenCode, Cursor, Gemini CLI, Kimi Code, GitHub Copilot, Antigravity, DeepSeek, Qwen, Pi, Hermes, Kiro, Kilo, Mistral Vibe, Amp, Devin, Grok, CodeBuddy, Qoder, Trae, MiMo, Aider, AtomCode, OpenClaude, Cline and IBM Bob"></picture></a></p>
 
-<a id="showcase"></a> <a id="brand-before-after"></a> <a id="用-openmotion-可以做什么"></a>
-<a id="使用场景与复刻效果示例"></a>
+<a id="showcase"></a>
 
-## 🎞️ 用途と再現例
+## 🔥 100+ TOP Viral Games を初公開。次はあなたの作品へ。
 
-製品デモ、ブランド動画、トーク動画などから制作の参考を探せます。以下のプレビューは参考動画です。
+商業的に実績のある人気ゲームの形式を集めた **100+ TOP Viral Games コレクション**を、初めてオープンソースとして公開します。コアループを学び、ソースを実行し、世界観やルールを変えて自分のプレイヤーへ届けましょう。
 
-**[テンプレートライブラリをすべて見る →](https://open-design.ai/templates/)** — さらに多くのテンプレート、動画全編、Motion.md、再現用の指示を確認できます。
 
-### AI で再編集・構成を変更
+以下の 6 例は、**このリポジトリに同梱されたゲームの実行画面**です。画像から編集可能なソースへ移動できます。試遊と Remix はローカルの Game Studio で行います。
 
-<table width="100%">
-<tr>
+<table><tr>
 <td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/live-templates/many-possible-futures.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/f4a30a4a3b2dbc5c43df68837bebb284d204a1408394e248d7df339154914917.gif" width="480" alt="複数の場面をひとつの物語に"></picture><br>
-<strong>OpenAI · 複数の場面をひとつの物語に</strong><br>
-ひとつのテーマで場面をつなぎ、多彩なモンタージュへ展開。<br>
-<a href="https://open-design.ai/templates/many-possible-futures-motion-design/">テンプレートを見る</a>
+<a href="../templates/games/harbor-skirmish"><img src="readme/opengame/harbor-skirmish.webp" width="480" alt="Harbor Skirmish — 3D アクション"></a><br>
+<strong>Harbor Skirmish</strong><br>
+<sub>3D アクション</sub><br>
+海辺の島を走り、跳び、ダッシュやフックで移動。世界、敵、武器を変更できます。<br>
+<a href="../templates/games/harbor-skirmish">ソースを見る</a>
 </td>
 <td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/live-templates/making-of-window-collage.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/dae76ee380e75eb257be035bda3697981c5cce42b53a0f61da34c46687b52e1d.gif" width="480" alt="制作過程をコラージュで再編集"></picture><br>
-<strong>Anthropic · 制作過程をコラージュで再編集</strong><br>
-クリップや画面を順に重ね、主タイトルの読みやすさを保つ。<br>
-<a href="https://open-design.ai/templates/making-of-window-collage-motion-design/">テンプレートを見る</a>
+<a href="../templates/games/rooftop-roast"><img src="readme/opengame/rooftop-roast.webp" width="480" alt="Rooftop Roast — ブランド向けゲーム"></a><br>
+<strong>Rooftop Roast</strong><br>
+<sub>ブランド向けゲーム</sub><br>
+ドローンでコーヒー豆を集め、カフェの屋上へ。店舗、キャンペーン、報酬をカスタマイズ。<br>
+<a href="../templates/games/rooftop-roast">ソースを見る</a>
 </td>
 </tr>
 </table>
 
-### 製品発表とデモ
-
-<table width="100%">
+<table>
 <tr>
 <td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/live-templates/notion-custom-agents.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/b62ffb99195f35396b6ec0b5f8f0abb8552ffd2493a5e982e5e10fd640c44a0f.gif" width="480" alt="課題から解決へ"></picture><br>
-<strong>Notion · 課題から解決へ</strong><br>
-積み重なるタスクが整理される流れを、自分の製品の機能に置き換える。<br>
-<a href="https://open-design.ai/templates/notion-custom-agents-motion-design/">テンプレートを見る</a>
+<a href="../templates/games/drift-dash"><img src="readme/opengame/drift-dash.webp" width="320" alt="Drift Dash — アーケードレース"></a><br>
+<strong>Drift Dash</strong><br>
+<sub>アーケードレース</sub><br>
+3 周のコースで AI のライバル 3 台と競争。操作感、コース、勝利条件を変更。<br>
+<a href="../templates/games/drift-dash">ソースを見る</a>
 </td>
 <td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="https://releases.open-design.ai/open-motion/media/sha256/66bc3f14f916a58800562af5b2c8412b2f554f36a435da950faa39ef4b82da96.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/ecbb5b36bf9997451a02fbf6db8ef9083b93326eb81b5bd1c29b7ca988d008cd.gif" width="480" alt="ユーザーの声から製品発表へ"></picture><br>
-<strong>OpenAI · ユーザーの声から製品発表へ</strong><br>
-重なるリクエストで期待を高め、ひとつの明確な動きでアプリを見せる。<br>
-<a href="https://open-design.ai/templates/demand-becomes-a-desktop-release-motion-design/">テンプレートを見る</a>
+<a href="../templates/games/pin-rescue"><img src="readme/opengame/pin-rescue.webp" width="320" alt="Pin Rescue — パズル"></a><br>
+<strong>Pin Rescue</strong><br>
+<sub>パズル</sub><br>
+ピンを抜いて水と溶岩を合わせ、金貨を取り出す。独自のステージを設計。<br>
+<a href="../templates/games/pin-rescue">ソースを見る</a>
 </td>
 </tr>
 </table>
 
-### ブランド動画とモーション
-
-<table width="100%">
+<table>
 <tr>
 <td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/live-templates/a-world-connected-by-computational-fragments.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/d94806d916b9b7d9325db6901cc36b890ee0e4ff7503bfbd888b2d258b985925.gif" width="480" alt="モーションで世界をつなぐ"></picture><br>
-<strong>Kimi · モーションで世界をつなぐ</strong><br>
-コードの帯、ずれた断片、トランジションでブランドの場面をつなぐ。<br>
-<a href="https://open-design.ai/templates/a-world-connected-by-computational-fragments-motion-design/">テンプレートを見る</a>
+<a href="../templates/games/sort-stack"><img src="readme/opengame/sort-stack.webp" width="320" alt="Sort Stack — カジュアルパズル"></a><br>
+<strong>Sort Stack</strong><br>
+<sub>カジュアルパズル</sub><br>
+同じ色のリングを柱の間で移動。色、配置、制限時間を調整。<br>
+<a href="../templates/games/sort-stack">ソースを見る</a>
 </td>
 <td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/live-templates/slack-slack.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/e5f730483a177dad8cebd3f19728d04a590a075691ca2c48544c05c73490a505.gif" width="480" alt="ブランドマークを分解・再構成"></picture><br>
-<strong>Slack · ブランドマークを分解・再構成</strong><br>
-マークを単純な形に分解し、自分の色と名前で組み直す。<br>
-<a href="https://open-design.ai/templates/slack-slack-motion-design/">テンプレートを見る</a>
+<a href="../templates/games/tilt-temple"><img src="readme/opengame/tilt-temple.webp" width="320" alt="Tilt Temple — 物理チャレンジ"></a><br>
+<strong>Tilt Temple</strong><br>
+<sub>物理チャレンジ</sub><br>
+迷路を傾け、鍵を集めてポータルへ。道筋、障害物、雰囲気を変更。<br>
+<a href="../templates/games/tilt-temple">ソースを見る</a>
 </td>
 </tr>
 </table>
 
-### 解説とチュートリアル
+### コレクション全体を見る
 
-<table width="100%">
-<tr>
-<td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="https://releases.open-design.ai/open-motion/media/sha256/79e74122a92470f1cfe4ce39552b1eacad81bf316514605fef8d64f0c62eea4b.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/f6372a94259356a96f71ab0be2414f2c793d4fc823a45bfba70ca53dba595f04.gif" width="480" alt="ツールをまたぐ流れを説明"></picture><br>
-<strong>Anthropic · ツールをまたぐ流れを説明</strong><br>
-ひとつの問いをデータ、操作、スライドまで追い、文脈を保つ。<br>
-<a href="https://open-design.ai/templates/connected-tools-evidence-chain-motion-design/">テンプレートを見る</a>
-</td>
-<td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/live-templates/an-agent-payment-with-human-approval.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/caf3c5ba8c42668634ed37bfb7bf70b08aff3897eef89cc5b62980c1402532e4.gif" width="480" alt="承認の流れを順に見せる"></picture><br>
-<strong>Stripe · 承認の流れを順に見せる</strong><br>
-同じ依頼を会話からスマートフォンの確認画面まで一貫して見せる。<br>
-<a href="https://open-design.ai/templates/an-agent-payment-with-human-approval-motion-design/">テンプレートを見る</a>
-</td>
-</tr>
-</table>
+以下のソース例は 6 ジャンルをカバーします。動くコアループから見た目、入力、ルールを変えられます。**このソーススナップショットには、コレクションのうち 26 本の同梱例が含まれます。**
 
-### データとグラフで伝える
+| ジャンル | 同梱ゲーム |
+| --- | --- |
+| シューティング · 5 | [Comet Guard](../templates/games/comet-guard) · [Harbor Skirmish](../templates/games/harbor-skirmish) · [Lane Turret](../templates/games/lane-turret) · [Periscope Depth](../templates/games/periscope-depth) · [Starlight Bastion](../templates/games/starlight-bastion) |
+| プラットフォーマー · 2 | [Lantern Hop](../templates/games/lantern-hop) · [Skyline Courier](../templates/games/skyline-courier) |
+| 物語 · 2 | [Lighthouse Log](../templates/games/lighthouse-log) · [Night Train Letters](../templates/games/night-train) |
+| カジュアル・パズル · 11 | [Castle Crush](../templates/games/castle-crush) · [Gate Legion](../templates/games/gate-legion) · [Glyph Garden](../templates/games/glyph-garden) · [Jingyang Ridge](../templates/games/jingyang-ridge) · [Merge Bakery](../templates/games/merge-bakery) · [Pin Rescue](../templates/games/pin-rescue) · [Rooftop Roast](../templates/games/rooftop-roast) · [Slime Swell](../templates/games/slime-swell) · [Sort Stack](../templates/games/sort-stack) · [Stack the Moon](../templates/games/stack-the-moon) · [Tilt Temple](../templates/games/tilt-temple) |
+| レース · 4 | [Drift Dash](../templates/games/drift-dash) · [Neon Drift](../templates/games/neon-drift) · [Sky Runner](../templates/games/sky-runner) · [Tidebreaker](../templates/games/tidebreaker) |
+| ホラー · 2 | [Hollow Signal](../templates/games/hollow-signal) · [Last Light](../templates/games/last-light) |
 
-<table width="100%">
-<tr>
-<td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/live-templates/mathematics-as-evolving-geometry.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/a1044ff2c0fadb69adc1eb9274e40665d7b4f87cd95e951d5dcb0e0d1cbedf1b.gif" width="480" alt="複雑な概念を図で伝える"></picture><br>
-<strong>OpenAI · 複雑な概念を図で伝える</strong><br>
-共通の点と線を使い、幾何学的な図から次の図へ変形させる。<br>
-<a href="https://open-design.ai/templates/mathematics-as-evolving-geometry-motion-design/">テンプレートを見る</a>
-</td>
-<td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="https://releases.open-design.ai/open-motion/media/sha256/be5fc241ac81b90d7e7ded0bf1c90040d2823e6c659420d636722b5935c6e452.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/86184ef3b1da142db2dde7cfda80b69635e5adb9c2f6d0c0b87dc9c3e0bc7cb5.gif" width="480" alt="結果を段階的に見せる"></picture><br>
-<strong>Anthropic · 結果を段階的に見せる</strong><br>
-全体像から個々の発見へ進み、それぞれの結果に対する操作を示す。<br>
-<a href="https://open-design.ai/templates/scan-to-suggested-fix-motion-design/">テンプレートを見る</a>
-</td>
-</tr>
-</table>
-
-### 音楽と映像表現
-
-<table width="100%">
-<tr>
-<td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/live-templates/controllable-song-composition.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/5e5f90231e7f456d70f002694eae9f3b1605bc06240e98224f719c8e1dcbbfa0.gif" width="480" alt="曲ができる過程を可視化"></picture><br>
-<strong>ElevenLabs · 曲ができる過程を可視化</strong><br>
-プロンプト、構成、テンポを波形と完成した曲につなげる。<br>
-<a href="https://open-design.ai/templates/controllable-song-composition-motion-design/">テンプレートを見る</a>
-</td>
-<td width="50%" valign="top">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/live-templates/living-waveform-poster.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/1c892636aac9911c05b6aa44667d1e18c7b8813a47d55d408ba21595020cb121.gif" width="480" alt="音楽ポスターに動きを"></picture><br>
-<strong>Deezer · 音楽ポスターに動きを</strong><br>
-タイトルを固定し、周囲の流れる波形でリズムを表現する。<br>
-<a href="https://open-design.ai/templates/living-waveform-poster-motion-design/">テンプレートを見る</a>
-</td>
-</tr>
-</table>
-
-<a id="creator-video-gallery"></a> <a id="presenter-motion"></a>
-
-### AI でトーク動画を編集
-
-話し手を中心に、読みやすい字幕、画面の挿入、キーワードのアニメーションで要点を伝えます。自分の収録動画に合う表現を見つけてください。
-
-<table width="100%">
-<tr><th colspan="3" align="left">🎓 教える・解説する</th></tr>
-<tr>
-<td width="33%" valign="top" align="center">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/people/careerwithriya.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/7716c7166bf9f098f67845d55872e08f5765eaeb1439eb5760db785fa6d2d41e.gif" width="216" alt="話し手の動画参考：キャリアを変える 6 つの必須スキル"></picture><br>
-<strong>キャリアを変える 6 つの必須スキル</strong><br>
-番号付きの要点 + 動くキーワード<br>
-<sub>参考動画 · @careerwithriya</sub>
-</td>
-<td width="33%" valign="top" align="center">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/people/dan-martell-tools.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/0d7e7316322a28b6ce9013beaee4208c84b12bbb5565f04fcbc175c72e6aeadc.gif" width="216" alt="話し手の動画参考：今、最も優れた AI ツールは？"></picture><br>
-<strong>今、最も優れた AI ツールは？</strong><br>
-話し手 + 浮かぶツールカード<br>
-<sub>参考動画 · Dan Martell</sub>
-</td>
-<td width="33%" valign="top" align="center">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/people/harpercarrollai.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/9b4a957dc004efc4f1ddfdfed546ca3ccc6b1a1978c15d0887d0175b84caa39f.gif" width="216" alt="話し手の動画参考：10 日間の AI 基礎・1 日目"></picture><br>
-<strong>10 日間の AI 基礎・1 日目</strong><br>
-個人のレッスン + 読みやすい字幕<br>
-<sub>参考動画 · @harpercarrollai</sub>
-</td>
-</tr>
-<tr><th colspan="3" align="left">🖥️ ワークフローを見せる</th></tr>
-<tr>
-<td width="33%" valign="top" align="center">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/people/ali-abdaal-workflow.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/03b9096a894f0572289ec31f9476854e660113852a97b4898c5b88158030b9a8.gif" width="216" alt="話し手の動画参考：毎日使う 5 つのツール"></picture><br>
-<strong>毎日使う 5 つのツール</strong><br>
-デスクでの語り + 作業画面<br>
-<sub>参考動画 · Ali Abdaal</sub>
-</td>
-<td width="33%" valign="top" align="center">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/people/john-tagudin-capso.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/a8a09b0b4837125c948bcdeff964ae7a9ff971ea0275927d045bc72f81141d72.gif" width="216" alt="話し手の動画参考：注釈付きのツールデモ"></picture><br>
-<strong>注釈付きのツールデモ</strong><br>
-話し手 + 画面 + 注釈<br>
-<sub>参考動画 · @john.tagudin</sub>
-</td>
-<td width="33%" valign="top" align="center">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/people/aiwithsachi.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/e04f9c2fdfb1bce2a2f83bbf28bde8765af58c589bb52b904694ff8113d61a7e.gif" width="216" alt="話し手の動画参考：Claude に入れたい 5 つのプラグイン"></picture><br>
-<strong>Claude に入れたい 5 つのプラグイン</strong><br>
-口頭でのリスト + 補足スクリーンショット<br>
-<sub>参考動画 · @aiwithsachi</sub>
-</td>
-</tr>
-<tr><th colspan="3" align="left">🎬 物語と製品を伝える</th></tr>
-<tr>
-<td width="33%" valign="top" align="center">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/people/khris-sheer-founder.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/0359b48294cb978df976f9ae2ab6ca4644854bee438dca09accc1144c30259bc.gif" width="216" alt="話し手の動画参考：創業者の実験・第 1 話"></picture><br>
-<strong>創業者の実験・第 1 話</strong><br>
-創業者の日記 + 日常の B ロール<br>
-<sub>参考動画 · @khris.sheer</sub>
-</td>
-<td width="33%" valign="top" align="center">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/people/ugc-rachelll.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/0b779052281e89a3efc44e5a4b4492e245a12a14c0c5118813e59876419ad5c5.gif" width="216" alt="話し手の動画参考：AI クリエイターと製品"></picture><br>
-<strong>AI クリエイターと製品</strong><br>
-製品の物語 + 根拠 + ピクチャーインピクチャー<br>
-<sub>参考動画 · @ugc.rachelll</sub>
-</td>
-<td width="33%" valign="top" align="center">
-<picture><source media="(prefers-reduced-motion: reduce)" srcset="readme/people/kevinstratvert.jpg"><img src="https://releases.open-design.ai/open-motion/media/sha256/31655004df5561a835eacd093fdd7e2a247b3c5fec0a9074ce59c6d9c9c56291.gif" width="216" alt="話し手の動画参考：5 つの AI ツールへの支払いをやめよう"></picture><br>
-<strong>5 つの AI ツールへの支払いをやめよう</strong><br>
-製品チュートリアル + 実演<br>
-<sub>参考動画 · Kevin Stratvert</sub>
-</td>
-</tr>
-</table>
+Studio には原作者へのリンクを持つコミュニティ参考作品も表示されます。同梱ソースとは別のコレクションです。外部参考の Remix は新しいオリジナルゲームのブリーフを作成し、作者のコードや素材を取り込むものではありません。
 
 <a id="features"></a>
-<a id="为什么选择-openmotion"></a>
 
-## ✨ OpenMotion の特長
+## ✨ OpenGame を使う理由
 
-<a id="what-is-openmotion"></a> <a id="openmotion-是什么"></a> <a id="video-is-code"></a>
+### 1. The Open-source Super Game Agent
 
-### 1. 動画制作の全工程をエージェントと進めるスタジオ
+<p><img src="readme/opengame/diagrams/creation-stack.ja.svg" width="100%" alt="OpenGame の制作フロー：アイデア、Remix、素材、試遊、公開"></p>
 
-**HTML で動画を書く。** シーン、書体、レイアウト、トランジションとそのタイミングを HTML、CSS、JavaScript で記述します。実写、生成したクリップ、画像、音楽、ナレーションを組み合わせ、同じプロジェクトを Studio で開いて MP4 に書き出せます。
+#### Game Studio で制作・試遊・改善
 
-![ローカルエージェント、任意のメディアモデル、制作リソースで、参考分析、シーン記述、不足素材生成、編集、MP4 出力とソース保存を行います。](readme/diagrams/creation-stack.ja.svg)
+左側でゲームを説明し、**Artifact Viewer** で結果を見て遊びます。プレビューとソースを切り替え、既存作品を開き直し、次の改良を Agent に伝えられます。何を変えるべきか、実物を見ながら判断できます。
 
-**書いて、観て、直して、書き出す。** 製品を差し替える、冒頭を詰める、出演者を加える、字幕や結末を変える。エージェントがソースを編集し、結果をエディターで確認できます。ローカルの MCP クライアントはプロジェクト用ツールを使用します。シェルを使えるエージェントでは Skills と指定バージョンの CLI も利用できます。[接続設定](#agent-setup) · [ネイティブ合成ガイド](../skills/openmotion-production/references/native.md) · [HTML の作例](../template-library/product-promo/index.html)
+<p><img src="readme/opengame/studio-play.webp" width="100%" alt="実際の Game Studio と Harbor Skirmish のプレイ可能なプレビュー"></p>
 
-<a id="studio-in-use"></a>
+*ソースから起動した実際の UI。同じワークスペースに制作画面と Harbor Skirmish を表示しています。*
 
-<img src="readme/live-product/editor.ja.jpg" width="100%" alt="Studio のサンプルプロジェクト。左にコンポジションの一覧、中央にプレビュー、下にシーンのタイムラインと音声波形が表示されています。">
-
-同じ Studio ワークスペースで動画を確認し、クリップを配置して書き出せます。
-
-#### Studio で編集できるもの
-
-| Studio の機能 | 今できること |
+| ワークスペースの機能 | できること |
 | --- | --- |
-| **物語とタイムライン** | 素材の読み込み・配置、台本や確定タイムコードに基づく切り詰め・並べ替え・修正 |
-| **動きと字幕** | 内容に合わせた動く文字、トランジション、注釈、図表、字幕 |
-| **素材と音** | 手元の素材の読み込み、内蔵モデル連携での画像・動画・音楽・TTS 生成 |
-| **画像の修正** | 参考画像対応モデルで候補を生成し、時間と動きを保ったまま差し替え |
-| **プレビューと版** | Studio で確認し、手動またはエージェントで編集。次の修正にも同じプロジェクトを使用 |
-| **出力とソース** | 固定版を MP4 にレンダリングし、HTML、CSS、JavaScript、素材を保存 |
+| ジャンル・スタイル・設定 | 詳細なプロンプトを書く前に方向を決める |
+| テンプレート検索 | 仕組みや表現に合う動く出発点を探す |
+| プレイ可能なプレビュー | 操作、テンポ、フィードバックを実際に確認する |
+| Preview / Code | 現在のゲームの HTML ソースを見る |
+| 横画面 / 縦画面 | 端末と操作方法に合わせて設計する |
+| 素材と所有ゲーム | 自分の下書きに戻り、制作を続ける |
+| 共有・トレーラー | 必要な環境を整え、リンクや動画を用意する |
 
-> 「承認済みの見せ方は維持。中盤をこの画面録画に替え、指定タイムコードで導入を短くし、最後の CTA を 2 秒長くしてください。」
+制作は **説明 → 実装 → 試遊 → 改良** の循環です。「最初のジャンプが難しい」「報酬を分かりやすく」「危険な道を選ぶ理由を作って」のような具体的な指示が役立ちます。
 
-[プロジェクトとバージョン管理](project-workspace.md)
+#### ブリーフから、遊べるゲームへ
 
-<a id="分享可编辑的复刻工程"></a>
+明確な目標、反応のよい操作、続ける理由。ゲームワークフローは実装の前に、誰が遊び、何を行い、どう勝ち、どう失敗し、難度がどう変わるかを整理します。
 
-#### 参考動画から編集可能なプロジェクトへ
+<p><img src="readme/opengame/studio-create.webp" width="100%" alt="6 ジャンル、テンプレート、プロンプト入力を備えた実際の制作入口"></p>
 
-1. **参考動画を分析する。** 再現したい場面を選び、カットの順序、トランジション、音が入る位置を Motion.md に記録します。自分のブランドに合わせて替える部分も明記します。
-2. **カットを組み直す。** エージェントがブランドキットに沿って、コピーや製品の画像・動画を使った HTML シーンを再構築し、Studio のタイムラインに並べます。
-3. **同じ時点で見比べる。** 元動画と再現版を同じ時点で比較し、尺、動き、音を調整します。最後に通して再生し、全体のテンポを確認します。
-4. **書き出して共有する。** MP4 を書き出し、HTML ソースと素材を保存します。ほかの人がアレンジできるよう、Motion.md、プレビュー、共有可能な素材をプロジェクトに添えます。[提出時のチェックリスト](../library/ENTRY_TEMPLATE.md)
+ジャンルは **shooter、platformer、story、casual、racing、horror**。表現は **pixel、minimal、ASCII、voxel、anime、3D**。世界設定は **medieval、cyberpunk、retro、modern、space、fantasy**。これらはブリーフの方向づけであり、完成品には実装とレビューが必要です。
 
-<a id="bring-your-agent-and-keys"></a>
+| 段階 | 作業 | 確認する成果 |
+| --- | --- | --- |
+| ブリーフ | 核となる操作、対象、端末、時間、成功条件 | 焦点の定まった体験の説明 |
+| 計画 | 操作、カメラ、ルール、難度、視覚表現 | ゲーム計画とアート方針 |
+| 素材 | 再利用、制作、生成 | 出典、ライセンス、費用を含む一覧 |
+| 実装 | 仕組み、反応、メニュー、再開 | ゲームファイルと動くプレビュー |
+| 検証 | リソース、ルール、入力のチェック | 実測結果、画面、残る課題 |
+| 交付 | カバー、メタデータ、共有準備 | 再び開いて改善できる作品 |
 
-### 2. 無料・オープンソース。ローカルエージェントで使え、各工程で BYOK に対応
+```text
+デスクトップ向けの、穏やかな屋上配達ゲームを作ってください。
+90 秒で荷物を 3 個届けます。二段ジャンプと明確な着地点を用意し、
+夕焼けの暖色と立体的な 3D 形状を使ってください。
+最初の説明、タイマー、勝敗、ポーズ、再開を含め、最初の配達は
+簡単にしてください。計画、実装、1 プレイ全体の検証まで行ってください。
+```
 
 <a id="choose-agent"></a>
 
-**エージェントを選んでください。** WorkBuddy、Codex、Claude Code、DeepSeek Harness には個別のセットアップ手順があります。それ以外のボタンからは MCP と CLI の共通接続手順を開けます。
+### 2. 無料でオープンソース。自分の Agent とキーで。
 
-<p>
-  <a href="#workbuddy-setup"><img src="readme/agents/workbuddy-badge.svg" width="144" height="34" alt="WorkBuddy" /></a>
-  <a href="#agent-setup"><img src="readme/agents/codex-badge.svg" width="144" height="34" alt="Codex CLI" /></a>
-  <a href="#claude-setup"><img src="readme/agents/claude-code-badge.svg" width="144" height="34" alt="Claude Code" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/opencode-badge.svg" width="144" height="34" alt="OpenCode" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/hermes-badge.svg" width="144" height="34" alt="Hermes" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/antigravity-badge.svg" width="144" height="34" alt="Antigravity" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/gemini-badge.svg" width="144" height="34" alt="Gemini CLI" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/grok-build-badge.svg" width="144" height="34" alt="Grok Build" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/kimi-badge.svg" width="144" height="34" alt="Kimi CLI" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/cursor-badge.svg" width="144" height="34" alt="Cursor Agent" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/qwen-badge.svg" width="144" height="34" alt="Qwen Code" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/qoder-badge.svg" width="144" height="34" alt="Qoder CLI" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/copilot-badge.svg" width="144" height="34" alt="GitHub Copilot" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/pi-badge.svg" width="144" height="34" alt="Pi" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/kiro-badge.svg" width="144" height="34" alt="Kiro CLI" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/kilo-badge.svg" width="144" height="34" alt="Kilo" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/vibe-badge.svg" width="144" height="34" alt="Mistral Vibe" /></a>
-  <a href="#deepseek-setup"><img src="readme/agents/deepseek-badge.svg" width="144" height="34" alt="DeepSeek TUI / Harness" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/reasonix-badge.svg" width="144" height="34" alt="Reasonix" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/aider-badge.svg" width="144" height="34" alt="Aider" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/devin-badge.svg" width="144" height="34" alt="Devin" /></a>
-  <a href="#local-agent-connection"><img src="readme/agents/trae-badge.svg" width="144" height="34" alt="Trae CLI" /></a>
+**BYOA — Bring Your Own Agent。BYOK — Bring Your Own Keys。** ローカル Agent と自分のモデルサービスを選び、ゲームのソースを自分のワークスペースに保持します。
+
+<p align="center">
+<img src="readme/agents/codex-badge.svg" height="36" alt="Codex">
+<img src="readme/agents/claude-code-badge.svg" height="36" alt="Claude Code">
+<img src="readme/agents/opencode-badge.svg" height="36" alt="OpenCode">
+<img src="readme/agents/gemini-badge.svg" height="36" alt="Gemini CLI">
+<img src="readme/agents/cursor-badge.svg" height="36" alt="Cursor">
+<img src="readme/agents/copilot-badge.svg" height="36" alt="GitHub Copilot">
+<img src="readme/agents/kimi-badge.svg" height="36" alt="Kimi">
+<img src="readme/agents/qwen-badge.svg" height="36" alt="Qwen">
+<img src="readme/agents/aider-badge.svg" height="36" alt="Aider">
+<img src="readme/agents/kiro-badge.svg" height="36" alt="Kiro">
+<img src="readme/agents/trae-badge.svg" height="36" alt="Trae">
+<img src="readme/agents/qoder-badge.svg" height="36" alt="Qoder">
+<img src="readme/agents/hermes-badge.svg" height="36" alt="Hermes">
+<img src="readme/agents/pi-badge.svg" height="36" alt="Pi">
 </p>
 
-| 持ち込むもの | 動画への活かし方 |
+**29 のローカル Agent で、同じゲーム制作フローを。** [対応一覧](#agent-wall)と[現在のクライアント定義](../shared/local-agents.ts)を確認できます。
+
+OpenGame はゲームツール、ソース、見えるワークスペースをコーディング Agent に接続します。統合されたローカル Agent 入口、または**ローカル stdio MCP** 対応クライアントを使えます。ソースには上記クライアントのアダプター定義がありますが、インストール、認証、モデル対応は各クライアントに依存します。バッジは全組み合わせの検証済み表示ではありません。
+
+| 用意するもの | OpenGame が提供するもの |
 | --- | --- |
-| **🤖 エージェント — BYOA** | Skills と MCP、対応環境では CLI で接続。いつものクライアント、アカウント、作業文脈を使えます。 |
-| **🔑 キー — BYOK** | Model Settings に対応するメディア API キーを設定し、画像、動画、音楽、TTS のモデルを選択。対応するローカル連携ではエージェントの既存ログインを利用できます。 |
-| **🎨 ブランドと素材** | ロゴ、書体、スクリーンショット、実写、台本、音楽を用意します。ブランド情報と使用許可のある素材を Motion.md の Brand Kit 欄に記録します。 |
-| **🧩 制作の出発点** | 参考、モーション部品、テンプレート、コミュニティ Skills から方向を選び、ソースや参考をエージェントへ渡します。 |
+| インストール・認証済みのコーディング Agent | ゲーム作成、ファイル編集、プレビュー、検証ツール |
+| アイデア、参考、テンプレート | ブリーフ、再利用可能な制作指針、編集可能なプロジェクト |
+| 自分のアートや音楽、設定済みメディアサービス | 素材検索、生成ジョブ、共通の素材ライブラリ |
+| クリエイティブな判断と試遊 | 繰り返せる検証、見える結果、保持できるソース |
 
-**Skills、プロジェクトツール、モデル連携、Studio、レンダリングの制作パイプラインはオープンソースです。** ローカルで動かし、実装を確認・拡張できます。このローカル工程にソフトの月額料金やレンダリングごとの料金はありません。生成 API を使わず、手持ちの映像・画像・音声だけでも制作できます。
+オープンソースアプリにモデル利用枠は含まれません。Agent の契約、メディア生成、任意のホスティングにはそれぞれ条件があります。まず同梱素材と手続き型グラフィックスで遊びの核を作れます。
 
-認証情報はワークスペースの設定に保存します。エージェントの契約や外部モデルの利用料は各提供元の規定に従います。[エージェント別の接続方法と検証状況](agent-adapters.md)
+### 3. 100+ TOP Viral Games。Remix Any Game。
 
-<a id="make-your-motion-language-reusable"></a> <a id="motion-design-community"></a>
+**好きなゲームから、自分の一本へ。** 仕組み、参考リンク、遊べる作品をブリーフにして、Agent にコアループの整理、世界観の変更、新しい成長や報酬、プレイ可能な実装を任せます。
 
-### 3. 300 本以上の Motion.md で動画を再現
+同梱ゲームの **Remix** はソースを自分の下書きへコピーします。コミュニティ作品では、カタログの説明・ジャンル・スタイルから新しいオリジナル作品のブリーフを作ります。ワンクリックで制作を開始し、Agent が実装と試遊を進めます。外部作品のソースや素材は自動取り込みされません。
 
-OpenMotion が提案する **Motion.md** は、ショットの順序、長さ、トランジション、置き換え可能な素材を Markdown で記録する形式です。オンラインライブラリでは、参考動画とモーションガイドを同じ詳細ページで確認できます。
+<p><img src="readme/opengame/studio-code.webp" width="100%" alt="Harbor Skirmish の HTML を表示する実際の Code モード"></p>
 
-Brand Kit セクションには、ブランド情報、語り口、確認済みの製品情報を記録します。Design セクションから独立した `DESIGN.md` を参照し、視覚ルールを再利用できます。参考動画の動きやテンポを保ちながら、自分のブランドを表現できます。
+*プレビューとソースは同じゲームの別の表示です。スクリーンショットの UI ラベルはそのまま保持しています。*
 
-業界やブランドの制作体系を共有するには、[Motion Package v0.2 草案](motion-package-spec.md)と[作成ツール](../packages/motion-package/README.md)を使えます。デザインとモーションの文書、素材、依存関係、任意の `SKILL.md` をまとめます。同梱レシピは二つの入力例を示します。パッケージ検証は、Studio への自動取り込みや映像の再現性の検証とは別です。
+| 出発点 | Remix のアイデア |
+| --- | --- |
+| Harbor Skirmish | 敵を減らし、明確な目標を持つ時間制の救出ミッションへ |
+| Drift Dash | ドリフトでブーストを充電し、コースを再設計 |
+| Pin Rescue | 溶岩を水で冷やしてから金を落とす新しい問題へ |
+| Sort Stack | 色名、取り消し、段階的な制約を持つ学習モードへ |
+| Rooftop Roast | キャンペーン用に店舗、収集目標、報酬を変更 |
+| Tilt Temple | 分岐、チェックポイント、異なるリスクと報酬を追加 |
 
-![Motion.md and brand context](readme/diagrams/creative-context.svg)
+これらは制作の提案で、完成した同梱バリエーションではありません。一つ変えて遊び、手応えが出てから広げましょう。
 
-<a id="resources-to-start-from"></a> <a id="motion-gallery"></a>
+`design/plan.md` に体験と受け入れ条件、`design/assets.csv` に素材情報、`design/verification.md` に実際の検証と未確認点を残します。後日再開したり別の Agent に引き継いだりする際にも使えます。
 
-#### テンプレートを選び、自分の内容に置き換える
+#### ゲームと一緒に引き継ぐ制作コンテキスト
 
-**参考ブランド、用途、動画タイプ**で絞り込むか、キーワードで検索できます。詳細ページにはプレビュー、スタイル、制作の要点、Motion.md のダウンロードがまとまっています。Studio の**テンプレートを再現**からエージェント向けの指示をコピーできます。
+<p><img src="readme/opengame/diagrams/project-context.ja.svg" width="100%" alt="ゲームの制作コンテキスト：企画、素材一覧、検証、ソース"></p>
 
-参考動画のみの項目は再現ワークフローで制作します。編集可能なソースが付属する項目は、そのプロジェクトを直接アレンジできます。
-
-![テンプレートを選び、自分の内容に置き換える](readme/live-product/library.ja.jpg)
-
-[オンラインテンプレート一覧](https://open-design.ai/templates/)
-
-<a id="all-in-one-studio"></a> <a id="full-video-creation-stack"></a>
+### 4. ゲームの画像・動画・音楽・声を制作
 
 <a id="model-wall"></a>
 
-### 4. 画像・動画・音楽・音声を生成
+**11+ メディアモデル**で、画像・動画・音楽・音声を制作。接続済みサービスで利用できるモデルを使えます。
 
-**BYOK で、自分のモデルアカウントを動画制作に使えます。** **Model Settings** で対応する API キーを登録し、モデルを選んでください。Studio の **Model Gateway** で画像、動画、音楽、音声を生成し、プレビューした候補を同じプロジェクトに取り込めます。対応するローカル画像生成では、既存のエージェントのログイン情報も利用できます。
+<p align="center">
+<img src="readme/opengame/models/gpt-image.svg" width="133" alt="GPT Image">
+<img src="readme/opengame/models/seedream.svg" width="133" alt="Seedream">
+<img src="readme/models/nano-banana.svg" width="133" alt="Nano Banana">
+<img src="readme/models/flux.svg" width="133" alt="FLUX">
+<img src="readme/models/seedance.svg" width="133" alt="Seedance">
+<img src="readme/models/wan.svg" width="133" alt="Wan">
+<img src="readme/models/suno.svg" width="133" alt="Suno">
+<img src="readme/models/elevenlabs.svg" width="133" alt="ElevenLabs">
+<img src="readme/models/kokoro.svg" width="133" alt="Kokoro">
+<img src="readme/opengame/models/byteplus.svg" width="133" alt="BytePlus Voice">
+</p>
 
-**モデル設定**で fal.ai に接続してカタログを更新すると、GPT Image 2.6、Nano Banana 2.1、FLUX.3、Seedance 2.5、Kling 4.0、Wan 3.0、Eleven v4 を検索できます。以下のプリセットは更新前にも表示されます。
+既存素材を持ち込むか、設定済みサービスでキャラクター、背景、テクスチャ、音楽、音声、動画を生成します。Agent は現在のモデル一覧を確認し、適切な機能を選び、完成した素材をゲームに組み込みます。
 
-<p><img src="readme/models/codex.svg" width="133" alt="Codex Image">
-<img src="readme/models/nano-banana.svg" width="133" alt="Nano Banana 2">
-<img src="readme/models/flux.svg" width="133" alt="FLUX Schnell">
-<img src="readme/models/seedance.svg" width="133" alt="Seedance 2.0">
-<img src="readme/models/wan.svg" width="133" alt="Wan 2.2">
-<img src="readme/models/suno.svg" width="133" alt="Suno v4">
-<img src="readme/models/kokoro.svg" width="133" alt="Kokoro"></p>
-
-| 必要な素材 | 内蔵モデルカタログの例 | 動画への用途 |
+| 必要な素材 | 現在の方法 | ワークフローのモデル例 |
 | --- | --- | --- |
-| **🖼️ 画像** | Codex Image、Atlas Cloud の Nano Banana 2、fal.ai の FLUX Schnell | ブランド画像、シーンの絵、補助画像。対応する Codex 画像経路で参考画像を用いた編集 |
-| **🎬 動画** | Atlas Cloud の Seedance 2.0、fal.ai の Wan 2.2 | 撮影素材やモーションと組み合わせるショット、B ロール |
-| **🎵 音楽** | Atlas Cloud の Suno v4 | 雰囲気と企画に合ったサウンドトラック |
-| **🎙️ TTS / ナレーション** | fal.ai の Kokoro | 承認済み台本から音声を生成し、映像・音楽と配置 |
+| キャラクター、環境、テクスチャ、カバー | 画像生成・持ち込み | GPT Image、Seedream |
+| 音楽・雰囲気 | 音楽生成・持ち込み | ElevenLabs Music |
+| ナレーション・台詞 | 音声合成・録音 | ElevenLabs、BytePlus TTS |
+| シネマティック・告知素材 | 動画生成 | Wan、Seedance |
+| 即時の効果音 | Web Audio で実装 | ローカル合成 |
+| 3D キャラクター・小物 | 同梱 CC0 GLB・Three.js の手続き型形状 | 既存素材とコード |
 
-> 「Motion.md の Brand Kit と確定済みの台本を使って、冒頭のビジュアル、挿入カット、BGM、ナレーションを生成してください。選んだ素材をプロジェクトに入れ、音と映像を合わせてから全編を見せてください。」
+正確なモデル ID と利用可否は接続環境の一覧に従います。全アカウントで全モデルが使えるという意味ではありません。専用の画像から 3D、リギング、アニメーション生成は、現在列挙されたゲーム向けモデル能力に含まれません。
 
-[内蔵モデル一覧](../gateway/catalog.ts) · [プロバイダー設定とエンドポイントの登録](model-gateway.md)
+まず既存素材で遊びを成立させ、生成する価値のある素材を選びます。出典、ライセンス、承認済み費用を記録することで、見栄えのよいゲームも保守しやすくなります。
 
 <a id="technical-guide"></a>
-<a id="安装与技术文档"></a>
 
-## 🛠️ セットアップと技術資料
+## 🛠️ 設定と技術アーキテクチャ
 
-リンク先の詳しい技術資料には、英語または中国語のものがあります。
+### このソーススナップショット
 
-### ソースからインストール
+上記の製品提供には、100 本以上のゲーム集と複数プラットフォームへの公開が含まれます。このガイドのチェックアウトには 26 本の同梱ゲームがあり、以下のコマンドとツール名はこの版に対応します。ゲーム公開ツールはローカル一覧への登録、Web 共有は独立したホスティング処理です。各プラットフォームへの公開には、対応する製品連携を使用してください。
 
-エージェントでのインストールには[上の指示](#quick-start)を使ってください。ソースから起動する手順は次のとおりです。
+### ソースと MCP
 
-#### OpenMotion を起動する
+[セットアップガイド](opengame-setup.md)にはインストール、専用データディレクトリ、Windows、手動設定をまとめています。**Studio と MCP の絶対 `MOTION_DATA_DIR` を一致させること**が、同じゲームを見て編集するための条件です。
 
-**無料のローカル制作環境から。** 自分のエージェントを接続し、同梱テンプレートや撮影素材を使ってローカルでレンダリング。新しい素材を生成するときは Model Settings に対応キーを追加します。
+<details>
+<summary><strong>stdio MCP の手動設定</strong></summary>
 
-Git、npm、**Node.js 26.11.1** を用意してください。ソースからのプレビューと書き出しには Chrome または Chromium と、FFmpeg・FFprobe も必要です。[実行環境の設定](usage.md)
-
-```sh
-git -c filter.lfs.process= -c filter.lfs.smudge= -c filter.lfs.required=false clone --depth 1 --single-branch --branch main https://github.com/nexu-io/openmotion.git openmotion
-cd openmotion
-npm ci
-npm run build:studio
-npm start
-```
-
-**http://localhost:4173** を開き、**テンプレートライブラリ**からテンプレートを選びます。**テンプレートを再現**を押すと、エージェントに送る指示をコピーできます。プロジェクトと認証情報はコードとは別に保存され、`MOTION_DATA_DIR` でワークスペースを選べます。
-
-<a id="agent-setup"></a>
-
-#### エージェントを接続する
-
-プラグイン対応 Codex では、チェックアウトから実行：
-
-```sh
-bash scripts/install-motion.command
-```
-
-<a id="workbuddy-setup"></a>
-
-**WorkBuddy** · OpenMotion Connector をインポートするか、付属の `mcp.json` をカスタム MCP として追加します。WorkBuddy に利用可能な動画テンプレートを一覧表示させてください。[WorkBuddy の設定手順](agent-adapters.md#workbuddy)
-
-<a id="claude-setup"></a>
-
-**Claude Code** · [手動 MCP 設定](#manual-mcp)でこのソースに接続し、`/mcp` で確認してください。
-
-<a id="deepseek-setup"></a>
-
-**DeepSeek** · DeepSeek TUI ではターミナルから HTML プロジェクトを編集できます。DeepSeek Harness では Cordis を使って OpenMotion の MCP ツールに接続できます。[DeepSeek Harness の設定](agent-adapters.md#deepseek-harness)
-
-インストーラーはローカルでビルドしたパッケージを使います。[Windows 用テストパッケージ](test-packages.md)
-
-オンラインテンプレートで試します：
-
-> OpenMotion で、このテンプレート詳細ページの動画を自分の Brand Kit と文案で再現してください。動きとテンポを生かし、確認用に編集可能なプロジェクトを Studio で開いてください。
-
-動画から始める場合は、参考と[再構築ブリーフ](#reverse-engineer-a-video)を渡してください。ホストが会話の横に Studio を開けない場合は、返されたローカルプロジェクトのリンクを使います。
-
-##### Skills、MCP、CLI
-
-プラグインと MCP サーバーの名前は `openmotion` です。Tools、Skills、リソースはそれぞれ `openmotion_*`、`openmotion-*`、`openmotion://` を使います。旧 Tool・リソース名は互換エイリアスとして残ります。旧 Skill エントリは削除されました。`openmotion-*` を使用し、更新後にホストの Skill 一覧を再読み込みしてください。[名称とインストールの互換性](npm-installation.md#public-names-and-compatibility)
-
-チェックアウトから [Skills CLI](https://github.com/vercel-labs/skills) を使い、5 つの基本ワークフローを確認・インストールできます：
-
-```sh
-npx skills add ./skills --list
-npx skills add ./skills --skill openmotion-director openmotion-production openmotion-template-to-video openmotion-recreate openmotion-video-to-template
-```
-
-これは指示書をコピーするだけで、ランタイムのインストールや MCP 登録はしません。共有文書を使える状態にしてアプリを別途接続するか、上記の統合インストーラーを使ってください。
-
-| Skill | 用途 |
-| --- | --- |
-| [openmotion-recreate](../skills/openmotion-recreate/SKILL.md) | 参考動画の再構築と結果の比較 |
-| [openmotion-template-to-video](../skills/openmotion-template-to-video/SKILL.md) | 既存の編集可能なテンプレートの改編 |
-| [openmotion-director](../skills/openmotion-director/SKILL.md) | オリジナル動画、物語、動き、音、創作レビュー |
-| [openmotion-video-to-template](../skills/openmotion-video-to-template/SKILL.md) | 持ち運べる再利用テンプレートの制作 |
-| [openmotion-production](../skills/openmotion-production/SKILL.md) | 範囲を定めた編集、プレビュー、検査、問題解決、出力 |
-
-<a id="local-agent-connection"></a>
-
-**そのほかのローカルエージェントを接続する** · 公式インストールガイドに従い、クライアントに接続します。stdio MCP 対応のクライアントには下記の設定を使えます。ターミナルを使うエージェントでは、プロジェクトのディレクトリを開き、[ローカルエンジンの CLI](../skills/openmotion-production/references/native.md) で HTML シーンをプレビュー・レンダリングできます。 npm 公開版では `openmotion setup --host <エージェント名>`（例: `opencode`）を実行します。setup がアプリと Skills をインストールし、追加すべきランチャー設定を返します。[そのほかのローカルエージェント](npm-installation.md#other-local-agents)
-
-<a id="manual-mcp"></a>
+`mcpServers` オブジェクトを使うクライアント向けの例です。Node 実行ファイル、チェックアウト、ワークスペースを絶対パスに置き換えます。異なるクライアントでは固有の形式を使ってください。
 
 ```json
 {
   "mcpServers": {
-    "openmotion": {
+    "opengame": {
       "command": "/absolute/path/to/node",
-      "args": ["--experimental-strip-types", "/absolute/openmotion/mcp.ts"],
-      "env": { "MOTION_DATA_DIR": "/absolute/openmotion-data" }
+      "args": [
+        "--experimental-strip-types",
+        "/absolute/path/to/opengame/mcp.ts"
+      ],
+      "env": {
+        "MOTION_DATA_DIR": "/absolute/path/to/.opengame/workspace"
+      }
     }
   }
 }
 ```
 
-**公開 MCP 名 18 個（素材ライブラリの互換エイリアス 1 個を含む）**で、テンプレート検索・詳細取得、プロジェクトの作成と読み取り、編集、プレビュー、素材の読み込みと BYOK 生成、再利用素材のバージョン、プロジェクト管理と ZIP 共有、出力、版の復元、キャンセルを扱います。共通の手順とエンジンガイドは MCP resources から取得できます。[ツール契約](mcp-phase1-tools.md)
+ツールを再読み込みし、ゲームワークフローと指定したゲーム ID を読めるか確認します。Skill 指示だけではアプリや MCP 接続はインストールされません。クラウド専用クライアントはこのローカル stdio 設定を実行できません。
 
-`openmotion_list_templates` でテンプレートを探し、`openmotion_get_template` で詳細を確認します。`openmotion_create_project` で編集用のコピーを作成できます。[テンプレート一覧](template-catalog.md)
-
-アプリには `npm start` 、stdio には `npm run mcp` を使用します。シェル対応エージェントは実行環境が返す固定版エンジン CLI で検査・レンダリング可能。管理対象の編集には revision 検査を適用します。[ネイティブ制作](../skills/openmotion-production/references/native.md)
-
-<a id="product-tour"></a> <a id="产品界面"></a> <a id="connect-your-agent"></a> <a id="use-from-your-agent"></a> <a id="从-agent-接入"></a> <a id="your-agent-your-studio"></a>
-
-<a id="reverse-engineer-a-video"></a>
-
-### 参考動画を編集可能なプロジェクトにする
-
-| 参考から読み解くもの | 自分の物語に置き換えるもの |
-| --- | --- |
-| **導入と物語** — 順序、展開、見せ場への積み上げ | 自分の約束、製品の事実、行動喚起 |
-| **ショット構成** — 画角、カメラ、レイヤー、視覚階層 | 自社 UI、映像、ロゴ、補助画像 |
-| **動きとテンポ** — 登場、切り替え、緩急、読む時間 | 動きの意図を保ち、内容に合わせて調整 |
-| **文字とブランド** — 文字階層、色、構図 | 自分の書体、配色、原稿、Brandkit |
-| **音とリズム** — 発話のタイミング、音楽の合図、強調 | 自分の声、用意した音楽、音の演出 |
-
-エージェントが SNS のリンクを開けない場合は、ローカルの動画ファイルとタイムコードを渡してください。元動画だけがある場合は[参考動画の再現手順](../skills/openmotion-recreate/SKILL.md)、編集可能なソースがある場合は[テンプレートの手順](../skills/openmotion-template-to-video/SKILL.md)を使います。
-
-```text
-OpenMotion で添付の参考動画を自社ブランド向けに再構築してください。
-
-分析：冒頭、ショットの順序、文字、トランジション、音の合図。
-維持：選択区間の製品の見せ方とカメラのテンポ。
-変更：ロゴ、UI、訴求、原稿、エンドカードを提供素材へ。
-生成：ブランドと承認済み台本に従い、設定済みモデルで不足する
-画像、動画、BGM、TTS ナレーションを用意。
-
-編集可能なプロジェクトを Studio で開き、参考と同時点を比較。
-残る差分を説明し、確認後に MP4 を出力して次の編集用にソースを保存。
-```
-
-<a id="ai-video-editing"></a> <a id="keep-editing-after-the-remake"></a>
-
-<a id="テンプレートと-motionmd-を確認する"></a>
-
-#### テンプレートをエージェントに渡す
-
-1. 参考動画を再生し、「ビジュアルスタイル」や「制作時のポイント」を開いて内容を確認します。ガイドを保存するには「motion.md をダウンロード」を選びます。
-2. 「指示を表示」で内容を確認し、「テンプレートを再現」でコピーします。ブランド素材と制作要件を添えて、指示をエージェントに貼り付けます。
-3. エージェントが作成したプロジェクトを Studio で開き、編集して書き出します。
-
-![テンプレートのプレビュー、展開した指示、「テンプレートを再現」ボタン、コピー完了の通知が同じ画面に表示されています。](readme/live-product/remix.ja.jpg)
-
-<a id="open-projects-reusable-knowledge"></a> <a id="developer-architecture"></a>
-
-### システム構成
-
-Studio でタイムラインを調整するときも、エージェントがカットを直すときも、編集対象は同じ HTML プロジェクトです。ローカルの TypeScript サービスが素材とバージョンを管理し、ブラウザーベースのエンジンが選んだバージョンを MP4 に書き出します。
-
-#### モジュール間の連携
-
-![ローカルエージェントは 9 個の MCP プロジェクトツールで、Studio はローカル HTTP で接続。アプリケーションがバージョン、素材、書き出しを管理し、Model Gateway が素材を供給します。レンダラーが選んだバージョンを書き出して検証します。](readme/diagrams/runtime-architecture.ja.svg)
-
-エージェントは書き込み前にバージョンを確認するので、古いリクエストが直前の変更を上書きすることを防げます。生成した素材は選んだものだけがプロジェクトに入ります。書き出しには開始時点のバージョンを使い、その後の編集は次の版に反映されます。ファイル仕様は書き出し時に検証され、映像と音、間合いは再生して確認できます。
-
-<details>
-<summary>全体設計とロードマップをテキストで読む</summary>
-
-```text
-制作の入力
-参考動画 + 撮影素材 + 台本 + ブランド素材
-                 ↓
-コミュニティの知識
-Motion.md + BRANDKIT.md + Skills + テンプレート + 部品
-                 ↓
-BYOA：ローカルエージェント              OPENMOTION STUDIO
-DeepSeek Harness / Codex / Claude Code  React 19 + TypeScript + Vite
-他のホスト、Skills、ホストの分析ツール  Tailwind CSS + Zustand
-                 |                     CodeMirror + Dockview
-            stdio MCP                  素材 / プレビュー / タイムライン
-            プロジェクトツール 9 個             ローカル HTTP
-                 └──────────┬──────────┘
-                            ↓
-ローカルアプリ：Node.js + TypeScript + node:http
-会話 / プロジェクトファイル / 素材 / revision / 出力ジョブ
-                 ↓                         ↓
-BYOK：MODEL GATEWAY                    動画をコードで
-キー / アカウント / モデルルーティング HTML シーン + 素材 + Studio データ
-探索 / 生成ジョブ                     HTML + CSS + JavaScript + GSAP
-                 ↓                         ↑
-モデルアダプター                             |
-Codex Image / Atlas Cloud / fal.ai          |
-画像 / 動画 / 音楽 / TTS                      |
-                 ↓                         |
-生成候補 → プレビュー / 選択 → 明示的に採用 ──┘
-                            ↓
-レンダリングと検証
-選択したバージョン → HTML エンジンと Chromium → FFmpeg / FFprobe
-                            ↓
-現在の納品物
-MP4 + 編集可能なソース + 素材 + 版と出力の検証記録
-                            ↓
-計画中：各プラットフォームへ公開
-接続機能 → 公開確認 → 予約 → 成績のフィードバック
-                            ↓
-計画中：知識のフィードバック
-版に結びつく結果 → チームの記憶 / RAG → 評価済み Skill 改善
-```
+現在の識別子は `openmotion-game`、`openmotion://workflow/game/start`、`openmotion_game_*` です。このソース版では正確な名前を維持してください。設定内の `opengame` は接続の表示名です。
 
 </details>
 
-BYOA は既存の Agent クライアントを使い、素材ワークスペースではモデルによる直接生成と素材の再利用ができます。BYOK は対応するモデルアカウントを接続します。Studio とローカルサービスが編集可能な作品を管理し、認証情報はプロジェクトファイルの外に保たれます。第 1 段階の公開 MCP は**18 個の名前：プロジェクト用 9 個、テンプレートカタログ用 2 個、Skill ライブラリ用 2 個、プロジェクトアーカイブ用 1 個、プロジェクト管理用 1 個、BYOK メディア用 1 個、同じ素材ライブラリ機能の名前 2 個**です。Studio でプロバイダーキーを設定し、`openmotion_media_use` でモデルを探してローカル Gateway 経由でメディアを生成します。`openmotion_assets_use`（`openmotion_assets` も互換）で再利用素材のアップロード・確認・生成、バージョン保持、選んだバージョンの作品への読み込みを行います。[素材ライブラリガイド](assets.md)。キーはサービス内に留まり、公開 MCP 契約に公開（パブリッシュ）機能は含まれません。
+### ゲームツール
 
-#### 技術スタックとソースの索引
-
-| 層 | 技術 | ソースの入口 |
-| --- | --- | --- |
-| **Studio と編集 UI** | React 19、TypeScript 5.9、Vite 6、Tailwind CSS 4、Zustand、CodeMirror、Dockview | [Studio ソース](../studio/src) · [Motion アプリ](../studio/src/motion/MotionApp.tsx) · [エディター開発](editor-fork.md) |
-| **アプリ実行環境** | CI で Node.js 26.11.1、ネイティブ HTTP、TypeScript 実行、ローカルファイル/JSON | [server.ts](../server.ts) · [workspace.ts](../workspace.ts) · [セッション設計](session-architecture.md) |
-| **エージェント接続** | ローカル stdio MCP、5 つの基本 Skills、生成したホストアダプター | [mcp.ts](../mcp.ts) · [phase1.ts](../phase1.ts) · [アダプター生成](../scripts/export-adapters.ts) |
-| **マルチモーダル生成** | Codex メディアアダプター、Atlas Cloud predictions、fal.ai キュー連携、永続化した生成ジョブ | [Gateway サービス](../gateway/service.ts) · [提供元アダプター](../gateway/providers.ts) · [モデルカタログ](../gateway/catalog.ts) |
-| **合成と動き** | HTML/CSS/JS、GSAP、固定版の合成エンジン、ネイティブのタイムライン/履歴 | [エンジン連携](../hyperframes.ts) · [テンプレートソース](../template-library) · [版管理アダプター](../phase1-versions.ts) |
-| **レンダリングとメディア** | Chromium、Puppeteer Core、FFmpeg、FFprobe | [レンダリングサービス](../server.ts) · [出力検証器](../scripts/verify-export.ts) · [ネイティブ実行環境のロック](../scripts/runtime-lock.json) |
-| **制作の知識** | Markdown、ソースパッケージ、プリセット、比較記録 | [Motion.md](motion-md.md) · [基本 Skills](../skills) · [コミュニティ Library](../library/README.md) |
-| **検証とパッケージ** | Node テスト、Vitest、Studio 検査、npm ロックファイル、明示的な配布一覧 | [テスト](../tests) · [Studio テスト](../studio/tests) · [CI](../.github/workflows/ci.yml) · [配布](../scripts/distribution.ts) |
-| **公開と学習 — 計画中** | プラットフォームアダプター、予約、版に関連するフィードバックと検索。実装設計は今後 | [Studio の構想](product/studio-vision.md) |
-
-依存関係の固定は [package.json](../package.json)、[package-lock.json](../package-lock.json) と[実行環境のロック](../scripts/runtime-lock.json)にあります。モデルと第三者ライブラリは各自の条件を保ち、アプリは Apache-2.0 です。
-
-#### 開発に参加する
-
-| 得意分野 | 役立つ貢献 | 入口 |
-| --- | --- | --- |
-| **フロントエンドと操作** | タイムライン、素材生成 UI、アクセシビリティ、プレビューの改善 | [Studio](../studio/src) · [メディア生成 UI](../studio/src/motion/MediaGenerator.tsx) |
-| **AI とモデル基盤** | 共通のジョブ・素材フローで提供元アダプターやモデルプリセットを追加 | [Gateway 設計](product/media-generation-design.md) · [提供元アダプター](../gateway/providers.ts) |
-| **エージェントと開発ツール** | ホストアダプター、Skill、リソースガイド、プロジェクト操作の改善 | [エージェントアダプター](agent-adapters.md) · [MCP 契約](mcp-phase1-tools.md) |
-| **動きとクリエイティブコード** | 実際の改編を添えた部品、ネイティブテンプレート、Motion.md パッケージ | [部品](../library/components/README.md) · [登録チェックリスト](../library/ENTRY_TEMPLATE.md) |
-| **動画とレンダリング** | 出力の信頼性、メディア処理、再現可能な検証の改善 | [エンジンの説明](hyperframes.md) · [出力検証器](../scripts/verify-export.ts) |
-| **SNS 公開** | 計画中の接続層を設計：アカウント利用、公開確認、予約、版の対応付け | [公開の方向性](product/studio-vision.md) · [提案を議論する](https://github.com/nexu-io/openmotion/issues) |
-
-[ローカル設定](#quick-start)から始め、担当する層を選び、[CONTRIBUTING.md](../CONTRIBUTING.md) と [AGENTS.md](../AGENTS.md)に従ってください。プロジェクトと認証情報はチェックアウト外に置き、固定バージョンと上流ライセンスを維持します。
-
-[製品アーキテクチャ](product/architecture.md) · [Studio 開発](../studio/README.md) · [Model Gateway](model-gateway.md) · [貢献ガイド](../CONTRIBUTING.md)
-
-<a id="one-video-more-places-to-share"></a> <a id="publish-to-every-platform"></a>
-
-<a id="super-motion-video-agent"></a> <a id="status--roadmap"></a> <a id="当前状态与路线图"></a> <a id="roadmap"></a>
-
-### 画面比率ごとの書き出しと公開
-
-画面比率ごとに構図を整え、Studio で各版を確認して MP4 を書き出し、対象のプラットフォームへアップロードします。
-
-| 依頼する版 | 調整するもの |
+| 作業 | 現在のツール名 |
 | --- | --- |
-| **縦のショート** — Reels、Shorts、TikTok、小紅書など | 導入、大きく読みやすい文字、画角、字幕位置 |
-| **横の動画** — 製品ページ、発表、YouTube | UI の細部、広い構図、説明する時間 |
-| **正方形のフィード版** — SNS キャンペーン | コンパクトな構図、見出し、明快な締め |
+| 作成・確認 | `openmotion_game_create`、`openmotion_game_get` |
+| ソースの読み書き | `openmotion_game_read_file`、`openmotion_game_write_files` |
+| 表示情報 | `openmotion_game_update_meta`、`openmotion_game_capture_cover` |
+| 動作検証 | `openmotion_game_validate`、`openmotion_game_simulate`、`openmotion_game_playtest` |
+| 準備状態・ローカル公開 | `openmotion_game_set_status`、`openmotion_game_publish` |
+| ゲーム動画 | `openmotion_game_trailer` |
 
-配信アカウントとの連携、予約投稿、公開後の成果のフィードバックは計画中です。
+Web 公開には素材ツールの `action: "web_publish"`、`targetKind: "game"` を使います。メディアの探索と生成も専用ツールを使い、実行前に現在のスキーマを確認します。
 
-#### Studio のロードマップと共同編集の構想
+<a id="system-architecture"></a>
 
-| 分野 | 今できること | 今後の方向 |
+### OpenGame の仕組み
+
+**Game Studio と Agent は同じゲームファイルを扱います。** UI は制作条件、プレビュー、ソース表示を担当し、Agent アダプターが制作タスクを実行します。共通サービスがゲーム、素材、検証を管理するため、同じプロジェクトを Studio でも外部 MCP クライアントでも継続できます。
+
+<p><img src="readme/opengame/diagrams/runtime-architecture.ja.svg" width="100%" alt="OpenGame の実行構成：Studio、Agent、共通ゲームサービス、メディア、検証、配信"></p>
+
+| レイヤー | 役割 | ソース |
 | --- | --- | --- |
-| **再構築と編集** | エージェントによる参考再構築、テンプレート改編、編集可能なプロジェクト、MP4 出力 | 評価済み事例と再現可能な比較の拡充 |
-| **ブランドと知識** | 明示的な Brandkit、Motion.md、Skills、ソースパッケージ | 個人/チームの記憶、RAG、評価済み Skill 改善 |
-| **人とエージェント** | 同じローカルプロジェクトの引き継ぎ | タイムラインのコメント、共同レビュー、共同編集 |
-| **マルチモーダル制作** | 画像・動画・音楽・TTS の連携、生成、候補選択、タイムラインへの採用 | 映像、画像、声、音楽、Avatar サービスの横断検索 |
-| **各プラットフォームへの公開 — 計画中** | 画面比率別の制作と MP4 の引き渡し | 接続機能、公開確認、予約、自動リフレーム、SNS プリセット |
-| **フィードバック** | 人によるレビュー、保存したプロジェクトの版 | 版ごとの成績、定期的な制作タスク |
+| Game Studio | ブリーフ、探索、プレイ可能なプレビュー、ソース表示 | [GameStudio.tsx](../studio/src/motion/game/GameStudio.tsx)、[ArtifactBrowserPane.tsx](../studio/src/super-agent/ArtifactBrowserPane.tsx) |
+| Agent 実行環境 | クライアント選択、会話、タスク実行 | [実行アダプター](../gateway/agent-runtimes.ts)、[Super Agent](../gateway/super-agent.ts)、[29 クライアント](../shared/local-agents.ts) |
+| HTTP + MCP | 共通ゲーム操作への 2 つの入口 | [server.ts](../server.ts)、[mcp.ts](../mcp.ts)、[12 ゲームツール](../shared/game-tools.ts) |
+| ゲームサービス | 所有ソース、Remix、メタデータ、状態管理 | [GameProjects](../game-projects.ts)、[ゲーム仕様](../shared/game-contract.ts) |
+| モデルと素材 | モデル一覧、生成ジョブ、再利用できるメディア | [モデルカタログ](../gateway/catalog.ts)、[素材ライブラリ](../gateway/asset-library.ts) |
+| 検証 | リソース検査、ルールのシミュレーション、ブラウザー試遊 | [ゲームサービス](../game-projects.ts)、[ブラウザー実行環境](../browser.ts)、[ゲームテスト](../tests/game-projects.test.ts) |
+| 配信 | ローカル一覧、Web スナップショット、ゲームトレーラー | [Web 公開](../gateway/web-publish.ts)、[配信フロー](../skills/openmotion-game/references/game-flow.md) |
 
-![人とエージェントが共有タイムラインを確認する生成コンセプト画像。協働機能は計画中。](https://releases.open-design.ai/open-motion/media/sha256/a5efa5be51936f33ecc7ef4241ce2602ebf4e7efcc8ce30e0dac5a8bd2b34957.png)
+### リクエストから、自分のゲームへ
 
-*共同編集の構想。タイムラインに「このカットをもう少し長く」とコメントすると、エージェントが間合いを調整します。計画中の機能です。* [Studio の構想](product/studio-vision.md) · [知識とフィードバック](product/studio-vision.md#knowledge-and-feedback)
+1. **出発点を選ぶ。** 新しいブリーフは下書きに、同梱テンプレートの Remix は独立した編集可能なコピーになります。
+2. **Agent に渡す。** Studio がブリーフとゲーム ID を選択した Agent に渡します。外部クライアントはローカル MCP から同じゲームワークフローを利用できます。
+3. **実装と検証。** Agent がファイルを変更し、素材を追加し、リソース・ルール・操作を検証。Studio はそのファイルをプレビューします。
+4. **公開と改善。** カバー、プレイ可能な公開版、トレーラーを準備。ローカルソースを残して改善し、共有版を更新するときは再公開します。
 
-<a id="社区共建"></a> <a id="community"></a>
+所有ゲームは `MOTION_DATA_DIR/games/<game-id>/` に保存され、`game.json`、プレイ用エントリー、関連ファイルを含みます。制作方針、素材の出典、検証記録は `design/` に残し、同梱テンプレートは `templates/games/` に分離します。準備完了・公開済みのゲームを変更すると、状態は `building` に戻ります。
 
-<a id="社区"></a>
+### 技術スタック
 
-## 🤝 作品と制作手順を共有する
+| 領域 | 技術 | 製品での役割 |
+| --- | --- | --- |
+| アプリケーションサービス | Node.js + TypeScript | HTTP と MCP でゲーム・Agent・素材サービスを共有 |
+| Studio | React + Vite + Tailwind CSS + Zustand | 制作、プレビュー、プロジェクト状態を扱うワークスペース |
+| ゲーム出力 | HTML、CSS、JavaScript；必要に応じ Canvas / WebGL / Three.js | ソースを編集して直接プレビューできるブラウザーゲーム |
+| ソース表示 | [CodeViewer](../studio/src/design/CodeViewer.tsx) | 完成物と実際のソースを並べて確認 |
+| 検証と動画 | Chrome + Hyperframes + FFmpeg / ffprobe | ブラウザー検証、プレイ録画、MP4 出力 |
+| UI システム | OpenDesign の共通コントロール、フォント、ブランド素材 | ワークスペース全体で一貫した体験 |
 
-再現した動画、再利用できるテンプレート、カットの間合いを記録した Motion.md を共有してください。元動画と完成版を並べ、編集可能なプロジェクトを添えると、ほかの人も同じリズムを自分の素材で試せます。
+### 拡張するレイヤーを選ぶ
 
-| 貢献するもの | 含めるもの |
+| 作りたいもの | 開始点 |
 | --- | --- |
-| **再構築作品** | 参考と作者、企画、プロジェクト、プレビュー、比較、残る差分 |
-| **テンプレートや部品** | 動くソース、変更項目、素材、プレビュー、クレジット |
-| **Skill やデザインシステム** | 方法、維持/変更の規則、実際に実行した作例 |
-| **Brandkit** | ブランド、正確な製品情報、共有できる素材 |
-| **エージェント対応や編集機能の改善** | 焦点を絞った変更と再現可能な検証 |
+| ゲームや Remix を追加 | [ゲームテンプレート](../templates/games)、[ゲームワークフロー](../skills/openmotion-game/SKILL.md) |
+| ワークスペースを改善 | [Game Studio](../studio/src/motion/game/GameStudio.tsx)、[デザインシステム](../packages/design-system/README.md) |
+| Agent 接続を拡張 | [Agent 実行環境の構成](agent-runtime-architecture.md) |
+| モデル・素材フローを追加 | [Model Gateway](model-gateway.md)、[素材システム](assets.md) |
+| ゲームツールや配信を拡張 | [ツール定義](../shared/game-tools.ts)、[GameProjects](../game-projects.ts)、[貢献ガイド](../CONTRIBUTING.md) |
 
-[リソース提出時のチェックリスト](../library/ENTRY_TEMPLATE.md) · [貢献ガイド](../CONTRIBUTING.md) · [問題を報告](https://github.com/nexu-io/openmotion/issues) · [コントリビューター](https://github.com/nexu-io/openmotion/graphs/contributors) · [メディア向け資料](media-kit.md)
+[アーキテクチャ、プロジェクト構成、サービス境界の詳細 →](opengame-architecture.md) · [導入とトラブルシューティング →](opengame-setup.md)
 
-このリポジトリの名前は `nexu-io/html-anything` から [`nexu-io/openmotion`](https://github.com/nexu-io/openmotion) に変わりました。
+<a id="launch-and-earn"></a>
 
-[OpenMotion 公式サイト](https://open-design.ai/ja/motion/) · [OpenDesign Go](https://go.open-design.ai/?utm_source=github&utm_medium=referral&utm_campaign=openmotion&utm_content=readme_ja) · [Discord](https://discord.com/invite/M7NnHS9gNa) · [Feishu](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=b6cs46dc-acb2-48ed-941d-c45642ead841) · [X @OpenDesignDevs](https://x.com/OpenDesignDevs) · [X @OpenDesignHQ](https://x.com/OpenDesignHQ) · [YouTube](https://www.youtube.com/channel/UChtshixMhvtgBWzoD9R_Qfg)
+## 🌍 遊べる作品から、ゲームビジネスへ
 
-[**GitHub で OpenMotion にスターを付ける**](https://github.com/nexu-io/openmotion)
+### TikTok・WeChat・Douyin — プレイヤーがいる場所へ
 
-[![OpenMotion の更新をフォローするには GitHub でスターを](https://releases.open-design.ai/open-motion/media/sha256/eb32b6cd4736cbbf42a537af24ed1ab8745192efcd7f3f69ffd5f2d569fe1607.gif)](https://github.com/nexu-io/openmotion)
+**TikTok、WeChat、Douyin などへの公開に対応。** ひとつのアイデアから配信先に合う版を用意し、プレイヤーが発見し、遊び、共有する場所へ届けます。ソースを保持し、公開後も改良を続けられます。
 
-<a id="acknowledgements"></a>
-
-### 謝辞
-
-ブランド動画の制作者と該当箇所のタイムコードは各比較映像に添えています。[エージェントとモデルのロゴ](readme/models/README.md)
-
-OpenMotion のライセンスは [Apache-2.0](../LICENSE)です。第三者のコード、テンプレート、素材、フォントは元のライセンスとクレジットを保ちます。
-
-| 出典 | 関係 |
+| 配信先 | 市場へ届ける方法 |
 | --- | --- |
-| [OpenDesign](https://github.com/nexu-io/open-design) | OpenMotion の開発元。UI デザイン、リソース構成、ブランド方針を担当。[デザインシステム](design-system.md) と [Motion ショーケース](https://open-design.ai/ja/motion/) |
-| [Hyperframes](https://github.com/heygen-com/hyperframes) | HTML 動画合成、Studio、レンダリングの基盤（0.9.7 固定）。制作者の参考、外部改編デモ、部品ソース。[エンジンの説明](hyperframes.md)、[テンプレートの告知](../template-library/NOTICE.md) と[カタログの出典](template-catalog.md) |
-| [MotionGit](https://motiongit.com/) / adunext | Kinetic Tech ソースを Presenter Tech として収録。[ライセンスとクレジット](../library/templates/presenter-tech/NOTICE.md) |
-| [Hypit](https://github.com/hypit-ai/hypit) | エージェントによる話題の動画の再構築と編集可能な派生版の着想。ランタイムの導入なし |
-| [rea-video](https://github.com/JuneYaooo/rea-video) | 参考の分析と事例研究：[実写の開封](https://github.com/JuneYaooo/rea-video/blob/main/docs/cases/unboxing/report_en.md) と[キャラクター、コード、画面録画](https://github.com/JuneYaooo/rea-video/blob/main/docs/cases/dual_role/report_en.md)。[展示素材のクレジット](readme/brand-showcase/README.md)。ランタイムの導入なし |
-| [OpenAI · Codex Originals](https://openai.com/codex-originals/) | 外部のブランド動画の参考。公式キャンペーン静止画と外部視聴リンク |
-| [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) / [Super-agent プロトタイプ](https://github.com/deepseek-ai/dsh-superagent-prototype) | エージェント拡張性と継続タスクの着想。プロトタイプは現行 OpenMotion ランタイムとは別 |
-| Claude Motion / CapCut / [ChatCut](https://chatcut.io/docs/what-is-chatcut) / [OpenChatCut](https://github.com/0xsline/OpenChatCut) | エージェント制作、使いやすい AI 編集、継続的な修正の製品参考 |
-| [OpusClip](https://www.opus.pro/calendar) | 配信と[外部の予約公開](https://www.opus.pro/tools/instagram-reels-scheduler)の製品参考。内蔵コネクターなし |
-| [GSAP](https://github.com/greensock/GSAP) / [FFmpeg](https://ffmpeg.org/) | 動画とメディアの依存ライブラリ。バージョンは [package.json](../package.json) と[実行環境のロック](../scripts/runtime-lock.json) |
+| TikTok | ゲームを公開し、プレイ紹介や告知コンテンツで新しいプレイヤーへ届ける |
+| WeChat | ミニゲーム環境へ公開し、共有と継続プレイにつなげる |
+| Douyin | ミニゲーム環境へ公開し、コンテンツ発見から実際のプレイへつなぐ |
+| Web | プレイ可能なリンクを共有し、ブラウザーで直接試してもらう |
 
-[素材の出典](readme/ASSETS.md) · [その他の展示素材の出典](readme/brand-showcase/README.md) · [フォントのライセンス](../web/design-system/fonts/NOTICES.txt) · [Studio のライセンス](../studio/LICENSE)
+自分の開発者アカウントを使い、配信先の審査を完了してください。公開ごとにプレイ可能な版、ソース、告知素材を保持すると、その後の改善にも役立ちます。
 
-旧 HTML Anything アプリは [`legacy` ブランチ](https://github.com/nexu-io/openmotion/tree/legacy)に保存されています。現在のブランチと配布範囲は[リポジトリ移行ガイド](repository-migration.md) を参照してください。
+### 面白いループを、収益につながる作品へ
 
-## スター数の推移
+もう一度遊びたいと思える体験が出発点です。最初の一回を分かりやすくし、挑戦、進行、報酬を磨いてから、作品に合うビジネスモデルを選びます。
 
-<a href="https://www.star-history.com/?repos=nexu-io%2Fopenmotion&amp;type=date">
-  <picture>
-    <source media="screen" srcset="https://raw.githubusercontent.com/nexu-io/openmotion/readme-charts/star-history.svg">
-    <img alt="毎日更新される OpenMotion の GitHub スター数の推移" src="readme/star-history.svg">
-  </picture>
-</a>
+| ビジネスの方向 | 出発点 | 次に磨くもの |
+| --- | --- | --- |
+| 広告付きミニゲーム | 短く、繰り返し遊べるチャレンジ | 継続率、任意の報酬タイミング、配信先の広告連携 |
+| 有料コンテンツ | 完結した基本体験 | 追加ステージ、外観、上位版と決済連携 |
+| ブランドゲーム・プレイアブル広告 | 商品、キャンペーン、キャラクター | ブランドに合う仕組み、終了画面、測定できる CTA |
 
-[オフライン用のスナップショット](readme/star-history.svg)
+プレイヤーに合うモデルを選び、必要な広告・決済サービスを接続してください。OpenGame は商用ゲーム制作の入口を広げ、収益は作品、プレイヤー、運営によって生まれます。
+
+<a id="playable-ads"></a>
+
+## 📱 ブランドを、短い遊びにする
+
+プレイアブル広告では、行動を促す前に小さな体験を届けます。縦画面ワークフローは、すぐ遊べる開始、短い学習、コンパクトな挑戦、明確なエンドカードを重視します。
+
+| 瞬間 | 設計の目的 | 例 |
+| --- | --- | --- |
+| 最初の操作 | 何をするか伝える | ピンを抜く、輪を動かす、車線を選ぶ |
+| 学習 | 操作を通して教える | 最初の有効な操作と結果を示す |
+| 挑戦 | 小さな満足を作る | 救出する、短いコースを終える |
+| 反応 | 勝敗を明確にする | 報酬、結果、素早い再挑戦 |
+| 終了 | キャンペーンにつなぐ | ブランド、特典、指定された CTA |
+
+```text
+Rooftop Roast から縦画面のコーヒー店広告を作ってください。
+一つの配達操作を最初の体験で教え、最後に「Harbor Coffee」の
+報酬カードを出します。提供されたブランド素材を使い、
+押しやすい操作と再プレイを用意してください。CTA URL は設定可能にし、
+公開はプレイ可能な結果のレビュー後にしてください。
+```
+
+出力は編集可能なゲームです。配信先と広告連携を選び、申請前にプレイ体験とキャンペーン設定を確認してください。
+
+<a id="verification"></a>
+
+## 🧪 実際のプレイに耐えるゲームへ
+
+ページが開くだけでは十分ではありません。ファイル検証、ルールのシミュレーション、ブラウザー入力を分けて確認します。
+
+| 検証 | 確認できること | 別途必要なこと |
+| --- | --- | --- |
+| Validate | 入口、ローカル参照、対応するソース検査 | 面白さとバランス |
+| Simulate | 規定の契約を実装したゲームの決定的なルール動作 | 見た目と入力体験 |
+| Play-test | キー・マウス操作、状態、リソースエラー、レイアウト | 実機タッチ、端末性能、人による試遊 |
+| Capture | 実行中の実際の一場面 | クリア、音質、公開判定 |
+
+推奨計画では、**適切な戦略で勝てること**、弱い戦略では失敗すること、放置で自動的に成功しないことを確認します。移動ゲームは有意な移動を、タップパズルは実際のパズル操作をテストします。
+
+証拠を作品と一緒に残してください。Chrome がない場合や、タッチ、音、性能を調べていない場合は、その未確認点を明記します。
+
+<a id="sharing"></a>
+
+## 🔗 ワークスペースから、誰かのブラウザーへ
+
+### ローカルに保存、またはプレイリンクを公開
+
+完成したゲームは**ローカルのゲームカタログ**に登録できます。公開共有は別の操作です。OpenDesign にログインし、ホスティング用ワークスペースを設定すると、ゲームと参照するローカル素材を静的スナップショットとして公開できます。
+
+| 送り先 | 成果物 |
+| --- | --- |
+| ワークスペース | 編集可能なファイル、メタデータ、制作の文脈 |
+| ローカルカタログ | ローカルで遊べる作品 |
+| 公開 Web | 設定済みホスティングによる静的スナップショット |
+| トレーラー | ゲーム録画を使った編集可能な動画プロジェクトと MP4 |
+
+ローカル編集は公開済みスナップショットに自動反映されません。更新時は再公開し、返された URL で素材と操作を確認します。
+
+### 動画でゲームを伝える
+
+トレーラー機能はゲーム映像を録画し、タイトル、見どころ、CTA を構成して動画にします。Chrome、FFmpeg/ffprobe、準備済みの動画ランタイムが必要です。初期録画は無音のため、音楽、効果音、最終再生は別途レビューします。
+
+[共有・トレーラーの詳細 →](../skills/openmotion-game/references/game-flow.md)
+
+<a id="faq"></a>
+
+## 💬 制作前によくある質問
+
+<details>
+<summary><strong>コードを書く必要がありますか？</strong></summary>
+
+自然言語でアイデアとフィードバックを伝え、Agent にソースを書かせるところから始められます。Web 開発の知識は深いカスタマイズに役立ちますが、テンプレートとプレビューは初心者にも具体的な出発点を提供します。共有前には自分でも遊んで確認してください。
+
+</details>
+
+<details>
+<summary><strong>2D と 3D の両方を作れますか？</strong></summary>
+
+はい。同梱作品と制作フローは両方に対応します。仕組みと端末を絞り、3D 素材、性能、入力を検証してください。ネイティブコンソールやアプリストア向けパッケージは別作業です。
+
+</details>
+
+<details>
+<summary><strong>マルチプレイヤーに対応していますか？</strong></summary>
+
+新規制作は現在シングルプレイヤーのフローです。既存のローカルルーム型ゲームにはローカル WebSocket サーバーが必要です。静的公開はそのサーバーを配備しないため、オンラインマルチプレイヤーのホスティングではありません。
+
+</details>
+
+<details>
+<summary><strong>すべて無料でオフラインですか？</strong></summary>
+
+アプリの独自コードはオープンソースで、同梱ゲームの閲覧と試遊に Agent は不要です。Agent、生成メディア、任意のホスティングは認証、通信、料金を必要とする場合があります。素材と依存関係にも固有の条件があります。
+
+</details>
+
+<details>
+<summary><strong>何が編集可能なまま残りますか？</strong></summary>
+
+HTML、CSS、JavaScript、制作文書はワークスペースに残り、生成素材は素材ライブラリから参照します。公開共有は静的スナップショットなので、後の変更用にローカルプロジェクトを保持してください。
+
+</details>
+
+<a id="community"></a>
+
+## 🤝 遊びたくなるゲームを、一緒に
+
+気持ちのよい小さな仕組み、分かりやすいチュートリアル、使い回せる素材フロー、再現できる不具合報告。どれも次のクリエイターの出発点を良くします。
+
+| 貢献 | 添える情報 |
+| --- | --- |
+| ゲーム・Remix | ソース、操作、実際の画面、素材のクレジット、検証 |
+| ワークフロー改善 | 問題、変更案、効果の分かる例 |
+| 不具合 | 再現手順、期待値、実際の結果、環境、診断 |
+| Studio 改善 | ユーザー操作、実装、影響するレイアウトの確認 |
+| 文書・翻訳 | 動くコマンド、正確な例、有効なリンク |
+
+変更前に [CONTRIBUTING.md](../CONTRIBUTING.md) を確認してください。固定 Node 版とロックファイルを使い、変更範囲に必要な検証を行います。生成プロジェクトと認証情報はチェックアウトの外に置きます。
+
+[問題を報告](https://github.com/OpenDesignHQ/opengame/issues) · [貢献](../CONTRIBUTING.md) · [Discord](https://discord.com/invite/M7NnHS9gNa) · [OpenDesign をフォロー](https://x.com/OpenDesignHQ)
+
+**[OpenGame に Star](https://github.com/OpenDesignHQ/opengame)** を付けて新しいゲームと改善を追ってください。作品と、それを面白くしたアイデアを共有しましょう。
+
+## 謝辞
+
+OpenGame は **OpenDesign** が [OpenMotion](https://github.com/nexu-io/openmotion) のコードベースから構築しています。ランタイム識別子と実際の UI スクリーンショットは既存の表記を保持しています。
+
+ゲームワークフローには [Higgsfield skills](https://github.com/higgsfield-ai/skills) から適応した指針が含まれます。[出典](../skills/openmotion-game/PROVENANCE.md)と [MIT ライセンス](../skills/openmotion-game/LICENSE-HIGGSFIELD)を参照してください。[Hyperframes のクレジット](hyperframes.md)、[Studio のライセンス](../studio/LICENSE)、コミュニティ参考の原作者表示も保持しています。
+
+ヒーローは生成したゲーム世界の背景と、描き直していない実際の Studio 画面を組み合わせています。個別ゲーム画像はローカル実行のキャプチャーです。背景イラストはゲーム出力ではありません。[画像の出典と撮影記録](readme/opengame/ASSETS.md) · [フォント通知](../packages/design-system/fonts/NOTICES.txt)
+
+独自コードは [Apache-2.0](../LICENSE) です。第三者のコード、フォント、メディアには各自の条件が適用されます。

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" role="img" aria-labelledby="title desc"><title id="title">Agent が制作を引き継げるゲームプロジェクト</title><desc id="desc">制作方針、素材、検証記録をソースと一緒に残す。</desc><defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L6 4L1 7" fill="none" stroke="#087c62" stroke-width="1.5"/></marker></defs><rect width="1200" height="400" rx="14" fill="#fafaf2"/><g font-family="Arial, Helvetica, PingFang SC, Hiragino Sans, Microsoft YaHei, sans-serif" text-anchor="middle">
+<text x="600" y="64" font-size="32" font-weight="700" fill="#202322">Agent が制作を引き継げるゲームプロジェクト</text>
+<text x="600" y="99" font-size="17" font-weight="400" fill="#46615c">制作方針、素材、検証記録をソースと一緒に残す。</text>
+<rect x="40" y="144" width="250" height="120" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="165.0" y="178" font-size="23" font-weight="700" fill="#202322">ゲーム企画</text>
+<text x="165.0" y="209" font-size="16" font-weight="400" fill="#46615c">design/plan.md</text>
+<text x="165.0" y="234" font-size="16" font-weight="400" fill="#46615c">ルール・表現・受け入れ条件</text>
+<path d="M165 264V294" fill="none" stroke="#087c62" stroke-width="2"/>
+<rect x="330" y="144" width="250" height="120" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="455.0" y="178" font-size="23" font-weight="700" fill="#202322">素材一覧</text>
+<text x="455.0" y="209" font-size="16" font-weight="400" fill="#46615c">design/assets.csv</text>
+<text x="455.0" y="234" font-size="16" font-weight="400" fill="#46615c">出典・ライセンス・費用</text>
+<path d="M455 264V294" fill="none" stroke="#087c62" stroke-width="2"/>
+<rect x="620" y="144" width="250" height="120" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="745.0" y="178" font-size="23" font-weight="700" fill="#202322">検証記録</text>
+<text x="745.0" y="209" font-size="16" font-weight="400" fill="#46615c">design/verification.md</text>
+<text x="745.0" y="234" font-size="16" font-weight="400" fill="#46615c">検証・結果・未確認点</text>
+<path d="M745 264V294" fill="none" stroke="#087c62" stroke-width="2"/>
+<rect x="910" y="144" width="250" height="120" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="1035.0" y="178" font-size="23" font-weight="700" fill="#202322">遊べるソース</text>
+<text x="1035.0" y="209" font-size="16" font-weight="400" fill="#46615c">HTML · CSS · JavaScript</text>
+<text x="1035.0" y="234" font-size="16" font-weight="400" fill="#46615c">操作・ステージ・ゲーム状態</text>
+<path d="M1035 264V294" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M165 294H1035" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M600 294V320" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="600" y="365" font-size="23" font-weight="700" fill="#202322">同じプロジェクトで、Remix・レビュー・改善を続ける。</text>
+</g></svg>

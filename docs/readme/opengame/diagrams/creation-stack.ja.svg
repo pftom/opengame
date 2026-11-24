@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc"><title id="title">ゲームのアイデアから、ゲームビジネスへ</title><desc id="desc">Agent、ソース、公開をひとつの制作フローでつなぐ。</desc><defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L6 4L1 7" fill="none" stroke="#087c62" stroke-width="1.5"/></marker></defs><rect width="1200" height="500" rx="14" fill="#fafaf2"/><g font-family="Arial, Helvetica, PingFang SC, Hiragino Sans, Microsoft YaHei, sans-serif" text-anchor="middle">
+<text x="600" y="64" font-size="32" font-weight="700" fill="#202322">ゲームのアイデアから、ゲームビジネスへ</text>
+<text x="600" y="99" font-size="17" font-weight="400" fill="#46615c">Agent、ソース、公開をひとつの制作フローでつなぐ。</text>
+<rect x="48" y="133" width="352" height="94" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="224.0" y="167" font-size="23" font-weight="700" fill="#202322">アイデア・参考作品</text>
+<text x="224.0" y="198" font-size="16" font-weight="400" fill="#46615c">仕組み、世界観、プレイヤー</text>
+<path d="M224 227V254" fill="none" stroke="#087c62" stroke-width="2"/>
+<rect x="424" y="133" width="352" height="94" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="600.0" y="167" font-size="23" font-weight="700" fill="#202322">100+ の人気ゲーム素材</text>
+<text x="600.0" y="198" font-size="16" font-weight="400" fill="#46615c">コアループを学び、自分の作品へ</text>
+<path d="M600 227V254" fill="none" stroke="#087c62" stroke-width="2"/>
+<rect x="800" y="133" width="352" height="94" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="976.0" y="167" font-size="23" font-weight="700" fill="#202322">Agent とメディアモデル</text>
+<text x="976.0" y="198" font-size="16" font-weight="400" fill="#46615c">29 の Agent · 画像・動画・音声</text>
+<path d="M976 227V254" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M138 254H976" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M138 254V295" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="42" y="300" width="192" height="92" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="138.0" y="334" font-size="23" font-weight="700" fill="#202322">理解する</text>
+<text x="138.0" y="365" font-size="16" font-weight="400" fill="#46615c">コアループと対象</text>
+<path d="M234 345h34" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="273" y="300" width="192" height="92" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="369.0" y="334" font-size="23" font-weight="700" fill="#202322">Remix・実装</text>
+<text x="369.0" y="365" font-size="16" font-weight="400" fill="#46615c">編集可能なソース</text>
+<path d="M465 345h34" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="504" y="300" width="192" height="92" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="600.0" y="334" font-size="23" font-weight="700" fill="#202322">素材を作る</text>
+<text x="600.0" y="365" font-size="16" font-weight="400" fill="#46615c">アート・音楽・声</text>
+<path d="M696 345h34" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="735" y="300" width="192" height="92" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="831.0" y="334" font-size="23" font-weight="700" fill="#202322">試遊・改善</text>
+<text x="831.0" y="365" font-size="16" font-weight="400" fill="#46615c">ルール・操作感</text>
+<path d="M927 345h34" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="966" y="300" width="192" height="92" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="1062.0" y="334" font-size="23" font-weight="700" fill="#202322">公開する</text>
+<text x="1062.0" y="365" font-size="16" font-weight="400" fill="#46615c">Web・配信先</text>
+<text x="600" y="458" font-size="22" font-weight="700" fill="#202322">遊べるゲーム、編集可能なソース、告知素材を保持。</text>
+</g></svg>

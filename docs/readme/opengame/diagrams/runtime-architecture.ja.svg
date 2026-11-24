@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="780" viewBox="0 0 1200 780" role="img" aria-labelledby="title desc"><title id="title">Studio と Agent が共有するゲームワークスペース</title><desc id="desc">ソース版の実行構成 · 共通のローカルサービスとファイル</desc><defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L6 4L1 7" fill="none" stroke="#087c62" stroke-width="1.5"/></marker></defs><rect width="1200" height="780" rx="14" fill="#fafaf2"/><g font-family="Arial, Helvetica, PingFang SC, Hiragino Sans, Microsoft YaHei, sans-serif" text-anchor="middle">
+<text x="600" y="64" font-size="32" font-weight="700" fill="#202322">Studio と Agent が共有するゲームワークスペース</text>
+<text x="600" y="99" font-size="17" font-weight="400" fill="#46615c">ソース版の実行構成 · 共通のローカルサービスとファイル</text>
+<rect x="90" y="132" width="450" height="88" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="315.0" y="166" font-size="23" font-weight="700" fill="#202322">コーディング Agent</text>
+<text x="315.0" y="197" font-size="16" font-weight="400" fill="#46615c">ローカル実行アダプター / 外部 MCP</text>
+<rect x="660" y="132" width="450" height="88" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="885.0" y="166" font-size="23" font-weight="700" fill="#202322">Game Studio</text>
+<text x="885.0" y="197" font-size="16" font-weight="400" fill="#46615c">制作 · プレビュー · コード · 共有</text>
+<text x="315" y="249" font-size="17" font-weight="400" fill="#46615c">12 のゲームツール / stdio MCP</text>
+<text x="885" y="249" font-size="17" font-weight="400" fill="#46615c">ローカル HTTP と Agent への引継ぎ</text>
+<path d="M315 261V285H600" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M885 261V285H600" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M600 285V309" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="190" y="319" width="820" height="94" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="600.0" y="353" font-size="23" font-weight="700" fill="#202322">共通のローカルアプリケーション</text>
+<text x="600.0" y="384" font-size="16" font-weight="400" fill="#46615c">Node.js + TypeScript · GameProjects · 状態管理</text>
+<path d="M600 413V437" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M210 437H990" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M210 437V461" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M600 437V461" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M990 437V461" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="40" y="471" width="340" height="100" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="210.0" y="505" font-size="23" font-weight="700" fill="#202322">Model Gateway</text>
+<text x="210.0" y="536" font-size="16" font-weight="400" fill="#46615c">モデル一覧 · 生成ジョブ · 接続先</text>
+<rect x="430" y="471" width="340" height="100" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="600.0" y="505" font-size="23" font-weight="700" fill="#202322">自分のゲームプロジェクト</text>
+<text x="600.0" y="536" font-size="16" font-weight="400" fill="#46615c">HTML / CSS / JS + 素材 + game.json</text>
+<rect x="820" y="471" width="340" height="100" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="990.0" y="505" font-size="23" font-weight="700" fill="#202322">検証と自動試遊</text>
+<text x="990.0" y="536" font-size="16" font-weight="400" fill="#46615c">ルールのシミュレーション + Chrome</text>
+<path d="M210 571V605H600V571" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="320" y="630" font-size="16" font-weight="400" fill="#46615c">再利用できるメディア素材</text>
+<path d="M990 571V605H600" fill="none" stroke="#087c62" stroke-width="2"/>
+<text x="900" y="630" font-size="16" font-weight="400" fill="#46615c">結果とスクリーンショット</text>
+<path d="M600 605V653" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="600" y="687" font-size="27" font-weight="700" fill="#202322">ローカルプレイ · Web 公開 · トレーラー</text>
+<text x="600" y="718" font-size="18" font-weight="400" fill="#46615c">同じソースから、公開と書き出しを個別に実行</text>
+<text x="600" y="757" font-size="14" font-weight="400" fill="#46615c">TikTok / WeChat / Douyin への公開連携は、ローカル MCP のゲーム登録とは別の配信経路。</text>
+</g></svg>

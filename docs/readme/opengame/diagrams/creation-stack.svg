@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc"><title id="title">From a game idea to a game business</title><desc id="desc">One creation loop. Your agent, your source, your release.</desc><defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L6 4L1 7" fill="none" stroke="#087c62" stroke-width="1.5"/></marker></defs><rect width="1200" height="500" rx="14" fill="#fafaf2"/><g font-family="Arial, Helvetica, PingFang SC, Hiragino Sans, Microsoft YaHei, sans-serif" text-anchor="middle">
+<text x="600" y="64" font-size="32" font-weight="700" fill="#202322">From a game idea to a game business</text>
+<text x="600" y="99" font-size="17" font-weight="400" fill="#46615c">One creation loop. Your agent, your source, your release.</text>
+<rect x="48" y="133" width="352" height="94" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="224.0" y="167" font-size="23" font-weight="700" fill="#202322">Your idea or reference</text>
+<text x="224.0" y="198" font-size="16" font-weight="400" fill="#46615c">A mechanic, world or audience</text>
+<path d="M224 227V254" fill="none" stroke="#087c62" stroke-width="2"/>
+<rect x="424" y="133" width="352" height="94" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="600.0" y="167" font-size="23" font-weight="700" fill="#202322">100+ viral game resources</text>
+<text x="600.0" y="198" font-size="16" font-weight="400" fill="#46615c">Study the loop. Make it yours.</text>
+<path d="M600 227V254" fill="none" stroke="#087c62" stroke-width="2"/>
+<rect x="800" y="133" width="352" height="94" rx="10" fill="#fff" stroke="#b9d7cc"/>
+<text x="976.0" y="167" font-size="23" font-weight="700" fill="#202322">Your agent + media models</text>
+<text x="976.0" y="198" font-size="16" font-weight="400" fill="#46615c">29 agents · image, video and audio</text>
+<path d="M976 227V254" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M138 254H976" fill="none" stroke="#087c62" stroke-width="2"/>
+<path d="M138 254V295" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="42" y="300" width="192" height="92" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="138.0" y="334" font-size="23" font-weight="700" fill="#202322">Understand</text>
+<text x="138.0" y="365" font-size="16" font-weight="400" fill="#46615c">Core loop + audience</text>
+<path d="M234 345h34" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="273" y="300" width="192" height="92" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="369.0" y="334" font-size="23" font-weight="700" fill="#202322">Remix &amp; build</text>
+<text x="369.0" y="365" font-size="16" font-weight="400" fill="#46615c">Editable game source</text>
+<path d="M465 345h34" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="504" y="300" width="192" height="92" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="600.0" y="334" font-size="23" font-weight="700" fill="#202322">Create assets</text>
+<text x="600.0" y="365" font-size="16" font-weight="400" fill="#46615c">Art, music and voice</text>
+<path d="M696 345h34" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="735" y="300" width="192" height="92" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="831.0" y="334" font-size="23" font-weight="700" fill="#202322">Play &amp; refine</text>
+<text x="831.0" y="365" font-size="16" font-weight="400" fill="#46615c">Rules, input and feel</text>
+<path d="M927 345h34" fill="none" stroke="#087c62" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="966" y="300" width="192" height="92" rx="10" fill="#e4f1e8" stroke="#b9d7cc"/>
+<text x="1062.0" y="334" font-size="23" font-weight="700" fill="#202322">Publish</text>
+<text x="1062.0" y="365" font-size="16" font-weight="400" fill="#46615c">Web + target platforms</text>
+<text x="600" y="458" font-size="22" font-weight="700" fill="#202322">Keep the playable game, editable source and launch material.</text>
+</g></svg>
