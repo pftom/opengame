@@ -576,7 +576,7 @@ A useful contribution can be a tiny mechanic with great feel, a clearer tutorial
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a change. For source work, use the pinned Node version, preserve lockfiles and run checks for the affected boundary. Keep generated projects and credentials outside the checkout.
 
-[Report an issue](https://github.com/OpenDesignHQ/opengame/issues) · [Contribute](CONTRIBUTING.md) · [Join Discord](https://discord.com/invite/M7NnHS9gNa) · [Follow OpenDesign](https://x.com/OpenDesignHQ)
+[Report an issue](https://github.com/OpenDesignHQ/opengame/issues) · [Contribute](CONTRIBUTING.md) · [Discord](https://discord.com/invite/M7NnHS9gNa) · [Feishu](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=b6cs46dc-acb2-48ed-941d-c45642ead841) · [Follow OpenDesign](https://x.com/OpenDesignHQ)
 
 **[Star OpenGame](https://github.com/OpenDesignHQ/opengame)** to follow new games and improvements. Share what you made, and the idea that made it fun.
 

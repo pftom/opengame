@@ -78,8 +78,10 @@ test('one maintained guide serves source setup and npm generation while the old 
   assert.doesNotMatch(forward, /```|npm|onboarding/i);
   for (const file of ['README.md', 'README.zh-CN.md', 'docs/README.zh-CN.md', 'docs/README.ja.md']) {
     const readme = await readFile(new URL('../' + file, import.meta.url), 'utf8');
-    const sourceEntry = readme.indexOf('https://github.com/nexu-io/openmotion/blob/main/docs/install.md');
-    const npmEntry = readme.indexOf('https://releases.open-design.ai/motion');
-    assert(sourceEntry >= 0 && npmEntry > sourceEntry, file + ': source prompt precedes optional npm prompt');
+    assert(readme.includes('https://github.com/OpenDesignHQ/opengame.git'), file + ': clone the OpenGame source');
+    assert(readme.includes('npm ci\nnpm run build:studio'), file + ': install and build the source checkout');
+    const guide = file.startsWith('docs/') ? 'opengame-setup.md' : 'docs/opengame-setup.md';
+    assert(readme.includes(`](${guide})`), file + ': link to the OpenGame source setup guide');
+    assert(!readme.includes('https://releases.open-design.ai/motion'), file + ': do not redirect game setup to the upstream video release');
   }
 });

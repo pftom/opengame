@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { access, cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
@@ -164,29 +164,31 @@ test('test npm artifacts contain their application, locked manifest and no bundl
     assert.deepEqual(cards.cards.map((card: any) => card.templateId), onboardingTemplateIds.slice(-3));
     assert(cards.cards.every((card: any) => card.templateKind === 'reference' && !card.createArgs));
     const readme = await readFile(path.join(installer, 'package/README.md'), 'utf8');
-    const media = new Map<string, string>((await json('repository-media.json')).files.map((file: { path: string; url: string }) => [file.path, file.url]));
-    const hero = media.get('docs/readme/brand-hero.jpg');
-    const mobileHero = media.get('docs/readme/brand-hero.mobile.jpg');
-    const studioCapture = `https://raw.githubusercontent.com/nexu-io/openmotion/${release.commit}/docs/readme/live-product/editor.en.jpg`;
-    assert(hero && mobileHero, 'Public README covers must retain registered media identities');
-    assert(readme.includes('The open-source Claude Motion &amp; CapCut alternative'));
-    assert(readme.includes(`srcset="https://raw.githubusercontent.com/nexu-io/openmotion/${release.commit}/docs/readme/capcut-claude-motion-cover.webp"`));
-    assert(readme.includes(hero));
-    assert(readme.includes(`src="https://raw.githubusercontent.com/nexu-io/openmotion/${release.commit}/docs/readme/openmotion-logo.svg"`));
-    assert(readme.includes(`https://github.com/nexu-io/openmotion/blob/${release.commit}/docs/motion-md.md`));
+    const raw = `https://raw.githubusercontent.com/OpenDesignHQ/opengame/${release.commit}/`;
+    const browse = `https://github.com/OpenDesignHQ/opengame/blob/${release.commit}/`;
+    assert(readme.includes('The Open-source Super Game Agent'));
+    for (const asset of ['cover.webp', 'studio-play.webp', 'diagrams/runtime-architecture.svg']) {
+      assert(readme.includes(`src="${raw}docs/readme/opengame/${asset}"`), asset);
+    }
+    assert(readme.includes(`srcset="${raw}docs/readme/opengame/agents.mobile.webp"`));
+    assert(readme.includes(`src="${raw}packages/design-system/brand/opengame-logo.svg"`));
+    assert(readme.includes(`](${browse}docs/opengame-setup.md)`));
+    assert(readme.includes(`](${browse}docs/opengame-architecture.md)`));
     assert(readme.includes('](#choose-agent)'));
-    assert(readme.includes('href="https://open-design.ai/motion/'));
-    assert(readme.includes(`srcset="${mobileHero}"`));
-    assert(readme.includes(`href="https://github.com/nexu-io/openmotion/blob/${release.commit}/LICENSE"`));
-    assert(readme.includes(`src="${studioCapture}"`));
-    assert(readme.includes('href="https://open-design.ai/templates/notion-custom-agents-motion-design/"'));
-    assert(!readme.includes('](docs/') && !readme.includes('](template-library/'));
-    assert(!readme.startsWith('# Motion application npm package'));
+    assert(readme.includes('href="https://github.com/OpenDesignHQ/opengame"'));
+    assert(readme.includes(`href="${browse}LICENSE"`));
+    assert(!readme.includes('](docs/') && !readme.includes('](templates/'));
+    assert(!readme.includes(`https://raw.githubusercontent.com/nexu-io/openmotion/${release.commit}/`));
     const embeddedReadme = await readFile(path.join(application, 'README.md'), 'utf8');
-    assert(embeddedReadme.includes('](docs/motion-md.md)'), 'Installed documentation keeps local links to shipped guides');
-    assert(embeddedReadme.includes(`srcset="https://raw.githubusercontent.com/nexu-io/openmotion/${release.commit}/docs/readme/capcut-claude-motion-cover.webp"`));
-    assert(embeddedReadme.includes(`srcset="${mobileHero}"`));
-    assert(embeddedReadme.includes(`src="${studioCapture}"`));
+    for (const guide of ['opengame-setup.md', 'opengame-architecture.md']) {
+      assert(embeddedReadme.includes(`](docs/${guide})`), 'Installed documentation keeps local links to shipped guides');
+      await access(path.join(application, 'docs', guide));
+    }
+    assert(embeddedReadme.includes('src="packages/design-system/brand/opengame-logo.svg"'));
+    assert(embeddedReadme.includes(`src="${raw}docs/readme/opengame/cover.webp"`));
+    assert(embeddedReadme.includes(`srcset="${raw}docs/readme/opengame/agents.mobile.webp"`));
+    assert(embeddedReadme.includes(`src="${raw}docs/readme/opengame/studio-play.webp"`));
+    await assert.rejects(readdir(path.join(application, 'docs/readme/opengame')), { code: 'ENOENT' });
     await assert.rejects(readdir(path.join(application, 'docs/readme/media')), { code: 'ENOENT' });
     await assert.rejects(readFile(path.join(application, 'scripts/install-library-skill.mjs')), { code: 'ENOENT' });
     assert.equal((await json(path.join(application, 'package.json'))).version, version);

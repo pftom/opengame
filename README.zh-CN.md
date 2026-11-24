@@ -575,7 +575,7 @@ OpenGame 把游戏工具、源码和可视化工作区连接到编程 Agent。�
 
 提交变更前阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。源码开发使用固定 Node 版本，保留锁文件，按改动范围执行检查。生成项目和凭证保存在仓库之外。
 
-[报告问题](https://github.com/OpenDesignHQ/opengame/issues) · [参与贡献](CONTRIBUTING.md) · [加入 Discord](https://discord.com/invite/M7NnHS9gNa) · [关注 OpenDesign](https://x.com/OpenDesignHQ)
+[报告问题](https://github.com/OpenDesignHQ/opengame/issues) · [参与贡献](CONTRIBUTING.md) · [Discord](https://discord.com/invite/M7NnHS9gNa) · [飞书群](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=b6cs46dc-acb2-48ed-941d-c45642ead841) · [关注 OpenDesign](https://x.com/OpenDesignHQ)
 
 **[Star OpenGame](https://github.com/OpenDesignHQ/opengame)**，关注新游戏与后续改进。分享你的作品，也分享那个让它变得有趣的想法。
 

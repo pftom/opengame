@@ -573,7 +573,7 @@ HTML、CSS、JavaScript、制作文書はワークスペースに残り、生成
 
 変更前に [CONTRIBUTING.md](../CONTRIBUTING.md) を確認してください。固定 Node 版とロックファイルを使い、変更範囲に必要な検証を行います。生成プロジェクトと認証情報はチェックアウトの外に置きます。
 
-[問題を報告](https://github.com/OpenDesignHQ/opengame/issues) · [貢献](../CONTRIBUTING.md) · [Discord](https://discord.com/invite/M7NnHS9gNa) · [OpenDesign をフォロー](https://x.com/OpenDesignHQ)
+[問題を報告](https://github.com/OpenDesignHQ/opengame/issues) · [貢献](../CONTRIBUTING.md) · [Discord](https://discord.com/invite/M7NnHS9gNa) · [Feishu](https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=b6cs46dc-acb2-48ed-941d-c45642ead841) · [OpenDesign をフォロー](https://x.com/OpenDesignHQ)
 
 **[OpenGame に Star](https://github.com/OpenDesignHQ/opengame)** を付けて新しいゲームと改善を追ってください。作品と、それを面白くしたアイデアを共有しましょう。
 

@@ -16,16 +16,16 @@ test('installation onboarding routes only to existing Skills', async () => {
   const guide = new URL('../docs/usage.md', import.meta.url);
   const guideText = await readFile(guide, 'utf8');
   assert.match(guideText, /install\.md#installation-success-reply/);
-  const canonical = new URL('../skills/openmotion-template-to-video/SKILL.md', import.meta.url);
+  const canonical = new URL('../skills/openmotion-game/SKILL.md', import.meta.url);
   for (const [url, body] of [
-    ...await Promise.all(['../README.md', '../docs/README.zh-CN.md'].map(async file => {
+    ...await Promise.all(['../README.md', '../README.zh-CN.md', '../docs/README.zh-CN.md', '../docs/README.ja.md'].map(async file => {
       const url = new URL(file, import.meta.url);
       return [url, await readFile(url, 'utf8')] as const;
     }))
   ] as const) {
     const links = [...body.matchAll(/\]\(((?:\.\.\/)?skills\/[^)]+\/SKILL\.md)\)/g)]
       .map(([, link]) => new URL(link, url));
-    assert.ok(links.some(link => link.href === canonical.href), `Missing template onboarding in ${url.pathname}`);
+    assert.ok(links.some(link => link.href === canonical.href), `Missing game workflow in ${url.pathname}`);
     for (const link of links) await access(link);
   }
   for (const [, skillPath] of guideText.matchAll(/\]\((\.\.\/skills\/[^)]+)\)/g)) {

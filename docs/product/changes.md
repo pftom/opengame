@@ -5,7 +5,7 @@
 - Replace the inherited video-studio README with English, Simplified Chinese and Japanese OpenGame documentation, using the Super Game Agent positioning and a consistent navigation, showcase, feature and architecture structure.
 - Add the shared-symbol OpenGame wordmark, a gaming hero with a real Game Studio capture, six playable source examples, 29-agent identities, compact media-model badges and three localized product/technical diagrams. Keep editable asset sources, provenance and checksums with the imagery.
 - Document source setup, the existing 12 game tools, project ownership, model/asset services, verification and delivery. Preserve runtime connection identifiers and distinguish the bundled source snapshot from the wider product collection.
-- Register the documentation resources for distribution and validate localized links, section anchors and asset inclusion. Runtime behavior, dependencies and release identifiers are unchanged.
+- Register the documentation resources for distribution and validate localized links, section anchors and asset inclusion. Packaged guide and image links resolve to the OpenGame repository at the packaged commit; community invitations remain aligned with Studio. Update source-onboarding and package checks for the game README. Application behavior, dependencies and release identifiers are unchanged.
 
 ## 2026-11-23: Sync redacted Codex host-session AI traces to PostHog
 
