@@ -114,7 +114,7 @@ it.each(['zh-CN', 'en', 'ja'] as const)('links the FAQ and footer to the README 
   for (const selector of ['.om-mcp-contact', '.om-mcp-footer-intro']) {
     const link = Array.from(document.querySelectorAll<HTMLAnchorElement>(`${selector} a`)).find(item => item.textContent?.includes(channel));
     expect(link).toBeDefined();
-    expect(readme).toContain(`[${channel}](${link!.href})`);
+    expect(readme).toContain(`href="${link!.href}"`);
     expect(link!.target).toBe('_blank');
   }
 });

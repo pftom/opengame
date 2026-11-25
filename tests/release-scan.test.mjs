@@ -32,7 +32,7 @@ test('only the approved public community invitation is permitted in product READ
   const invite = text.match(/href="([^"\n]+add_by_link[^"\n]+)"/)[1];
   const internal = 'https://' + 'workspace.' + 'feishu.cn/wiki/private';
   for (const kind of ['source', 'package']) {
-    for (const name of ['README.md', 'README.zh-CN.md', 'docs/README.zh-CN.md', 'docs/README.ja.md']) {
+    for (const name of ['README.md', 'README.zh-CN.md', 'README.ja.md', 'docs/README.zh-CN.md', 'docs/README.ja.md']) {
       assert.deepEqual(privacyFindings(name, `<a href="${invite}">Community</a>`, kind), []);
       for (const value of [invite + 'x', invite + '&extra=1', invite.replace('https:', 'http:'), invite + ' ' + internal]) {
         assert(privacyFindings(name, value, kind).some(hit => hit.rule === 'internal-link'));
@@ -43,7 +43,7 @@ test('only the approved public community invitation is permitted in product READ
     }
   }
   // The npm installer archive keeps the same product READMEs under its single `package/` root.
-  for (const name of ['package/README.md', 'package/README.zh-CN.md', 'package/docs/README.zh-CN.md', 'package/docs/README.ja.md']) {
+  for (const name of ['package/README.md', 'package/README.zh-CN.md', 'package/README.ja.md', 'package/docs/README.zh-CN.md', 'package/docs/README.ja.md']) {
     assert.deepEqual(privacyFindings(name, `<a href="${invite}">Community</a>`, 'package'), []);
     for (const value of [invite + 'x', invite + '&extra=1', invite.replace('https:', 'http:'), invite + ' ' + internal]) {
       assert(privacyFindings(name, value, 'package').some(hit => hit.rule === 'internal-link'));

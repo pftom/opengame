@@ -75,7 +75,7 @@ export function privacyFindings(name, text, kind = 'source') {
   if (/(?:^|\/)\.env(?:\.|$)/.test(name) && !(kind === 'source' && /(?:^|\/)\.env\.(?:example|development)$/.test(name))) add('environment-file');
   // Only the owner-approved public Feishu invitation in the product READMEs, the shared community link and its
   // bundled Studio asset is exempt. Pin the complete URL by digest so adjacent private URLs and changed invitations fail.
-  const publicCommunityFiles = ['README.md', 'README.zh-CN.md', 'docs/README.zh-CN.md', 'docs/README.ja.md', 'studio/src/motion/CommunityLink.tsx'];
+  const publicCommunityFiles = ['README.md', 'README.zh-CN.md', 'README.ja.md', 'docs/README.zh-CN.md', 'docs/README.ja.md', 'studio/src/motion/CommunityLink.tsx'];
   // The npm installer archive keeps the same files under its single `package/` root.
   const publicCommunityFile = kind === 'package' ? name.replace(/^package\//, '') : name;
   const publicCommunity = publicCommunityFiles.includes(publicCommunityFile) || /^studio\/build\/editor-assets\/[^/]+\.js$/.test(publicCommunityFile);

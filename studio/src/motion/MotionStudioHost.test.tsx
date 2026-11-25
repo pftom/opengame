@@ -487,7 +487,7 @@ it.each(['zh-CN', 'en', 'ja', 'ko', 'de', 'fr', 'ru', 'es', 'pt-BR', 'it', 'tr']
   const link = container.querySelector<HTMLAnchorElement>('.motion-community-link')!;
   const readme = locale === 'zh-CN' ? chineseReadme : englishReadme;
   const channel = locale === 'zh-CN' ? '飞书群' : 'Discord';
-  expect(readme).toContain(`[${channel}](${link.href})`);
+  expect(readme).toContain(`href="${link.href}"`);
   expect(link.target).toBe('_blank');
   expect(link.rel).toContain('noopener');
   expect(container.querySelector<HTMLAnchorElement>(`a[href="${GITHUB_REPOSITORY}"]`)?.target).toBe('_blank');
