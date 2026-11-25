@@ -461,7 +461,7 @@ jobs:
           npm run build:studio
           node --test tests/design-system.test.ts
           npm run build:tracking
-          node --experimental-strip-types --test tests/tracking.test.ts tests/tracking-device.test.ts tests/studio-tracking.test.ts tests/mcp-tracking-host.test.ts tests/codex-session-tracking.test.ts tests/strategy-tracking-enrichment.test.ts
+          node --experimental-strip-types --test tests/template-attribution.test.ts tests/tracking.test.ts tests/tracking-device.test.ts tests/studio-tracking.test.ts tests/mcp-tracking-host.test.ts tests/codex-session-tracking.test.ts tests/strategy-tracking-enrichment.test.ts
       - name: Validate Design Studio projects and comment previews
         if: steps.scope.outputs.full == 'true'
         # Keep Chrome startup separate from the parallel installation and packaging tests.
