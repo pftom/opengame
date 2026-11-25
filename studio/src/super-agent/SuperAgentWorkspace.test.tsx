@@ -3414,18 +3414,18 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
   expect(gameInput.textContent).toBe('');
   expect(gameInput.getAttribute('data-placeholder')).not.toContain('Describe how to remix');
 
-  // The console screen shows one game; the D-pad steps to the next one
-  expect(container.querySelectorAll('.om-sa-game-fan-item')).toHaveLength(1);
+  // The hero shows a row of game cards over the selected game's art; clicking a side card selects it
+  expect(container.querySelector('.om-sa-game-hero-backdrop img')).toBeTruthy();
   const initialCenterLabel = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-fan-card')?.getAttribute('aria-label');
-  const nextFanBtn = container.querySelector('.om-sa-game-console-dpad-key[data-side="next"]') as HTMLButtonElement;
+  const nextFanBtn = container.querySelector('.om-sa-game-fan-item[data-slot="1"] .om-sa-game-fan-card') as HTMLButtonElement;
   expect(nextFanBtn).toBeTruthy();
   await act(async () => nextFanBtn.click());
   await flush();
   const nextCenterLabel = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-fan-card')?.getAttribute('aria-label');
   expect(nextCenterLabel).not.toBe(initialCenterLabel);
 
-  // The B key switches to the AAA batch and headline; the A key switches back
-  const [moneyKey, epicKey] = Array.from(container.querySelectorAll<HTMLButtonElement>('.om-sa-game-console-key'));
+  // The top switch moves to the AAA batch and headline, then back
+  const [moneyKey, epicKey] = Array.from(container.querySelectorAll<HTMLButtonElement>('.om-sa-game-mode-option'));
   await act(async () => epicKey.click());
   await flush();
   expect(epicKey.getAttribute('aria-checked')).toBe('true');

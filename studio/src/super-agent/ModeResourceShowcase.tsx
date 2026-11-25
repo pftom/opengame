@@ -1054,6 +1054,9 @@ export function ModeResourceShowcase({
     });
   }, [fannedGames, fanIndex]);
 
+  const heroGame = fanSlots.find(slot => slot.offset === 0)?.game;
+  const heroBackdrop = heroGame ? coverUrl(heroGame) : null;
+
   const isVideoMode = mode.id === 'motion' || mode.id === 'media';
   const isMotionGraphicsView =
     (mode.id === 'motion' && modeOptions?.motionEngine !== 'video-model')
@@ -1622,20 +1625,33 @@ export function ModeResourceShowcase({
           </div>
         )}
         {mode.id === 'game' && fanSlots.length > 0 ? (
-          <div className="om-sa-game-console" data-theme={gameTheme}>
-            <div className="om-sa-game-console-screen">
-              <div className="om-sa-game-hero-backdrop" aria-hidden="true">
-                <div className="om-sa-game-hero-scene" data-scene="money" data-active={gameTheme === 'money' || undefined}>
-                  {Array.from({ length: 14 }, (_, i) => <span key={i} className="om-sa-game-hero-coin" style={{ '--i': i } as CSSProperties} />)}
-                </div>
-                <div className="om-sa-game-hero-scene" data-scene="epic" data-active={gameTheme === 'epic' || undefined}>
-                  <span className="om-sa-game-hero-grid" />
-                  {Array.from({ length: 8 }, (_, i) => <span key={i} className="om-sa-game-hero-tracer" style={{ '--i': i } as CSSProperties} />)}
-                  <span className="om-sa-game-hero-crosshair" />
-                </div>
-                <span key={`sweep-${gameTheme}`} className="om-sa-game-hero-sweep" />
+          // Game hero: the selected game's art fills the background; the mode switch, headline and a row
+          // of game cards sit on top. Picking a card or a mode swaps the background.
+          <div className="om-sa-game-stage" data-theme={gameTheme}>
+            <div className="om-sa-game-hero-backdrop" aria-hidden="true">
+              {heroBackdrop && <img key={heroBackdrop} src={heroBackdrop} alt="" />}
+            </div>
+            {onChangeModeOptions && (
+              <div className="om-sa-game-mode-switch" role="radiogroup" aria-label={t('Game type')} data-theme={gameTheme}>
+                <span className="om-sa-game-mode-thumb" aria-hidden="true" />
+                {(['money', 'epic'] as const).map(id => (
+                  <Button
+                    key={id}
+                    variant="plain"
+                    type="button"
+                    role="radio"
+                    aria-checked={gameTheme === id}
+                    data-active={gameTheme === id || undefined}
+                    className="om-sa-game-mode-option"
+                    onClick={() => switchGameTheme(id)}
+                  >
+                    <RemixIcon name={id === 'money' ? 'sparkling-fill' : 'focus-3-line'} size={14} />
+                    <span>{t(id === 'money' ? 'Ad-revenue game' : 'AAA game')}</span>
+                  </Button>
+                ))}
               </div>
-          <div
+            )}
+            <div
             key={`fan-${gameTheme}`}
             className="om-sa-game-fan"
             data-theme={gameTheme}
@@ -1661,8 +1677,7 @@ export function ModeResourceShowcase({
               }
             }}
           >
-            {/* The console screen shows one game at a time; the D-pad and auto-rotation step through the batch. */}
-            {fanSlots.filter(slot => slot.offset === 0).map(({ game, index, offset }) => {
+            {fanSlots.map(({ game, index, offset }) => {
               const title = localizedGameTitle(game, locale);
               const cover = coverUrl(game);
               const isSelected = modeOptions?.gameTemplate?.id === game.id;
@@ -1752,60 +1767,6 @@ export function ModeResourceShowcase({
                 </div>
               );
             })}
-          </div>
-              <span key={`static-${gameTheme}`} className="om-sa-game-console-static" aria-hidden="true" />
-            </div>
-            <div className="om-sa-game-console-deck">
-              <div className="om-sa-game-console-dpad" role="group" aria-label={t('Browse templates')}>
-                <IconButton
-                  variant="plain"
-                  type="button"
-                  className="om-sa-game-console-dpad-key"
-                  data-side="prev"
-                  aria-label={t('Previous')}
-                  disabled={fannedGames.length <= 1}
-                  onClick={() => setFanIndex(prev => (prev - 1 + fannedGames.length) % fannedGames.length)}
-                  icon={<RemixIcon name="arrow-left-s-line" size={18} />}
-                />
-                <span className="om-sa-game-console-dpad-hub" aria-hidden="true" />
-                <IconButton
-                  variant="plain"
-                  type="button"
-                  className="om-sa-game-console-dpad-key"
-                  data-side="next"
-                  aria-label={t('Next')}
-                  disabled={fannedGames.length <= 1}
-                  onClick={() => setFanIndex(prev => (prev + 1) % fannedGames.length)}
-                  icon={<RemixIcon name="arrow-right-s-line" size={18} />}
-                />
-              </div>
-              <span className="om-sa-game-console-led" aria-live="polite">
-                <span className="om-sa-game-console-led-dot" aria-hidden="true" />
-                {t(gameTheme === 'money' ? 'Ad-revenue game' : 'AAA game')}
-              </span>
-              {onChangeModeOptions && (
-                <div className="om-sa-game-console-keys" role="radiogroup" aria-label={t('Game type')}>
-                  {(['money', 'epic'] as const).map(id => (
-                    <span key={id} className="om-sa-game-console-key-wrap" data-key={id}>
-                      <Button
-                        variant="plain"
-                        type="button"
-                        role="radio"
-                        aria-checked={gameTheme === id}
-                        aria-label={t(id === 'money' ? 'Ad-revenue game' : 'AAA game')}
-                        data-active={gameTheme === id || undefined}
-                        className="om-sa-game-console-key"
-                        onClick={() => switchGameTheme(id)}
-                      >
-                        {id === 'money' ? 'A' : 'B'}
-                      </Button>
-                      <span className="om-sa-game-console-key-label" aria-hidden="true">
-                        {t(id === 'money' ? 'Ad-revenue game' : 'AAA game')}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         ) : (
