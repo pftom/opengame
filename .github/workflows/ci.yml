@@ -359,7 +359,7 @@ jobs:
           node --experimental-strip-types --test --test-concurrency=1 \
             --test-reporter=spec --test-reporter-destination=stdout \
             --test-reporter=./.github/scripts/game-test-failures.mjs --test-reporter-destination=stdout \
-            tests/game-projects.test.ts tests/wechat-minigame.test.ts tests/game-harness-generalization.test.ts
+            tests/game-projects.test.ts tests/hosted-game-templates.test.ts tests/wechat-minigame.test.ts tests/game-harness-generalization.test.ts
 
   distribution:
     name: Distribution regression
@@ -488,6 +488,7 @@ jobs:
           version=$(node scripts/test-package.mjs version "$GITHUB_RUN_NUMBER" "${GITHUB_RUN_ATTEMPT:-1}")
           if [ "$PACKAGE_FORMAT" = npm ]; then
             node scripts/package-npm.mjs "dist/$version" "$version" --template-env="$TEMPLATE_ENVIRONMENT"
+            npm_execpath="$(realpath "$(command -v npm)")" node tests/packaged-game-download.mjs "dist/$version/openmotion-app-$version.tgz"
             bytes=$(wc -c < "dist/$version/openmotion-app-$version.tgz" | tr -d '[:space:]')
             printf '## npm install package\n\nCompressed size: %s bytes\n' "$bytes" >> "$GITHUB_STEP_SUMMARY"
           else

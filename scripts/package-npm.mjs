@@ -12,6 +12,7 @@ import { packageTemplateConfig } from '../shared/template-config.ts';
 import { checkVisionLock } from './vision-runtime.mjs';
 import { checkReleaseVersion, releaseTemplateEnvironment } from './release-version.mjs';
 import { onboardingSourceFiles } from '../shared/onboarding-templates.ts';
+import { buildGameTemplateBundles, offlineGame } from './game-template-publication.ts';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 // GitHub serves the full showcase. npm ships the application and its technical documentation.
@@ -97,7 +98,17 @@ export async function packageNpm(output = path.join(root, 'dist/npm-local'), ver
     const application = path.join(temporary, 'application'), installer = path.join(temporary, 'installer');
     await mkdir(application); await mkdir(path.join(installer, 'scripts'), { recursive: true });
     const commit = (await runFile('git', ['rev-parse', 'HEAD'], { cwd: root })).trim();
-    const files = await distributionFiles(releaseProfile, file => !isShowcaseAsset(file) && (!bundleRuntime || !file.endsWith('.map')));
+    const gameCards = new Set();
+    const gamesRoot = path.join(root, 'templates/games');
+    const games = await buildGameTemplateBundles(gamesRoot);
+    for (const id of Object.keys(games)) {
+      const prefix = `templates/games/${id}/`;
+      const card = JSON.parse(await readFile(path.join(gamesRoot, id, 'game.json'), 'utf8'));
+      gameCards.add(prefix + 'game.json');
+      if (card.cover && !/^(?:[a-z]+:|\/)/i.test(card.cover)) gameCards.add(prefix + card.cover);
+    }
+    const files = await distributionFiles(releaseProfile, file => !isShowcaseAsset(file) && (!bundleRuntime || !file.endsWith('.map'))
+      && (!file.startsWith('templates/games/') || file.startsWith(`templates/games/${offlineGame}/`) || gameCards.has(file)));
     const localPaths = new Set(files);
     for (const file of files) {
       let directory = path.posix.dirname(file);
@@ -117,6 +128,8 @@ export async function packageNpm(output = path.join(root, 'dist/npm-local'), ver
       }
     }
     await writeJSON(path.join(application, 'shared/template-config.json'), templateConfig);
+    const gameTemplates = { schemaVersion: 1, games };
+    await writeJSON(path.join(application, 'templates/game-downloads.json'), gameTemplates);
     await writeJSON(path.join(application, 'shared/build-info.json'), { commit });
     const skills = (await readdir(path.join(application, 'skills'))).sort();
     for (const name of ['runtime-assets.mjs', 'npm-runtime.mjs', 'npm-hosts.mjs', 'npm-installer.mjs', 'check-installed-mcp.mjs', 'mcp-client.mjs', 'diagnostics.mjs', 'diagnostic-redaction.mjs', 'zip.mjs']) await cp(path.join(root, 'scripts', name), path.join(installer, 'scripts', name));
@@ -156,7 +169,7 @@ export async function packageNpm(output = path.join(root, 'dist/npm-local'), ver
     const archive = path.join(output, `openmotion-application-${pkg.version}${templateConfig.environment === 'dev' ? '-dev' : ''}.tar.${bundleRuntime ? 'xz' : 'gz'}`);
     await runFile(process.platform === 'win32' ? path.join(process.env.SystemRoot, 'System32/tar.exe') : 'tar', [bundleRuntime ? '-cJf' : '-czf', archive, '-C', application, '.'], { env: { ...process.env, COPYFILE_DISABLE: '1' } });
     const manifest = { schemaVersion: 1, version: pkg.version, format: 'npm', templateEnvironment: templateConfig.environment,
-      commit, run: process.env.GITHUB_RUN_ID || null, attempt: process.env.GITHUB_RUN_ATTEMPT || '1',
+      commit, gameTemplates, run: process.env.GITHUB_RUN_ID || null, attempt: process.env.GITHUB_RUN_ATTEMPT || '1',
       application: { url: './' + path.basename(archive), sha256: await sha256(archive) },
       ...(bundledDependencies ? { bundledDependencies } : {}),
       locks: { npm: await sha256(path.join(application, 'package-lock.json')), native: await sha256(path.join(root, 'scripts/runtime-lock.json')) },

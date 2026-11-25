@@ -154,6 +154,18 @@ test('test npm artifacts contain their application, locked manifest and no bundl
     assert.match(release.commit, /^[a-f0-9]{40}$/);
     const application = path.join(directory, 'app'), installer = path.join(directory, 'installer');
     await extractArchive(built.application, application); await extractArchive(built.installer, installer);
+    const gameIndex = await json(path.join(application, 'templates/game-downloads.json'));
+    assert.deepEqual(gameIndex, release.gameTemplates, 'Public readback must check the objects pinned inside this application');
+    for (const [id, bundle] of Object.entries(gameIndex.games) as [string, { sha256: string }][]) {
+      assert.match(bundle.sha256, /^[a-f0-9]{64}$/);
+      const dir = path.join(application, 'templates/games', id);
+      const card = await json(path.join(dir, 'game.json'));
+      assert.equal(card.id, id);
+      if (card.cover && !/^(?:[a-z]+:|\/)/i.test(card.cover)) await access(path.join(dir, card.cover));
+      await assert.rejects(access(path.join(dir, 'index.html')), { code: 'ENOENT' });
+    }
+    assert(Object.hasOwn(gameIndex.games, 'sky-runner'));
+    await access(path.join(application, 'templates/games/tidebreaker/index.html'));
     const sourceEnv = { ...process.env }; delete sourceEnv.MOTION_TEMPLATE_SOURCE;
     const sourceMode = await runFile(process.execPath, ['--input-type=module', '-e', `import {templateConfig} from ${JSON.stringify(pathToFileURL(path.join(application, 'shared/template-config.ts')).href)}; process.stdout.write(templateConfig().source);`], { env: sourceEnv });
     assert.equal(sourceMode, 'hosted', 'An npm application without repository templates must read the latest hosted catalog');

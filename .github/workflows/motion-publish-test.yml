@@ -156,6 +156,9 @@ jobs:
       - name: Validate the frozen template and Skill snapshot
         if: ${{ inputs.mode == 'prepublish' }}
         run: node .github/scripts/publish-template-catalog.mjs validate "$MOTION_VERSION" "$RUNNER_TEMP/candidate"
+      - name: Verify this npm candidate's game download objects
+        if: ${{ inputs.mode == 'publish' }}
+        run: node scripts/game-template-publication.ts --verify-release "$RUNNER_TEMP/candidate/release-npm.json"
       - name: Prepare immutable template resources for publication
         if: ${{ inputs.mode == 'publish' }}
         env:

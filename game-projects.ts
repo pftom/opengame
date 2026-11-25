@@ -20,6 +20,7 @@ import { verificationBinaries } from './scripts/verify-export.ts';
 import type { Duplex } from 'node:stream';
 import { injectPreviewBridgeHtml, isValidPreviewBridgeToken } from './shared/preview-bridge.ts';
 import { attachmentDisposition } from './shared/http-header.ts';
+import { HostedGameTemplates } from './shared/hosted-game-templates.ts';
 import { zip } from './scripts/zip.mjs';
 import { escapeHtml } from './shared/scenario-content.ts';
 import { formatGameBriefPrompt, gameAssetInstructions, gameGenreLabels, gameGenres, gameStyles, gameSettings, isReadyBuiltInTemplate, type GameBrief, type GameCard, type GameCatalog, type GameCatalogIssue, type GameCreated, type GameHandoff, type GameRemixOptions, type RoomServerMessage, type GameTrailer, type GameTrailerStatus } from './shared/game-contract.ts';
@@ -716,7 +717,11 @@ export class GameProjects {
    */
   runtimeRoot: string = pluginRoot;
   private pending: Promise<unknown> = Promise.resolve();
-  constructor(workspace: string, templates = templatesRoot, kits = kitsRoot) { this.root = path.resolve(workspace, 'games'); this.templates = templates; this.kits = kits; }
+  private readonly hosted: HostedGameTemplates;
+  constructor(workspace: string, templates = templatesRoot, kits = kitsRoot) {
+    this.root = path.resolve(workspace, 'games'); this.templates = templates; this.kits = kits;
+    this.hosted = new HostedGameTemplates(path.join(templates, '..', 'game-downloads.json'), path.resolve(workspace, 'game-template-cache'));
+  }
   // Serialize mutations so concurrent requests cannot lose counts or race publication validation.
   mutate<T>(operation: () => Promise<T>): Promise<T> {
     const result = this.pending.then(async () => { await this.ensureStorage(); return operation(); }); this.pending = result.catch(() => {}); return result;
@@ -727,7 +732,7 @@ export class GameProjects {
     const state = await lstat(path.join(this.root, '.state.json')).catch(e => { if (e.code === 'ENOENT') return null; throw e; });
     if (state?.isSymbolicLink()) throw new GameError('Symlink viewer state');
   }
-  async locate(id: string, mineOnly = false) {
+  private async locateCard(id: string, mineOnly = false) {
     idPart(id);
     for (const [root, source] of [[this.root, 'mine'], [this.templates, 'template']] as const) {
       if (mineOnly && source !== 'mine') continue;
@@ -737,9 +742,13 @@ export class GameProjects {
     }
     throw new GameError('Game not found', 404);
   }
+  async locate(id: string, mineOnly = false) {
+    const card = await this.locateCard(id, mineOnly);
+    return card.source === 'template' ? { ...card, dir: await this.hosted.directory(id, card.dir) } : card;
+  }
   async get(id: string): Promise<GameCard> {
     await this.ensureStorage();
-    const { dir, source } = await this.locate(id);
+    const { dir, source } = await this.locateCard(id);
     const { rawPrompt: _rawPrompt, kit: _kit, trailer:_storedTrailer, pristineTemplateCopy: _pristineTemplateCopy, ...stored } = await jsonFile<StoredGame>(path.join(dir, 'game.json'));
     const state = await jsonFile<Record<string, Viewer>>(path.join(this.root, '.state.json'), {});
     const viewer = (Object.hasOwn(state, id) ? state[id] : undefined) ?? { plays: 0, reaction: 0, favorite: false };
@@ -803,7 +812,7 @@ export class GameProjects {
   private async builtInTemplateOrigin(id: string | null | undefined): Promise<StoredGame | null> {
     if (!id) return null;
     try {
-      const { dir, source } = await this.locate(id);
+      const { dir, source } = await this.locateCard(id);
       const stored = await jsonFile<StoredGame>(path.join(dir, 'game.json'));
       return isReadyBuiltInTemplate({ ...stored, source }) ? stored : null;
     } catch {
@@ -1227,7 +1236,7 @@ server.listen(port, '127.0.0.1', () => {
     return {id,players,maxTicks,result:{...runtime.over(),tick},timeline,scope:'Deterministic logic-only simulation with ordinary validated inputs; not browser, rendering or human acceptance.'};
   }
   private async trailerStorage(id:string,create=false) {
-    const located=await this.locate(id),workspace=path.dirname(this.root);
+    const located=await this.locateCard(id),workspace=path.dirname(this.root);
     const root=located.source==='mine'?located.dir:path.join(workspace,'game-trailers',id);
     if(create){
       await safeFile(located.source==='mine'?root:workspace,located.source==='mine'?'trailer/job.json':`game-trailers/${id}/trailer/job.json`,true);
@@ -1571,8 +1580,14 @@ server.listen(port, '127.0.0.1', () => {
 
   async staticFile(id: string, relative: string) {
     if (relative.toLowerCase() === 'game.json' || relative.toLowerCase()==='trailer/job.json' || isPublishRecord(relative)) throw new GameError('Private game metadata', 404);
-    const root=relative.startsWith('trailer/')?await this.trailerStorage(id):(await this.locate(id)).dir;
-    const file = await safeFile(root, relative);
+    const card = await this.locateCard(id);
+    const root = relative.startsWith('trailer/') ? await this.trailerStorage(id) : card.dir;
+    let file: string;
+    try { file = await safeFile(root, relative); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT' || card.source !== 'template' || root !== card.dir) throw error;
+      file = await safeFile(await this.hosted.directory(id, card.dir), relative);
+    }
     return { data: await readFile(file), mime: mime[path.extname(file).toLowerCase()] ?? 'application/octet-stream' };
   }
 }

@@ -1,0 +1,39 @@
+name: Publish playable game template bundles
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'templates/games/**'
+      - 'scripts/game-template-publication.ts'
+      - 'scripts/zip.mjs'
+      - 'shared/hosted-game-templates.ts'
+      - '.github/workflows/publish-game-templates.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publish:
+    if: github.repository == 'OpenDesignHQ/opengame' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '26.11.1'
+      - run: git lfs pull --include='templates/games/**' --exclude=''
+      - name: Check privacy and secrets before publishing
+        run: |
+          node .github/scripts/motion-scan.mjs install "$RUNNER_TEMP/scanner"
+          node .github/scripts/motion-scan.mjs source . "$RUNNER_TEMP/game-source-scan.json" "$RUNNER_TEMP/scanner/gitleaks"
+      - name: Publish and verify immutable game bundles
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.OPENGAME_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.OPENGAME_R2_SECRET_ACCESS_KEY }}
+          AWS_EC2_METADATA_DISABLED: 'true'
+          AWS_PAGER: ''
+          MOTION_R2_ENDPOINT: ${{ vars.OPENGAME_R2_ENDPOINT }}
+          MOTION_R2_BUCKET: ${{ vars.OPENGAME_R2_BUCKET }}
+        run: node scripts/game-template-publication.ts --publish

@@ -126,7 +126,7 @@ export async function scanSource(source, binary) {
   const names = (await runFile('git', ['ls-files', '-z'], { cwd: source })).split('\0').filter(Boolean);
   const work = await mkdtemp(path.join(os.tmpdir(), 'motion-source-scan-'));
   try {
-    // Scan the gallery, source catalog, and game templates separately within the unchanged per-batch budget.
+    // Scan every game as its own release unit, preserving the same limits and privacy rules.
     const batches = new Set();
     for (const name of names) {
       assert(!name.split('/').includes('..') && !path.isAbsolute(name), 'Unsafe tracked path');
@@ -134,7 +134,7 @@ export async function scanSource(source, binary) {
       let batch = 'source';
       if (name.startsWith('docs/readme/')) batch = 'gallery';
       if (name.startsWith('library/templates/catalog/')) batch = 'catalog';
-      if (name.startsWith('templates/games/')) batch = 'games';
+      if (name.startsWith('templates/games/')) batch = 'games-' + name.split('/')[2];
       batches.add(batch);
       const destination = path.join(work, batch, name);
       await mkdir(path.dirname(destination), { recursive: true }); await cp(file, destination);

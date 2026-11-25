@@ -39,7 +39,7 @@ The current source retains `openmotion_game_*` tool names and the `openmotion-ga
 
 ![Game plan, asset inventory, verification and source stay together](readme/opengame/diagrams/project-context.svg)
 
-Owned games are stored under the selected workspace's `games/<game-id>/` directory. Bundled templates stay in the repository's `templates/games/` directory. Remix creates a separate owned copy.
+Owned games are stored under the selected workspace's `games/<game-id>/` directory. Source installations and the full distribution ZIP include `templates/games/`. The default npm package ships each template's metadata and cover, the starter kits, and a playable offline Tidebreaker. On first play or Remix of another template, the local game service downloads its version-pinned ZIP from `releases.open-design.ai/open-game/games/objects/`, verifies its length, SHA-256 and archive entries, and installs it atomically under the workspace's `game-template-cache/<hash>/`. A completed download works offline across restarts. Remix creates a separate owned copy. New npm releases pin a new index; old installations continue to use their original game versions.
 
 ```text
 MOTION_DATA_DIR/
