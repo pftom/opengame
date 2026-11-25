@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from 'open-design-ui/button';
 import { IconButton } from 'open-design-ui/icon-button';
 import {
@@ -31,6 +31,7 @@ type TurnGroup = {
   id: string;
   user?: SuperAgentMessage;
   workItems: SuperAgentMessage[];
+  timelineEntries: SuperAgentMessage[];
   assistantItems: SuperAgentMessage[];
   changedFiles: SuperAgentFileOperation[];
   artifacts: SuperAgentArtifact[];
@@ -184,9 +185,44 @@ function groupMessagesIntoTurns(chat: SuperAgentChat): TurnGroup[] {
   }
 
   const claimedArtifactIds = new Set<string>();
+  const chatIsRunning = chat.state === 'running' || chat.state === 'waiting';
   return rawTurns.map((group, idx) => {
+    const isCurrentRunningTurn = chatIsRunning && idx === rawTurns.length - 1;
     const workItems = group.rest.filter(isWorkItem);
-    const assistantItems = group.rest.filter(m => m.role === 'assistant');
+    const allAssistant = group.rest.filter(m => m.role === 'assistant');
+
+    let lastWorkIdx = -1;
+    for (let i = group.rest.length - 1; i >= 0; i -= 1) {
+      if (isWorkItem(group.rest[i])) {
+        lastWorkIdx = i;
+        break;
+      }
+    }
+
+    let assistantItems: SuperAgentMessage[];
+    let foldedAssistantIds: Set<string>;
+    if (lastWorkIdx === -1) {
+      assistantItems = allAssistant;
+      foldedAssistantIds = new Set();
+    } else {
+      const trailingAssistant = group.rest.slice(lastWorkIdx + 1).filter(m => m.role === 'assistant');
+      if (trailingAssistant.length > 0) {
+        assistantItems = trailingAssistant;
+        const trailingIds = new Set(trailingAssistant.map(m => m.id));
+        foldedAssistantIds = new Set(allAssistant.filter(m => !trailingIds.has(m.id)).map(m => m.id));
+      } else if (!isCurrentRunningTurn && allAssistant.length > 0) {
+        const fallbackFinal = allAssistant[allAssistant.length - 1];
+        assistantItems = [fallbackFinal];
+        foldedAssistantIds = new Set(allAssistant.slice(0, -1).map(m => m.id));
+      } else {
+        assistantItems = [];
+        foldedAssistantIds = new Set(allAssistant.map(m => m.id));
+      }
+    }
+
+    const timelineEntries = group.rest.filter(
+      m => isWorkItem(m) || (m.role === 'assistant' && foldedAssistantIds.has(m.id) && Boolean(m.text.trim())),
+    );
     const artifactIds = new Set<string>();
     for (const m of group.rest) {
       if (m.toolEvent?.artifactId) {
@@ -231,7 +267,21 @@ function groupMessagesIntoTurns(chat: SuperAgentChat): TurnGroup[] {
     const hasRunning = workItems.some(
       m => m.status === 'streaming' || m.toolEvent?.status === 'running',
     );
-    const hasFailure = workItems.some(m => m.toolEvent?.status === 'failed' || isFailedGameValidation(m.toolEvent));
+    const hasUnrecoveredFailure = workItems.some((m, wi) => {
+      const ev = m.toolEvent;
+      if (!ev) return false;
+      const failed = ev.status === 'failed' || isFailedGameValidation(ev);
+      if (!failed) return false;
+      const normalizedTool = (ev.tool ?? '').replace(/^mcp_+openmotion_+/, '');
+      if (!normalizedTool) return true;
+      const recoveredLater = workItems.slice(wi + 1).some(later => {
+        const lev = later.toolEvent;
+        if (!lev) return false;
+        const lTool = (lev.tool ?? '').replace(/^mcp_+openmotion_+/, '');
+        return lTool === normalizedTool && lev.status === 'completed' && !isFailedGameValidation(lev);
+      });
+      return !recoveredLater;
+    });
 
     let durationMs: number | undefined;
     if (idx === rawTurns.length - 1 && chat.lastTurnDurationMs !== undefined) {
@@ -248,12 +298,13 @@ function groupMessagesIntoTurns(chat: SuperAgentChat): TurnGroup[] {
       id: turnId,
       user: group.user,
       workItems,
+      timelineEntries,
       assistantItems,
       changedFiles,
       artifacts,
       actionCards,
       hasRunning,
-      hasFailure,
+      hasFailure: hasUnrecoveredFailure,
       durationMs,
     };
   });
@@ -268,34 +319,130 @@ const gameGuideSections: Readonly<Record<string, string>> = {
   review: 'Game review rubric',
   playable: 'Playable ad',
   audio: 'Audio',
+  controls: 'Controls & camera guide',
+  brief: 'Game brief & level plan',
+  craft: 'Game feel & polish',
+  sprites: '2D sprite animation',
+  animation: '3D character animation',
+  procedural: 'Procedural animation',
+  textures: 'Materials & textures',
+  gates: 'Quality gates',
+  lookup: 'Reference research',
+  provenance: 'Asset provenance',
+  wechat: 'WeChat Mini Game port',
 };
+
+const mediaGuideSections: Readonly<Record<string, string>> = {
+  start: 'Multimodal media guide',
+  codex: 'Local image generation',
+};
+
+function sanitizeUserHomePath(raw?: string): string | undefined {
+  if (!raw) return raw;
+  return raw
+    .replace(/\/Users\/[^/\s'"]+\//g, '~/')
+    .replace(/\/home\/[^/\s'"]+\//g, '~/')
+    .replace(/C:\\Users\\[^\\\s'"]+\\/gi, '~\\');
+}
+
+function normalizeInternalJargon(text: string, t: Translate): string {
+  const replacement = t('Game creation workflow');
+  return text
+    .replace(/\bOpenMotion Game Skill\b/gi, replacement)
+    .replace(/\bopenmotion-game\b/gi, replacement);
+}
+
+function stripRedundantDeliverableInlineLinks(text: string, deliverables: SuperAgentArtifact[]): string {
+  if (!deliverables.length || !text.includes('](')) return text;
+  const projectIds = new Set(
+    deliverables
+      .map(item => item.projectId || (item.id.includes(':') ? item.id.split(':').slice(1).join(':') : ''))
+      .filter(Boolean),
+  );
+  if (!projectIds.size) return text;
+  return text.replace(
+    /(^|[。！？.!?\n])[ \t]*\[([^\]]+)\]\((\/(?:motion-api|api)\/(?:games|design)\/([^/?#)]+)\/[^)\s]*)\)(?=[ \t]*(?:\n|$))/gm,
+    (full, prefix: string, _label: string, _href: string, targetId: string) => {
+      try {
+        if (projectIds.has(decodeURIComponent(targetId)) || projectIds.has(targetId)) {
+          return prefix;
+        }
+      } catch {
+        if (projectIds.has(targetId)) return prefix;
+      }
+      return full;
+    },
+  );
+}
+
+function formatConsumerChatError(rawError: string, t: Translate): { summary: string; detail?: string } {
+  const trimmed = rawError.trim();
+  if (/thread\s+[0-9a-f-]+\s+already has an active writer/i.test(trimmed)) {
+    return {
+      summary: t('The previous step is still wrapping up in the background. Click Continue in a moment to resume.'),
+      detail: trimmed,
+    };
+  }
+  if (/ECONNREFUSED|Failed to fetch|NetworkError/i.test(trimmed)) {
+    return {
+      summary: t('Connection to the local Agent service was interrupted. Check your Agent status and click Continue.'),
+      detail: trimmed,
+    };
+  }
+  return { summary: trimmed };
+}
 
 function workflowGuideDetail(event: SuperAgentToolEvent, t: Translate): string | undefined {
   const tool = (event.tool ?? '').replace(/^mcp_+openmotion_+/, '');
   if (tool !== 'openmotion_read_workflow' || !event.inputPreview || event.status === 'failed') {
-    return event.summary;
+    return sanitizeUserHomePath(event.summary);
   }
 
   let args: Record<string, unknown>;
   try {
     args = JSON.parse(event.inputPreview);
-    if (!args || typeof args !== 'object' || Array.isArray(args)) return event.summary;
+    if (!args || typeof args !== 'object' || Array.isArray(args)) return sanitizeUserHomePath(event.summary);
   } catch {
-    return event.summary;
+    return sanitizeUserHomePath(event.summary);
   }
 
   const workflow = args.workflow ?? 'production';
   const section = args.section ?? 'start';
-  if (typeof workflow !== 'string' || typeof section !== 'string') return event.summary;
+  if (typeof workflow !== 'string' || typeof section !== 'string') return sanitizeUserHomePath(event.summary);
   if (workflow === 'game' && Object.hasOwn(gameGuideSections, section)) return t(gameGuideSections[section]);
+  if (workflow === 'media') {
+    if (Object.hasOwn(mediaGuideSections, section)) return t(mediaGuideSections[section]);
+    return `${t('Multimodal media guide')} · ${section}`;
+  }
   return `${workflow}/${section}`;
+}
+
+function isReadOnlyPrepTool(event?: SuperAgentToolEvent): boolean {
+  if (!event || event.status === 'running' || event.status === 'failed') return false;
+  const tool = (event.tool ?? '').replace(/^mcp_+openmotion_+/, '');
+  if (
+    tool === 'openmotion_read_workflow'
+    || tool === 'openmotion_capability_discover'
+    || tool === 'openmotion_game_get'
+    || tool === 'openmotion_game_read_file'
+    || tool === 'openmotion_list_skills'
+    || tool === 'openmotion_get_skill'
+    || tool === 'openmotion_workspace_resources'
+  ) {
+    return true;
+  }
+  return event.category === 'file_read';
 }
 
 function ToolStepRow({
   message,
+  selfHealed = false,
+  suppressArtifactAction = false,
   onOpenArtifactId,
 }: {
   message: SuperAgentMessage;
+  selfHealed?: boolean;
+  suppressArtifactAction?: boolean;
   onOpenArtifactId: (artifactId: string) => void;
 }) {
   const { t } = useI18n();
@@ -305,15 +452,19 @@ function ToolStepRow({
   const liveElapsedMs = useLiveElapsedMs(ev?.startedAt, isRunning);
   if (!ev) return null;
   const failedValidation = isFailedGameValidation(ev);
-  const status = failedValidation ? 'failed' : ev.status ?? 'completed';
+  const rawFailed = failedValidation || ev.status === 'failed';
+  const status = rawFailed ? (selfHealed ? 'completed' : 'failed') : (ev.status ?? 'completed');
   const fileOp = ev.fileOp ?? ev.files?.[0];
   const diffFiles = (ev.files ?? (fileOp ? [fileOp] : [])).filter(f => f.diffPreview);
-  const hasBody = Boolean(ev.command || diffFiles.length > 0 || ev.inputPreview || ev.outputPreview);
+  const hasRawPayloads = Boolean((ev.inputPreview && ev.category !== 'command' && diffFiles.length === 0) || ev.outputPreview);
+  const hasBody = Boolean(ev.command || diffFiles.length > 0 || hasRawPayloads);
   const isOpen = hasBody && expanded;
   const displayDurationMs = status === 'running'
     ? (liveElapsedMs >= 1000 ? liveElapsedMs : undefined)
     : ev.durationMs;
-  const detail = workflowGuideDetail(ev, t);
+  const detail = selfHealed
+    ? t('Adjusted parameters and retried automatically')
+    : workflowGuideDetail(ev, t);
 
   const headerContent = (
     <>
@@ -322,9 +473,9 @@ function ToolStepRow({
         data-status={status}
         data-category={ev.category || 'tool'}
       >
-        <RemixIcon name={categoryIcon(ev.category, status)} size={15} />
+        <RemixIcon name={selfHealed ? 'refresh-line' : categoryIcon(ev.category, status)} size={15} />
       </span>
-      <span className="om-sa-tool-label">{t(failedValidation ? 'Game validation failed' : ev.label || message.text)}</span>
+      <span className="om-sa-tool-label">{t(failedValidation && !selfHealed ? 'Game validation failed' : ev.label || message.text)}</span>
       {detail && detail !== ev.label && (
         <span className="om-sa-tool-summary" title={detail}>{detail}</span>
       )}
@@ -357,7 +508,7 @@ function ToolStepRow({
   );
 
   return (
-    <div className="om-sa-tool-row" data-open={isOpen || undefined}>
+    <div className="om-sa-tool-row" data-open={isOpen || undefined} data-retried={selfHealed || undefined}>
       <div className="om-sa-tool-head">
         {hasBody ? (
           <Button
@@ -374,7 +525,7 @@ function ToolStepRow({
             {headerContent}
           </div>
         )}
-        {ev.artifactId && (
+        {ev.artifactId && !suppressArtifactAction && (
           <Button
             variant="plain"
             type="button"
@@ -395,7 +546,7 @@ function ToolStepRow({
           {ev.command && (
             <div className="om-sa-cmd-block">
               <span className="om-sa-cmd-prompt" aria-hidden="true">$</span>
-              <code>{ev.command}</code>
+              <code>{sanitizeUserHomePath(ev.command)}</code>
             </div>
           )}
           {diffFiles.map((file, idx) => (
@@ -410,18 +561,109 @@ function ToolStepRow({
               {file.diffPreview && <UnifiedDiffView diff={file.diffPreview} />}
             </div>
           ))}
-          {ev.inputPreview && ev.category !== 'command' && diffFiles.length === 0 && (
-            <div className="om-sa-tool-section">
-              <span className="om-sa-tool-section-label">{t('Input')}</span>
-              <pre className="om-sa-tool-pre">{ev.inputPreview}</pre>
-            </div>
+          {hasRawPayloads && (
+            <details className="om-sa-tool-raw-details" open={ev.category === 'command'}>
+              <summary className="om-sa-tool-raw-summary">
+                <span>{t('View technical details')}</span>
+                <RemixIcon name="arrow-down-s-line" size={13} />
+              </summary>
+              {ev.inputPreview && ev.category !== 'command' && diffFiles.length === 0 && (
+                <div className="om-sa-tool-section">
+                  <span className="om-sa-tool-section-label">{t('Input')}</span>
+                  <pre className="om-sa-tool-pre">{ev.inputPreview}</pre>
+                </div>
+              )}
+              {ev.outputPreview && (
+                <div className="om-sa-tool-section">
+                  <span className="om-sa-tool-section-label">{t('Output')}</span>
+                  <pre className="om-sa-tool-pre">{ev.outputPreview}</pre>
+                </div>
+              )}
+            </details>
           )}
-          {ev.outputPreview && (
-            <div className="om-sa-tool-section">
-              <span className="om-sa-tool-section-label">{t('Output')}</span>
-              <pre className="om-sa-tool-pre">{ev.outputPreview}</pre>
-            </div>
-          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProgressNoteStepRow({
+  message,
+  onCopyText,
+  onOpenWebUrl,
+  onOpenFilePath,
+}: {
+  message: SuperAgentMessage;
+  onCopyText?: (text: string) => void;
+  onOpenWebUrl?: (url: string) => void;
+  onOpenFilePath?: (filePath: string, label?: string) => void;
+}) {
+  const { t } = useI18n();
+  const cleaned = normalizeInternalJargon(message.text.trim(), t);
+  if (!cleaned) return null;
+  return (
+    <div className="om-sa-progress-note-row">
+      <span className="om-sa-progress-note-dot" aria-hidden="true">
+        <RemixIcon name="chat-1-line" size={13} />
+      </span>
+      <div className="om-sa-progress-note-body">
+        <SimpleMarkdown
+          content={cleaned}
+          compact
+          onCopyCode={onCopyText}
+          onOpenWebUrl={onOpenWebUrl}
+          onOpenFilePath={onOpenFilePath}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PrepStepsGroupRow({
+  items,
+  onOpenArtifactId,
+}: {
+  items: SuperAgentMessage[];
+  onOpenArtifactId: (artifactId: string) => void;
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const totalMs = items.reduce((sum, item) => sum + (item.toolEvent?.durationMs ?? 0), 0);
+  return (
+    <div className="om-sa-prep-group" data-open={open || undefined}>
+      <Button
+        variant="plain"
+        type="button"
+        className="om-sa-tool-trigger om-sa-prep-group-trigger"
+        aria-expanded={open}
+        onClick={() => setOpen(prev => !prev)}
+      >
+        <span className="om-sa-tool-status" data-status="completed" data-category="search">
+          <RemixIcon name="book-open-line" size={14} />
+        </span>
+        <span className="om-sa-tool-label">
+          {t('Reviewed workflow guides & project context')}
+        </span>
+        <span className="om-sa-tool-summary">
+          {t('{count} checks', { count: items.length })}
+        </span>
+        <span className="om-sa-step-trail">
+          {totalMs > 0 && <span className="om-sa-step-time">{formatElapsedDuration(totalMs)}</span>}
+          <span className="om-sa-step-chevron" aria-hidden="true">
+            <RemixIcon name="arrow-down-s-line" size={14} />
+          </span>
+        </span>
+      </Button>
+      {open && (
+        <div className="om-sa-prep-group-items">
+          {items.map(item => (
+            <ToolStepRow
+              key={item.id}
+              message={item}
+              suppressArtifactAction
+              onOpenArtifactId={onOpenArtifactId}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -625,24 +867,92 @@ function WorkLogSection({
       </Button>
       {expanded && (
         <div className="om-sa-work-items">
-          {turn.workItems.map(item =>
-            item.role === 'reasoning' ? (
-              <ReasoningStepRow
-                key={item.id}
-                message={item}
-                isStreaming={item.id === activeReasoningId && item.status === 'streaming'}
-                onCopyText={onCopyText}
-                onOpenWebUrl={onOpenWebUrl}
-                onOpenFilePath={onOpenFilePath}
-              />
-            ) : (
-              <ToolStepRow
-                key={item.id}
-                message={item}
-                onOpenArtifactId={onOpenArtifactId}
-              />
-            ),
-          )}
+          {(() => {
+            const entries = turn.timelineEntries;
+            const lastArtifactEntryById = new Map<string, string>();
+            const selfHealedIds = new Set<string>();
+
+            for (let i = 0; i < entries.length; i += 1) {
+              const cur = entries[i];
+              const ev = cur.toolEvent;
+              if (ev?.artifactId) {
+                lastArtifactEntryById.set(ev.artifactId, cur.id);
+              }
+              if (ev && ev.status === 'failed' && !isFailedGameValidation(ev)) {
+                const curTool = (ev.tool ?? '').replace(/^mcp_+openmotion_+/, '');
+                if (curTool) {
+                  const healed = entries.slice(i + 1).some(later => {
+                    const lev = later.toolEvent;
+                    if (!lev) return false;
+                    const lTool = (lev.tool ?? '').replace(/^mcp_+openmotion_+/, '');
+                    return lTool === curTool && lev.status === 'completed' && !isFailedGameValidation(lev);
+                  });
+                  if (healed) selfHealedIds.add(cur.id);
+                }
+              }
+            }
+
+            const rendered: ReactNode[] = [];
+            let i = 0;
+            while (i < entries.length) {
+              const item = entries[i];
+              if (!isRunning && item.role === 'tool' && isReadOnlyPrepTool(item.toolEvent)) {
+                let j = i + 1;
+                while (j < entries.length && entries[j].role === 'tool' && isReadOnlyPrepTool(entries[j].toolEvent)) {
+                  j += 1;
+                }
+                if (j - i >= 3) {
+                  const batch = entries.slice(i, j);
+                  rendered.push(
+                    <PrepStepsGroupRow
+                      key={`prep:${batch[0].id}`}
+                      items={batch}
+                      onOpenArtifactId={onOpenArtifactId}
+                    />,
+                  );
+                  i = j;
+                  continue;
+                }
+              }
+
+              if (item.role === 'assistant') {
+                rendered.push(
+                  <ProgressNoteStepRow
+                    key={item.id}
+                    message={item}
+                    onCopyText={onCopyText}
+                    onOpenWebUrl={onOpenWebUrl}
+                    onOpenFilePath={onOpenFilePath}
+                  />,
+                );
+              } else if (item.role === 'reasoning') {
+                rendered.push(
+                  <ReasoningStepRow
+                    key={item.id}
+                    message={item}
+                    isStreaming={item.id === activeReasoningId && item.status === 'streaming'}
+                    onCopyText={onCopyText}
+                    onOpenWebUrl={onOpenWebUrl}
+                    onOpenFilePath={onOpenFilePath}
+                  />,
+                );
+              } else {
+                const aid = item.toolEvent?.artifactId;
+                const suppressArtifactAction = Boolean(aid && lastArtifactEntryById.get(aid) !== item.id);
+                rendered.push(
+                  <ToolStepRow
+                    key={item.id}
+                    message={item}
+                    selfHealed={selfHealedIds.has(item.id)}
+                    suppressArtifactAction={suppressArtifactAction}
+                    onOpenArtifactId={onOpenArtifactId}
+                  />,
+                );
+              }
+              i += 1;
+            }
+            return rendered;
+          })()}
           {showInlineLive && !hasActiveWorkItem && (
             <div className="om-sa-live-reply-phase" role="status" aria-live="polite">
               <span className="om-sa-live-reply-icon" data-spinning={spinningIcon || undefined} aria-hidden="true">
@@ -1047,19 +1357,24 @@ function resolveUserMessageContext(
   const visibleAttachments: SuperAgentResourceAttachment[] = [];
 
   for (const att of rawAttachments) {
+    const cleanTitle = att.title.trim();
     const isDuplicateDraftGame =
       att.kind === 'game-project'
       && Boolean(normalizedPrompt)
-      && att.title.trim() === normalizedPrompt;
+      && cleanTitle === normalizedPrompt;
+    const isInternalRemixDirective = /^Make an original game in the spirit of\b/i.test(cleanTitle);
     if (isDuplicateDraftGame) {
       hiddenDraftGames.push(att);
-    } else if (!inlineKeys.has(resourceKey(att))) {
+    } else if (!isInternalRemixDirective && !inlineKeys.has(resourceKey(att))) {
       visibleAttachments.push(att);
     }
   }
 
   if (userMsg.contextTags && userMsg.contextTags.length > 0) {
-    return { contextTags: userMsg.contextTags, visibleAttachments };
+    const dedupedTags = userMsg.contextTags.filter(
+      tag => !(tag.kind === 'param' && normalizedPrompt && tag.label.trim() === normalizedPrompt),
+    );
+    return { contextTags: dedupedTags, visibleAttachments };
   }
 
   if (hiddenDraftGames.length > 0) {
@@ -1231,89 +1546,108 @@ export function ExecutionTimeline({
               onOpenFilePath={onOpenFilePath}
             />
 
-            {turn.assistantItems.map(msg => (
-              <article key={msg.id} className="om-sa-message" data-role="assistant">
-                <div className="om-sa-message-body">
-                  <div className="om-sa-assistant-content">
-                    <SimpleMarkdown
-                      content={msg.text}
-                      onCopyCode={onCopyText}
-                      onOpenWebUrl={onOpenWebUrl}
-                      onOpenFilePath={onOpenFilePath}
-                    />
-                  </div>
-                </div>
-              </article>
-            ))}
-
             {(() => {
-              const deliverableArtifacts = turn.artifacts.filter(artifact => artifact.kind !== 'workspace-file');
-              if (isActiveTurn || deliverableArtifacts.length === 0) return null;
+              const deliverableArtifacts = !isActiveTurn
+                ? turn.artifacts.filter(artifact => artifact.kind !== 'workspace-file')
+                : [];
+              const isConsumerCreativeTurn = Boolean(chat.intent && chat.intent !== 'coding');
               return (
-                <div className="om-sa-deliverables" data-count={deliverableArtifacts.length === 1 ? 'single' : 'multi'}>
-                  {deliverableArtifacts.map(artifact => (
-                    <ArtifactDeliverableCard
-                      key={artifact.id}
-                      artifact={artifact}
-                      onOpenArtifactId={onOpenArtifactId}
+                <>
+                  {turn.assistantItems.map(msg => {
+                    const cleanedContent = deliverableArtifacts.length > 0
+                      ? normalizeInternalJargon(stripRedundantDeliverableInlineLinks(msg.text, deliverableArtifacts), t)
+                      : normalizeInternalJargon(msg.text, t);
+                    return (
+                      <article key={msg.id} className="om-sa-message" data-role="assistant">
+                        <div className="om-sa-message-body">
+                          <div className="om-sa-assistant-content">
+                            <SimpleMarkdown
+                              content={cleanedContent}
+                              onCopyCode={onCopyText}
+                              onOpenWebUrl={onOpenWebUrl}
+                              onOpenFilePath={onOpenFilePath}
+                            />
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+
+                  {isLastTurn && turn.actionCards.length > 0 && (!isActiveTurn || turn.assistantItems.length > 0) && (
+                    <div className="om-sa-action-cards">
+                      {turn.actionCards.map(card => (
+                        <TurnActionCard
+                          key={card.id}
+                          card={card}
+                          onTrigger={onTriggerActionCard}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {!isActiveTurn && turn.changedFiles.length > 0 && (
+                    <FilesChangedCard
+                      files={turn.changedFiles}
+                      projectDir={chat.projectDir}
+                      defaultExpanded={!isConsumerCreativeTurn}
                       onCopyText={onCopyText}
-                      onNotify={onNotify}
-                      onOpenAccountSettings={onOpenAccountSettings}
-                      onOpenInDesignStudio={onOpenInDesignStudio}
-                      onOpenInMotionStudio={onOpenInMotionStudio}
-                      onOpenInAssets={onOpenInAssets}
-                      onOpenInBrandKit={onOpenInBrandKit}
+                      onOpenFile={onOpenChangedFile}
                     />
-                  ))}
-                </div>
+                  )}
+
+                  {deliverableArtifacts.length > 0 && (
+                    <div className="om-sa-deliverables" data-count={deliverableArtifacts.length === 1 ? 'single' : 'multi'}>
+                      {deliverableArtifacts.map(artifact => (
+                        <ArtifactDeliverableCard
+                          key={artifact.id}
+                          artifact={artifact}
+                          onOpenArtifactId={onOpenArtifactId}
+                          onCopyText={onCopyText}
+                          onNotify={onNotify}
+                          onOpenAccountSettings={onOpenAccountSettings}
+                          onOpenInDesignStudio={onOpenInDesignStudio}
+                          onOpenInMotionStudio={onOpenInMotionStudio}
+                          onOpenInAssets={onOpenInAssets}
+                          onOpenInBrandKit={onOpenInBrandKit}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {!isActiveTurn && turn.assistantItems.length > 0 && (() => {
+                    const tokenDetail = isLastTurn && chat.lastTurnUsage?.totalTokens
+                      ? `${chat.lastTurnUsage.totalTokens.toLocaleString()} ${t('tokens')}`
+                      : '';
+                    const showInlineTokens = Boolean(tokenDetail && (!chat.intent || chat.intent === 'coding'));
+                    return (
+                      <div className="om-sa-turn-footer">
+                        <span
+                          className="om-sa-turn-meta"
+                          title={!showInlineTokens && tokenDetail ? tokenDetail : undefined}
+                        >
+                          {[
+                            engineLabel || chat.engine,
+                            turn.workItems.length > 0 ? t('{count} steps', { count: turn.workItems.length }) : '',
+                            turn.durationMs !== undefined ? formatElapsedDuration(turn.durationMs) : '',
+                            showInlineTokens ? tokenDetail : '',
+                          ].filter(Boolean).join(' · ')}
+                        </span>
+                        {combinedAssistantText && (
+                          <IconButton
+                            variant="ghost"
+                            className="motion-icon-button"
+                            aria-label={t('Copy response')}
+                            title={t('Copy response')}
+                            onClick={() => onCopyText(combinedAssistantText)}
+                            icon={<RemixIcon name="file-copy-line" size={13} />}
+                          />
+                        )}
+                      </div>
+                    );
+                  })()}
+                </>
               );
             })()}
-
-            {isLastTurn && turn.actionCards.length > 0 && (!isActiveTurn || turn.assistantItems.length > 0) && (
-              <div className="om-sa-action-cards">
-                {turn.actionCards.map(card => (
-                  <TurnActionCard
-                    key={card.id}
-                    card={card}
-                    onTrigger={onTriggerActionCard}
-                  />
-                ))}
-              </div>
-            )}
-
-            {!isActiveTurn && turn.changedFiles.length > 0 && (
-              <FilesChangedCard
-                files={turn.changedFiles}
-                projectDir={chat.projectDir}
-                onCopyText={onCopyText}
-                onOpenFile={onOpenChangedFile}
-              />
-            )}
-
-            {!isActiveTurn && turn.assistantItems.length > 0 && (
-              <div className="om-sa-turn-footer">
-                <span className="om-sa-turn-meta">
-                  {[
-                    engineLabel || chat.engine,
-                    turn.workItems.length > 0 ? t('{count} steps', { count: turn.workItems.length }) : '',
-                    turn.durationMs !== undefined ? formatElapsedDuration(turn.durationMs) : '',
-                    isLastTurn && chat.lastTurnUsage?.totalTokens
-                      ? `${chat.lastTurnUsage.totalTokens.toLocaleString()} ${t('tokens')}`
-                      : '',
-                  ].filter(Boolean).join(' · ')}
-                </span>
-                {combinedAssistantText && (
-                  <IconButton
-                    variant="ghost"
-                    className="motion-icon-button"
-                    aria-label={t('Copy response')}
-                    title={t('Copy response')}
-                    onClick={() => onCopyText(combinedAssistantText)}
-                    icon={<RemixIcon name="file-copy-line" size={13} />}
-                  />
-                )}
-              </div>
-            )}
           </div>
         );
       })}
@@ -1333,28 +1667,31 @@ export function ExecutionTimeline({
             : null
       )}
 
-      {chat.error && (
-        <div className="om-sa-error-card" role="alert">
-          <span className="om-sa-error-icon" aria-hidden="true">
-            <RemixIcon name="error-warning-line" size={18} />
-          </span>
-          <div className="om-sa-error-copy">
-            <strong>{t('Conversation paused')}</strong>
-            <p className="om-muted">{chat.error}</p>
+      {chat.error && (() => {
+        const formattedErr = formatConsumerChatError(chat.error, t);
+        return (
+          <div className="om-sa-error-card" role="alert">
+            <span className="om-sa-error-icon" aria-hidden="true">
+              <RemixIcon name="error-warning-line" size={18} />
+            </span>
+            <div className="om-sa-error-copy">
+              <strong>{t('Conversation paused')}</strong>
+              <p className="om-muted" title={formattedErr.detail}>{formattedErr.summary}</p>
+            </div>
+            {onContinue && (
+              <Button
+                variant="plain"
+                className="om-sa-continue-btn"
+                disabled={continueDisabled || busy || sending}
+                onClick={onContinue}
+              >
+                <RemixIcon name="play-fill" size={14} />
+                <span>{t('Continue')}</span>
+              </Button>
+            )}
           </div>
-          {onContinue && (
-            <Button
-              variant="plain"
-              className="om-sa-continue-btn"
-              disabled={continueDisabled || busy || sending}
-              onClick={onContinue}
-            >
-              <RemixIcon name="play-fill" size={14} />
-              <span>{t('Continue')}</span>
-            </Button>
-          )}
-        </div>
-      )}
+        );
+      })()}
 
       {showInterruptedCard && (
         <div className="om-sa-interrupted-card" role="status">

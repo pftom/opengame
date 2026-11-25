@@ -21,6 +21,19 @@
   font-size: var(--motion-text-sm);
 }
 
+@container sa-viewer (max-width: 920px) {
+  .om-gp-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(360px, 90%);
+    min-width: 0;
+    z-index: 6;
+    box-shadow: var(--motion-shadow-lg);
+  }
+}
+
 .om-gp-head {
   display: flex;
   align-items: center;
@@ -138,13 +151,22 @@
   background: var(--motion-inset);
 }
 
-.om-gp-hero img,
+.om-gp-hero img {
+  flex: none;
+  width: 96px;
+  height: 54px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--motion-radius-md);
+  display: block;
+  background: var(--motion-panel);
+}
+
 .om-gp-hero-placeholder {
   flex: none;
-  width: 72px;
-  height: 72px;
-  object-fit: cover;
-  border-radius: var(--motion-radius-lg);
+  width: 54px;
+  height: 54px;
+  border-radius: var(--motion-radius-md);
   display: grid;
   place-items: center;
   background: var(--motion-panel);

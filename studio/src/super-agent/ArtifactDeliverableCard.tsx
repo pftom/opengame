@@ -98,7 +98,7 @@ export function artifactDeliverableMeta(artifact: SuperAgentArtifact): ArtifactD
         icon: 'gamepad-line',
         tone: 'agent',
         typeLabel: 'HTML Game',
-        primaryActionLabel: 'Play',
+        primaryActionLabel: 'Play game',
         primaryActionIcon: 'play-fill',
       };
     case 'web':
@@ -155,7 +155,39 @@ const RAW_ARTIFACT_SUBTITLES = new Set([
   'design-project',
   'motion-project',
   'game-project',
+  'game studio',
+  'design studio',
+  'motion studio',
 ]);
+
+const GAME_GENRE_LABELS: Readonly<Record<string, string>> = {
+  platformer: 'Platformer',
+  shooter: 'Shooter',
+  story: 'Story',
+  casual: 'Hyper-casual',
+  racing: 'Racing',
+  horror: 'Horror',
+  arcade: 'Arcade',
+  puzzle: 'Puzzle',
+  rpg: 'RPG',
+  strategy: 'Strategy',
+  action: 'Action',
+  simulation: 'Simulation',
+  adventure: 'Adventure',
+};
+
+function formatArtifactSubDetail(rawSub: string, t: (key: string) => string): string {
+  if (!rawSub) return '';
+  const parts = rawSub
+    .split('·')
+    .map(part => part.trim())
+    .filter(part => part && !RAW_ARTIFACT_SUBTITLES.has(part.toLowerCase()))
+    .map(part => {
+      const mappedGenre = GAME_GENRE_LABELS[part.toLowerCase()];
+      return mappedGenre ? t(mappedGenre) : t(part);
+    });
+  return parts.join(' · ');
+}
 
 function safeFilenameSlug(title: string, fallback: string): string {
   const cleaned = title
@@ -259,15 +291,19 @@ export function ArtifactDeliverableCard({
 
   const meta = artifactDeliverableMeta(artifact);
   const rawSub = (artifact.subtitle ?? '').trim();
-  const subDetail = rawSub && !RAW_ARTIFACT_SUBTITLES.has(rawSub.toLowerCase()) ? rawSub : '';
+  const subDetail = formatArtifactSubDetail(rawSub, t);
   const subtitleText = isPlayableAdArtifact(artifact)
     ? t('Playable ad')
     : subDetail ? `${t(meta.typeLabel)} · ${subDetail}` : t(meta.typeLabel);
   const cloudTarget = resolveArtifactCloudTarget(artifact);
 
-  const thumbUrl = !thumbFailed && artifact.kind === 'asset-image' && artifact.url
-    ? artifact.url
+  const gameCoverSrc = artifact.kind === 'game-project' && artifact.projectId
+    ? `/motion-api/games/${encodeURIComponent(artifact.projectId)}/play/assets/cover.png${artifact.revision ? `?rev=${encodeURIComponent(artifact.revision)}` : ''}`
     : null;
+  const thumbUrl = !thumbFailed
+    ? (artifact.kind === 'asset-image' && artifact.url ? artifact.url : gameCoverSrc)
+    : null;
+  const isWideThumb = Boolean(thumbUrl && artifact.kind === 'game-project');
 
   const isDeckDesign = artifact.kind === 'design-project'
     && (artifact.scenario === 'deck' || artifact.scenario === 'document');
@@ -330,14 +366,23 @@ export function ArtifactDeliverableCard({
   const isExternalWebUrl = artifact.kind === 'web' && Boolean(artifact.url && /^https?:\/\//i.test(artifact.url));
 
   return (
-    <div className="om-sa-deliverable-card" data-kind={artifact.kind}>
+    <div
+      className="om-sa-deliverable-card"
+      data-kind={artifact.kind}
+      data-wide-cover={isWideThumb || undefined}
+    >
       <Button
         variant="plain"
         type="button"
         className="om-sa-deliverable-main"
         onClick={() => onOpenArtifactId(artifact.id)}
       >
-        <span className="om-sa-deliverable-icon" data-tone={meta.tone} aria-hidden="true">
+        <span
+          className="om-sa-deliverable-icon"
+          data-tone={meta.tone}
+          data-wide={isWideThumb || undefined}
+          aria-hidden="true"
+        >
           {thumbUrl ? (
             <img
               className="om-sa-deliverable-thumb"
@@ -356,7 +401,7 @@ export function ArtifactDeliverableCard({
           <small>{subtitleText}</small>
         </span>
         <span className="om-sa-deliverable-open-cue" aria-hidden="true">
-          <RemixIcon name="arrow-right-up-line" size={15} />
+          <RemixIcon name={isExternalWebUrl ? 'arrow-right-up-line' : 'arrow-right-s-line'} size={16} />
         </span>
       </Button>
 

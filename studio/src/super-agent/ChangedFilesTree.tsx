@@ -365,19 +365,26 @@ function ChangedTreeNodeList({
   );
 }
 
+export function isInternalManagedStorageDir(rawDir?: string): boolean {
+  if (!rawDir) return false;
+  return /(?:Application Support[\\/]Open(?:Design|Motion)|AppData[\\/](?:Roaming|Local)[\\/]Open(?:Design|Motion)|\.config[\\/]open(?:design|motion)|[\\/]super-agent[\\/]work[\\/])/i.test(rawDir);
+}
+
 export function FilesChangedCard({
   files,
   projectDir,
+  defaultExpanded = true,
   onCopyText,
   onOpenFile,
 }: {
   files: SuperAgentFileOperation[];
   projectDir?: string;
+  defaultExpanded?: boolean;
   onCopyText: (text: string) => void;
   onOpenFile?: (file: SuperAgentFileOperation) => void;
 }) {
   const { t } = useI18n();
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [collapsedDirs, setCollapsedDirs] = useState<Record<string, boolean>>({});
   const [openDiffs, setOpenDiffs] = useState<Record<string, boolean>>({});
 
@@ -464,7 +471,7 @@ export function FilesChangedCard({
             onCopyText={onCopyText}
             onOpenFile={onOpenFile}
           />
-          {projectDir && (
+          {projectDir && !isInternalManagedStorageDir(projectDir) && (
             <div className="om-sa-files-changed-foot">
               <Tooltip label={t('Copy project directory')}>
                 <Button

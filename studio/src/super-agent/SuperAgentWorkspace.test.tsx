@@ -3766,6 +3766,11 @@ it('FilesChangedCard renders collapsible folder tree, inline diff/image preview,
   expect(card.textContent).toContain('Files changed (9)');
   expect(card.textContent).toContain('+45');
   expect(card.textContent).toContain('-1');
+  // Creative game turns collapse changed files by default above the deliverable card
+  expect(card.querySelector('.om-sa-files-changed-list')).toBeNull();
+  const initialExpandBtn = card.querySelector<HTMLButtonElement>('.om-sa-files-changed-head-btn')!;
+  await act(async () => initialExpandBtn.click());
+  await flush();
 
   const folderNames = [...card.querySelectorAll('.om-sa-file-folder-name')].map(el => el.textContent);
   expect(folderNames).toEqual(['assets', 'design']);
@@ -3936,7 +3941,12 @@ it('SuperAgentWorkspace shows task project directory in header and opens changed
   await act(async () => dirHeaderBtn.click());
   expect(navigator.clipboard.writeText).toHaveBeenCalledWith('/tmp/data/games/game-neon-1');
 
-  // Click Open in Code Viewer on style.css
+  // Expand collapsed changed-files summary on creative game turn, then click Open in Code Viewer on style.css
+  const filesHeadBtn = container.querySelector<HTMLButtonElement>('.om-sa-files-changed-head-btn')!;
+  expect(filesHeadBtn.getAttribute('aria-expanded')).toBe('false');
+  await act(async () => filesHeadBtn.click());
+  await flush();
+
   const openStyleBtn = [...container.querySelectorAll<HTMLButtonElement>('.om-sa-file-copy-btn')].find(
     btn => btn.getAttribute('aria-label') === 'Open in Code Viewer' && btn.closest('.om-sa-file-change-row')?.textContent?.includes('style.css'),
   )!;
@@ -7557,4 +7567,96 @@ it('formats measured step durations without a minimum or a 60-second remainder',
   expect(formatElapsedDuration(1)).toBe('1ms');
   expect(formatElapsedDuration(8)).toBe('8ms');
   expect(formatElapsedDuration(119_999)).toBe('2m 0s');
+});
+
+it('folds intermediate progress notes into WorkLogSection, renders 16:9 game cover deliverable at turn bottom, and routes /motion-api/games links without file errors', async () => {
+  const container = document.createElement('div');
+  document.body.append(container);
+  const root = createRoot(container);
+  const onOpenArtifactId = vi.fn();
+  const onOpenWebUrl = vi.fn();
+  const onOpenFilePath = vi.fn();
+  try {
+    await act(async () => root.render(
+      <I18nProvider initialLocale="zh-CN">
+        <ExecutionTimeline
+          chat={{
+            ...sampleChat,
+            id: 'tidepost-chat',
+            intent: 'game',
+            state: 'idle',
+            projectDir: '/Users/demo/Library/Application Support/OpenDesign-dev/games/b0789372-b520-472b-acc9-ceca1dabeadf',
+            lastTurnUsage: { totalTokens: 2_232_924 },
+            approvals: [],
+            artifacts: [
+              {
+                id: 'game:b0789372-b520-472b-acc9-ceca1dabeadf',
+                kind: 'game-project',
+                title: '潮汐邮差 · Tidepost',
+                subtitle: 'platformer · Game Studio',
+                projectId: 'b0789372-b520-472b-acc9-ceca1dabeadf',
+                url: '/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html',
+                revision: 'rev-tide',
+                createdAt: 2000,
+                updatedAt: 5000,
+              },
+            ],
+            turnChangedFiles: {
+              u1: [{ action: 'create', path: 'index.html', addedLines: 12, artifactId: 'game:b0789372-b520-472b-acc9-ceca1dabeadf' }],
+            },
+            messages: [
+              { id: 'u1', role: 'user', text: '打造像素平台跳跃游戏', createdAt: 1000 },
+              { id: 'a-mid', role: 'assistant', text: '我会用 OpenMotion Game Skill 先搭建跳跃物理。', createdAt: 1500, status: 'completed' },
+              {
+                id: 't1',
+                role: 'tool',
+                text: 'Updated game source files',
+                createdAt: 2000,
+                toolEvent: { callId: 'c1', tool: 'openmotion_game_write_files', label: 'Updated game source files', status: 'completed', startedAt: 2000 },
+              },
+              {
+                id: 'a-final',
+                role: 'assistant',
+                text: '《潮汐邮差》已可试玩，支持点击 [开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html) 直接进入关卡，详见 [验收记录](</Users/demo/Library/Application Support/OpenDesign-dev/games/b0789372-b520-472b-acc9-ceca1dabeadf/design/verification.md>)。[开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html)',
+                createdAt: 3000,
+                status: 'completed',
+              },
+            ],
+          }}
+          busy={false}
+          sending={false}
+          engineLabel="GPT-5.4"
+          onOpenArtifactId={onOpenArtifactId}
+          onOpenWebUrl={onOpenWebUrl}
+          onOpenFilePath={onOpenFilePath}
+          onPreviewAttachment={vi.fn()}
+          onCopyText={vi.fn()}
+          onApprove={vi.fn()}
+        />
+      </I18nProvider>,
+    ));
+
+    const outerAssistantText = [...container.querySelectorAll('.om-sa-assistant-content')].map(el => el.textContent).join('\n');
+    expect(outerAssistantText).not.toContain('先搭建跳跃物理');
+    expect(outerAssistantText).toContain('《潮汐邮差》已可试玩');
+    expect(outerAssistantText).toContain('验收记录');
+    expect(outerAssistantText).not.toContain('Application Support');
+
+    const inlinePlayChip = container.querySelector<HTMLButtonElement>('.om-sa-artifact-inline-chip')!;
+    expect(inlinePlayChip).toBeTruthy();
+    await act(async () => inlinePlayChip.click());
+    expect(onOpenWebUrl).toHaveBeenCalledWith('/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html');
+    expect(onOpenFilePath).not.toHaveBeenCalled();
+
+    const deliverable = container.querySelector('.om-sa-deliverable-card')!;
+    expect(deliverable.getAttribute('data-wide-cover')).toBe('true');
+    expect(deliverable.textContent).toContain('HTML 游戏 · 平台跳跃');
+    expect(deliverable.textContent).not.toContain('Game Studio');
+    expect(deliverable.textContent).toContain('开始试玩');
+
+    expect(container.querySelector('.om-sa-turn-meta')?.textContent).not.toContain('2,232,924');
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
+  }
 });

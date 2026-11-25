@@ -140,6 +140,30 @@ function normalizeBrowserAddress(raw: string): string | null {
   return null;
 }
 
+function artifactAddressDisplay(artifact: SuperAgentArtifact): string {
+  if (artifact.kind === 'game-project') {
+    if (!artifact.projectId && artifact.url && /^https?:\/\//i.test(artifact.url)) {
+      try {
+        return new URL(artifact.url).host;
+      } catch {
+        return artifact.title;
+      }
+    }
+    return artifact.title;
+  }
+  if (
+    artifact.kind === 'design-project'
+    || artifact.kind === 'motion-project'
+    || artifact.kind === 'motion-export'
+    || artifact.kind === 'asset-image'
+    || artifact.kind === 'asset-video'
+    || artifact.kind === 'asset-audio'
+    || artifact.kind === 'brand-kit'
+  ) {
+    return artifact.title;
+  }
+  return artifactCanonicalAddress(artifact);
+}
 function searchWebUrl(query: string): string {
   return `https://www.bing.com/search?q=${encodeURIComponent(query.trim())}`;
 }
@@ -1136,6 +1160,26 @@ function GameProjectArtifactView({
     );
   }
 
+  const focusGameFrame = useCallback(() => {
+    if (effectiveMode !== 'preview' || annotateActive) return;
+    requestAnimationFrame(() => {
+      const frame = bridge.iframeRef.current;
+      if (!frame) return;
+      frame.focus({ preventScroll: true });
+      try {
+        frame.contentWindow?.focus();
+      } catch {
+        // Cross-origin frame focus may throw in strict sandboxes; element focus still succeeds.
+      }
+    });
+  }, [effectiveMode, annotateActive, bridge.iframeRef]);
+
+  useEffect(() => {
+    if (effectiveMode === 'preview' && !annotateActive && !isDraftOrFailed && !isBuilding) {
+      focusGameFrame();
+    }
+  }, [artifact.id, artifact.presentedAt, reloadKey, effectiveMode, annotateActive, isDraftOrFailed, isBuilding, focusGameFrame]);
+
   return (
     <ProjectPreviewCodeView
       frameKey={`${projectId || artifact.id}:${artifact.revision ?? ''}:${presentedKey}:${reloadKey}`}
@@ -1158,7 +1202,10 @@ function GameProjectArtifactView({
       onNotify={onNotify}
       frameRef={bridge.frameRef}
       iframeRef={bridge.iframeRef}
-      onIframeLoad={isExternalGame || bundledBlobUrl ? undefined : bridge.syncPickMode}
+      onIframeLoad={() => {
+        if (!isExternalGame && !bundledBlobUrl) bridge.syncPickMode();
+        focusGameFrame();
+      }}
       overlay={annotateActive && Boolean(projectId) && effectiveMode === 'preview' ? (
         <BrowserAnnotationOverlay
           mode="game-iframe"
@@ -1811,7 +1858,7 @@ export function ArtifactBrowserPane({
     if (!['web', 'design-project', 'game-project'].includes(activeArtifact.kind)) {
       setConsoleOpen(false);
     }
-    setAddressDraft(artifactCanonicalAddress(activeArtifact));
+    setAddressDraft(artifactAddressDisplay(activeArtifact));
     const keepingCodeTarget = Boolean(pendingCodeFile && pendingCodeFile.artifactId === activeArtifact.id);
     if (activeArtifact.kind === 'design-project') {
       setViewMode(keepingCodeTarget ? 'code' : 'preview');
@@ -2350,7 +2397,13 @@ export function ArtifactBrowserPane({
             onSubmit={event => {
               event.preventDefault();
               const trimmed = addressDraft.trim();
-              if (!trimmed || /^(?:design|motion|game|export|asset|brand):\/\//i.test(trimmed)) return;
+              if (
+                !trimmed
+                || (activeArtifact && activeArtifact.kind !== 'web' && trimmed === artifactAddressDisplay(activeArtifact))
+                || /^(?:design|motion|game|export|asset|brand):\/\//i.test(trimmed)
+              ) {
+                return;
+              }
               const normalized = normalizeBrowserAddress(trimmed);
               setAddressEditing(false);
               addressInputRef.current?.blur();
@@ -2372,7 +2425,11 @@ export function ArtifactBrowserPane({
             />
           </form>
 
-          {addressEditing && addressDraft.trim() && !/^(?:design|motion|game|export|asset|brand):\/\//i.test(addressDraft.trim()) && (() => {
+          {addressEditing
+            && addressDraft.trim()
+            && !(activeArtifact && activeArtifact.kind !== 'web' && addressDraft.trim() === artifactAddressDisplay(activeArtifact))
+            && !/^(?:design|motion|game|export|asset|brand):\/\//i.test(addressDraft.trim())
+            && (() => {
             const trimmed = addressDraft.trim();
             const normalized = normalizeBrowserAddress(trimmed);
             const q = trimmed.toLowerCase();
@@ -2532,6 +2589,7 @@ export function ArtifactBrowserPane({
                         className="motion-icon-button om-sa-annotate-btn"
                         data-active={annotateActive || undefined}
                         aria-label={t('Annotate elements, regions, and drawings')}
+                        onMouseDown={event => event.preventDefault()}
                         onClick={() => {
                           setAnnotateActive(v => {
                             const next = !v;

@@ -643,6 +643,11 @@
   flex-direction: column;
 }
 
+.om-super-agent[data-viewer-open][data-stage-viewer]:not([data-viewer-expanded]) > .om-sa-center-slot {
+  flex: 0.9 1 340px;
+  min-width: min(320px, 100%);
+}
+
 .om-sa-stream {
   position: relative;
   display: flex;
@@ -1539,9 +1544,99 @@
 }
 
 .om-sa-tool-row[data-open] .om-sa-step-chevron,
+.om-sa-prep-group[data-open] > .om-sa-prep-group-trigger .om-sa-step-chevron,
 .om-sa-reasoning-row[data-open] .om-sa-step-chevron {
   transform: rotate(0deg);
   color: var(--motion-muted);
+}
+
+.om-sa-tool-row[data-retried] .om-sa-tool-status {
+  color: var(--motion-muted);
+}
+
+.om-sa-tool-row[data-retried] .om-sa-tool-label {
+  color: var(--motion-muted);
+  font-weight: var(--motion-weight-regular);
+}
+
+.om-sa-prep-group {
+  border: 0;
+  background: transparent;
+}
+
+.om-sa-prep-group-items {
+  padding-left: var(--motion-space-16);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.om-sa-progress-note-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--motion-space-6);
+  padding: 4px var(--motion-space-6) 4px 0;
+  color: var(--motion-muted);
+  font-size: var(--motion-text-xs);
+  line-height: 1.5;
+}
+
+.om-sa-progress-note-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--motion-dim);
+}
+
+.om-sa-progress-note-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.om-sa-progress-note-body .om-sa-markdown {
+  font-size: var(--motion-text-xs);
+  line-height: 1.5;
+  color: var(--motion-muted);
+  gap: var(--motion-space-4);
+}
+
+.om-sa-tool-raw-details {
+  margin: 0;
+  border: 0;
+}
+
+.om-sa-tool-raw-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--motion-space-6);
+  margin-left: calc(var(--motion-space-6) * -1);
+  border-radius: var(--motion-radius-sm);
+  font-size: var(--motion-text-xs);
+  color: var(--motion-dim);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.om-sa-tool-raw-summary::-webkit-details-marker {
+  display: none;
+}
+
+.om-sa-tool-raw-summary:hover {
+  background: var(--motion-hover);
+  color: var(--motion-muted);
+}
+
+.om-sa-tool-raw-details[open] > .om-sa-tool-raw-summary {
+  margin-bottom: var(--motion-space-4);
+  color: var(--motion-muted);
+}
+
+.om-sa-tool-raw-details[open] > .om-sa-tool-raw-summary svg {
+  transform: rotate(180deg);
 }
 
 .om-sa-tool-view-btn {
@@ -2977,6 +3072,10 @@
   background: var(--motion-bg);
 }
 
+.om-super-agent[data-viewer-open][data-stage-viewer]:not([data-viewer-expanded]) > .om-sa-viewer-slot:not([style]) {
+  flex: 2.1 1 640px;
+}
+
 .om-super-agent[data-viewer-expanded] .om-sa-viewer-slot {
   flex: 1 1 100%;
   width: 100%;
@@ -3441,6 +3540,7 @@
 }
 
 .om-sa-viewer-stage {
+  position: relative;
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
@@ -4394,6 +4494,8 @@
 .om-sa-annot-tool-btn {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
   gap: var(--motion-space-4);
   padding: 4px var(--motion-space-8);
   border-radius: var(--motion-radius-md);
@@ -4412,10 +4514,22 @@
 }
 
 .om-sa-annot-close-btn {
+  flex-shrink: 0;
   width: 26px;
   height: 26px;
   border-radius: var(--motion-radius-md);
   color: var(--motion-muted);
+}
+
+.om-sa-annot-frozen-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  background: var(--motion-bg);
 }
 
 .om-sa-annot-hover-box,
@@ -5165,13 +5279,16 @@
     flex-direction: column;
   }
 
-  .om-sa-center-slot {
+  .om-sa-center-slot,
+  .om-super-agent[data-viewer-open][data-stage-viewer]:not([data-viewer-expanded]) > .om-sa-center-slot {
     width: 100%;
     min-width: 0;
     min-height: 0;
+    flex: 1 1 0;
   }
 
-  .om-sa-viewer-slot {
+  .om-sa-viewer-slot,
+  .om-super-agent[data-viewer-open][data-stage-viewer]:not([data-viewer-expanded]) > .om-sa-viewer-slot:not([style]) {
     min-width: 0;
     min-height: 0;
     width: 100%;
@@ -7830,6 +7947,14 @@
   overflow: hidden;
 }
 
+.om-sa-deliverable-icon[data-wide] {
+  width: 112px;
+  height: 63px;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--motion-radius-lg);
+  background: var(--motion-panel);
+}
+
 .om-sa-deliverable-thumb {
   width: 100%;
   height: 100%;
@@ -8138,6 +8263,23 @@
 .om-sa-file-chip:hover {
   background: var(--motion-hover);
   border-color: var(--motion-border);
+}
+
+.om-sa-file-chip.om-sa-artifact-inline-chip {
+  border: 0;
+  border-radius: var(--motion-radius-full);
+  padding: 2px var(--motion-space-8);
+  background: color-mix(in srgb, var(--motion-accent) 14%, transparent);
+  color: var(--motion-accent);
+  font-family: inherit;
+  font-size: 0.88em;
+  font-weight: var(--motion-weight-medium);
+  white-space: nowrap;
+}
+
+.om-sa-file-chip.om-sa-artifact-inline-chip:hover {
+  background: color-mix(in srgb, var(--motion-accent) 22%, transparent);
+  color: var(--motion-accent);
 }
 
 /* Game Studio mode strip, artwork pickers, and card badges inside Super Agent */

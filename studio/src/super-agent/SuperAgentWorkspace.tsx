@@ -116,6 +116,7 @@ const MIN_CENTER_WIDTH = 300;
 const MIN_VIEWER_WIDTH = 320;
 const RESIZER_SIZE = 1;
 const COMPACT_THREE_PANE_WIDTH = 1180;
+const COMPACT_STAGE_THREE_PANE_WIDTH = 1440;
 const MIN_STACKED_CHAT_HEIGHT = 220;
 const MIN_STACKED_VIEWER_HEIGHT = 160;
 const STACKED_MOTION_EDITOR_HEIGHT = 480;
@@ -461,11 +462,27 @@ export function SuperAgentWorkspace({
   });
   const prevBusyRef = useRef(false);
 
+  const currentViewerArtifact = useMemo(
+    () => (activeTabId !== NEW_VIEWER_TAB_ID ? viewerArtifacts.find(item => item.id === activeTabId) ?? null : null),
+    [activeTabId, viewerArtifacts],
+  );
+  const isStageViewerActive = Boolean(
+    viewerOpen
+    && currentViewerArtifact
+    && (
+      currentViewerArtifact.kind === 'game-project'
+      || currentViewerArtifact.kind === 'design-project'
+      || currentViewerArtifact.kind === 'motion-project'
+      || currentViewerArtifact.kind === 'motion-export'
+      || currentViewerArtifact.kind === 'asset-video'
+    ),
+  );
+
   const sidebarAsDrawer = narrow || (
     viewerOpen
     && !viewerExpanded
     && containerWidth > 0
-    && containerWidth < COMPACT_THREE_PANE_WIDTH
+    && containerWidth < (isStageViewerActive ? COMPACT_STAGE_THREE_PANE_WIDTH : COMPACT_THREE_PANE_WIDTH)
   );
   const sidebarDocked = !sidebarAsDrawer && sidebarOpen;
   sidebarDockedRef.current = sidebarDocked;
@@ -1230,11 +1247,46 @@ export function SuperAgentWorkspace({
     setViewerOpen(true);
   }, []);
 
+  const resolveInternalArtifactRouteId = useCallback((rawTarget: string): string | null => {
+    const trimmed = rawTarget.trim();
+    const gameMatch = trimmed.match(/^\/(?:motion-api|api)\/games\/([^/?#]+)\//i);
+    if (gameMatch) {
+      let decoded = gameMatch[1];
+      try { decoded = decodeURIComponent(decoded); } catch { /* keep raw */ }
+      const existing = viewerArtifacts.find(
+        item => item.kind === 'game-project' && (item.projectId === decoded || item.id === `game:${decoded}`),
+      );
+      if (existing) return existing.id;
+    }
+    const designMatch = trimmed.match(/^\/(?:motion-api|api)\/design\/raw\/([^/?#]+)\//i);
+    if (designMatch) {
+      let decoded = designMatch[1];
+      try { decoded = decodeURIComponent(decoded); } catch { /* keep raw */ }
+      const existing = viewerArtifacts.find(
+        item => item.kind === 'design-project' && (item.projectId === decoded || item.id === `design:${decoded}`),
+      );
+      if (existing) return existing.id;
+    }
+    const directMatch = viewerArtifacts.find(item => {
+      if (!item.url) return false;
+      const cleanItemUrl = item.url.split(/[?#]/)[0];
+      const cleanTarget = trimmed.split(/[?#]/)[0];
+      return Boolean(cleanItemUrl && cleanItemUrl === cleanTarget);
+    });
+    return directMatch?.id ?? null;
+  }, [viewerArtifacts]);
+
   const handleOpenFilePath = useCallback((rawPath: string, label?: string) => {
     const trimmed = rawPath.trim().replace(/^file:\/\//i, '');
     const hashIdx = trimmed.indexOf('#');
     const cleanPath = (hashIdx >= 0 ? trimmed.slice(0, hashIdx) : trimmed).trim();
     if (!cleanPath) return;
+
+    const routedArtifactId = resolveInternalArtifactRouteId(cleanPath);
+    if (routedArtifactId) {
+      void handleOpenArtifactId(routedArtifactId);
+      return;
+    }
 
     const existing = viewerArtifacts.find(item =>
       item.kind === 'workspace-file' && (item.filePath === cleanPath || item.id === `file:ref:${cleanPath}`),
@@ -1259,7 +1311,7 @@ export function SuperAgentWorkspace({
       updatedAt: now,
       presentedAt: now,
     });
-  }, [viewerArtifacts, openLocalPreviewArtifact]);
+  }, [viewerArtifacts, openLocalPreviewArtifact, resolveInternalArtifactRouteId]);
 
   const handleOpenChangedFile = (file: SuperAgentFileOperation) => {
     const inspectable = activeChat?.artifacts.filter(
@@ -1278,10 +1330,18 @@ export function SuperAgentWorkspace({
   };
 
   const handleOpenWebUrl = async (url: string) => {
+    const routedArtifactId = resolveInternalArtifactRouteId(url);
+    if (routedArtifactId) {
+      await handleOpenArtifactId(routedArtifactId);
+      return;
+    }
     try {
+      const resolvedUrl = url.startsWith('/') && typeof window !== 'undefined'
+        ? `${window.location.origin}${url}`
+        : url;
       const target = await ensureChatCreated();
       const res = await updateSuperAgentChat(target.id, {
-        addArtifact: { kind: 'web', url },
+        addArtifact: { kind: 'web', url: resolvedUrl },
       });
       applyChatSnapshot(res.conversation, false);
       setViewerOpen(true);
@@ -2096,6 +2156,7 @@ export function SuperAgentWorkspace({
       className="om-super-agent"
       data-viewer-open={viewerOpen || undefined}
       data-viewer-expanded={viewerExpanded || undefined}
+      data-stage-viewer={isStageViewerActive || undefined}
     >
       <StudioToastViewport toasts={toasts} dismissToast={dismissToast} />
 
