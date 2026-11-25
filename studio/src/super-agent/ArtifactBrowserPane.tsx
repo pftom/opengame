@@ -3003,11 +3003,14 @@ export function ArtifactBrowserPane({
 
                 {activeArtifact.kind !== 'web' && (
                   <>
-                    {(supportsAnnotate || externalHref || downloadHref) && (
+                    {(supportsAnnotate || externalHref || downloadHref)
+                      // Games only have "Open in Game Studio" below; skip the separator when it is absent.
+                      && (activeArtifact.kind !== 'game-project' || Boolean(activeArtifact.projectId && onOpenInGameStudio)) && (
                       <div role="separator" />
                     )}
 
-                    {!toolbarGameAction && !isMultiplayerGame && ['design-project', 'motion-project', 'game-project', 'asset-image', 'asset-video', 'asset-audio', 'brand-kit'].includes(activeArtifact.kind) && (
+                    {/* Games: templates use the toolbar Remix button; the user's own games need no Attach entry. */}
+                    {['design-project', 'motion-project', 'asset-image', 'asset-video', 'asset-audio', 'brand-kit'].includes(activeArtifact.kind) && (
                       <Button
                         variant="plain"
                         type="button"
@@ -3015,15 +3018,11 @@ export function ArtifactBrowserPane({
                         className="om-sa-browser-menu-item"
                         onClick={() => {
                           setBrowserMenuOpen(false);
-                          if (activeArtifact.kind === 'game-project' && onUseGameInAgent) {
-                            onUseGameInAgent(activeArtifact);
-                          } else {
-                            onAttachArtifact(activeArtifact);
-                          }
+                          onAttachArtifact(activeArtifact);
                         }}
                       >
-                        <RemixIcon name={activeArtifact.kind === 'game-project' && gameSourceKind !== 'mine' ? 'sparkling-line' : 'add-line'} size={14} />
-                        <span>{activeArtifact.kind === 'game-project' && gameSourceKind !== 'mine' ? t('Remix') : t('Attach')}</span>
+                        <RemixIcon name="add-line" size={14} />
+                        <span>{t('Attach')}</span>
                       </Button>
                     )}
 

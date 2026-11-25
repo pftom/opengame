@@ -2135,7 +2135,8 @@ it('auto-sends queued game handoffs from Game Studio, renders gamepad-line icon,
   const previewMenu = document.querySelector('.om-sa-browser-menu');
   expect(previewMenu?.textContent).toContain('Console & errors');
   expect(previewMenu?.textContent).not.toContain('Capture screenshot to chat');
-  expect(previewMenu?.textContent).toContain('Attach');
+  // The user's own games no longer offer an Attach entry in the browser menu.
+  expect(previewMenu?.textContent).not.toContain('Attach');
   await act(async () => menuBtn.click());
   await flush();
 
