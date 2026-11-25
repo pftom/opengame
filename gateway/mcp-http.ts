@@ -473,6 +473,7 @@ export class McpHttpGateway {
               );
             }
           },
+          transport: 'http',
           callPhase1: options.invokePhase1,
         },
       );

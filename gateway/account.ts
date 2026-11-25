@@ -216,6 +216,19 @@ const withBuiltinAudio = (models: DirectoryModel[]): DirectoryModel[] => {
 };
 
 /** OpenDesign's versioned CLI owns device authorization and credentials. */
+
+/**
+ * Console billing attribution shared by every subscription link. `od_entry_source` must stay the AMR-registered
+ * `openmotion_manage_subscription`: an unregistered value makes AMR drop the whole attribution, including od_entry_id.
+ */
+function consoleAttributionParams(entryId: string): Record<string, string> {
+  return {
+    billing: 'plan', od_origin: 'openmotion',
+    od_entry_source: 'openmotion_manage_subscription',
+    od_entry_id: attributedEntryId(entryId), od_entry_at: new Date().toISOString(),
+  };
+}
+
 export class OpenDesignAccount {
   readonly home: string;
   private child?: ChildProcess;
@@ -795,12 +808,7 @@ export class OpenDesignAccount {
   }
   /** Returns a shareable Agent upgrade link without account intents or browser side effects. */
   upgradeLink(entryId: string) {
-    const params = new URLSearchParams({
-      billing: 'plan', od_origin: 'openmotion',
-      od_entry_source: 'openmotion_manage_subscription',
-      od_entry_id: attributedEntryId(entryId), od_entry_at: new Date().toISOString(),
-      utm_source: PRODUCT_UTM_SOURCE, utm_medium: 'agent',
-    });
+    const params = new URLSearchParams({ ...consoleAttributionParams(entryId), utm_source: PRODUCT_UTM_SOURCE, utm_medium: 'agent' });
     return { url: consoleUrl + '/dashboard?' + params };
   }
 
@@ -811,11 +819,7 @@ export class OpenDesignAccount {
   async openSubscription(launch: (url: string) => Promise<void> = openSystemBrowser, attribution?: AccountAttribution) {
     const entryId = validEntryId(attribution?.entryId) ?? randomUUID();
     // Preserve the AMR-registered entry source so AMR keeps the full attribution (including od_entry_id).
-    const target = '/dashboard?' + new URLSearchParams({
-      billing: 'plan', od_origin: 'openmotion',
-      od_entry_source: 'openmotion_manage_subscription',
-      od_entry_id: attributedEntryId(entryId), od_entry_at: new Date().toISOString(),
-    });
+    const target = '/dashboard?' + new URLSearchParams(consoleAttributionParams(entryId));
     let url = consoleUrl + target;
     const profile = await this.profile();
     if (signedInProfile(profile) && profile!.apiUrl?.replace(/\/$/, '') === productionApi && await this.identity()) {

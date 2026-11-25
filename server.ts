@@ -1190,7 +1190,10 @@ export async function handler(req: IncomingMessage, res: ServerResponse, store =
       const data = await input(req);
       try {
         const result = await invokePhase1WithTracking(store, context, new URL(editorUrl).origin, data);
-        return json(res, 200, result);
+        // Preserve metadata only across the local RPC bridge; public HTTP and WebMCP do not record it.
+        const rpcBridge = validHostContext(data.trackingHost) && uuid.test(data.trackingContext);
+        const { _upgradeLinkResult, ...visible } = result;
+        return json(res, 200, rpcBridge ? result : visible);
       }
       catch (error) {
         const message = error instanceof Error ? error.message : 'Tool failed';

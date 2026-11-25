@@ -26,7 +26,8 @@ export function buildOpenMotionWebMcpTools(request: (url: string, init?: Request
         const response = await request('/motion-api/phase1/call', {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: options?.signal,
         });
-        const result = await response.json();
+        // The service returns the internal upgrade-link telemetry for the stdio MCP boundary; WebMCP never shows or counts it.
+        const { _upgradeLinkResult: _ignored, ...result } = await response.json();
         if (!response.ok) return { ...result, ...failure(typeof result.error === 'string' ? result.error : `HTTP ${response.status}`,
           typeof result.applied === 'boolean' ? result.applied : 'unknown', result.code ?? 'WEBMCP_CALL_FAILED', result) };
         return (tool.name === 'openmotion_assets_use' || tool.name === 'openmotion_asset_manage') && (input as { action?: string }).action === 'read'

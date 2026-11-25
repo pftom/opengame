@@ -676,6 +676,15 @@ test('upgrade links track one result per stdio MCP inspect, excluding WebMCP and
       const web: any = await callPhase1({ name: 'openmotion_media_use', arguments: { action: 'inspect' } });
       assert.ok(web.upgrade);
       checkUpgrade(web.upgrade);
+      assert.equal(Object.hasOwn(web, '_upgradeLinkResult'), false);
+      const remote = await http('/mcp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+        jsonrpc: '2.0', id: tier, method: 'tools/call', params: { name: 'openmotion_media_use', arguments: { action: 'inspect' } },
+      }) });
+      assert.equal(remote.status, 200);
+      const remoteResult: any = await remote.json();
+      assert.ok(remoteResult.result.structuredContent.upgrade);
+      assert.equal(Object.hasOwn(remoteResult.result.structuredContent, '_upgradeLinkResult'), false);
+      assert.doesNotMatch(remoteResult.result.content[0].text, /_upgradeLinkResult/);
       await tracking.flush();
       assert.equal(upgradeEvents().length, before);
       const result: any = await inspect(tier);
@@ -689,26 +698,41 @@ test('upgrade links track one result per stdio MCP inspect, excluding WebMCP and
       assert.deepEqual(event.properties, { entry_from: `agent_media_upgrade_${tier}`, outcome: 'success', entry_id: result.result.structuredContent.upgrade.entryId });
       assert.equal(event.host_context?.host_agent, 'codex');
     }
+    for (const action of ['providers', 'list']) {
+      plan = 'free';
+      const before = upgradeEvents().length;
+      const discovered: any = await rpc({ jsonrpc: '2.0', id: `discover-${action}`, method: 'tools/call',
+        params: { name: 'openmotion_capability_discover', arguments: { action } } }, store, undefined, undefined, undefined, { callPhase1 });
+      assert.ok(discovered.result.structuredContent.upgrade, action);
+      checkUpgrade(discovered.result.structuredContent.upgrade);
+      assert.equal(Object.hasOwn(discovered.result.structuredContent, '_upgradeLinkResult'), false, action);
+      assert.doesNotMatch(discovered.result.content[0].text, /_upgradeLinkResult/, action);
+      await tracking.flush();
+      assert.equal(upgradeEvents().length, before + 1, action);
+      assert.equal(upgradeEvents().at(-1)!.properties.entry_id, discovered.result.structuredContent.upgrade.entryId, action);
+    }
+    const counted = upgradeEvents().length;
     plan = 'plus';
     const included: any = await inspect('plus');
     assert.equal(Object.hasOwn(included.result.structuredContent, 'upgrade'), false);
     await tracking.flush();
-    assert.equal(upgradeEvents().length, 2);
+    assert.equal(upgradeEvents().length, counted);
 
     plan = 'go';
     t.mock.method(gateway.account, 'upgradeLink', () => { throw new Error('private-account-error'); });
     const webFailure: any = await callPhase1({ name: 'openmotion_media_use', arguments: { action: 'inspect' } });
     assert.equal(Object.hasOwn(webFailure, 'upgrade'), false);
+    assert.equal(Object.hasOwn(webFailure, '_upgradeLinkResult'), false);
     await tracking.flush();
-    assert.equal(upgradeEvents().length, 2);
+    assert.equal(upgradeEvents().length, counted);
     const failed: any = await inspect('failed');
     assert.equal(failed.result.isError, undefined);
     assert.equal(Object.hasOwn(failed.result.structuredContent, 'upgrade'), false);
     assert.equal(Object.hasOwn(failed.result.structuredContent, '_upgradeLinkResult'), false);
     assert.deepEqual(failed.result.structuredContent.settingsHandoff.arguments, { target: 'providers', entry: 'agent_media_upgrade_go' });
     await tracking.flush();
-    assert.equal(upgradeEvents().length, 3);
-    assert.deepEqual(upgradeEvents()[2].properties, { entry_from: 'agent_media_upgrade_go', outcome: 'failure' });
+    assert.equal(upgradeEvents().length, counted + 1);
+    assert.deepEqual(upgradeEvents()[counted].properties, { entry_from: 'agent_media_upgrade_go', outcome: 'failure' });
     assert.equal(Object.hasOwn(studioEvents, 'upgrade_link_result'), false);
     assert.deepEqual(omEvents.upgrade_link_result.producers, ['mcp']);
     assert.equal(validProperties(omEvents, 'upgrade_link_result', { entry_from: 'agent_media_upgrade_free', outcome: 'success', entry_id: crypto.randomUUID() }), true);
@@ -724,6 +748,64 @@ test('upgrade links track one result per stdio MCP inspect, excluding WebMCP and
     tracking.close();
   }
 }));
+
+for (const plan of ['free', 'go'] as const) {
+  test(`${plan} provider discovery strips upgrade metadata on every transport and tracks exactly once on stdio`, t => fixture(async store => {
+    const { rpc } = await import('../mcp.ts');
+    const { gatewayFor } = await import('../gateway/service.ts');
+    const { buildOpenMotionWebMcpTools } = await import('../shared/webmcp-tools.ts');
+    const events: PendingEvent[] = [];
+    const tracking = core(async batch => { events.push(...batch); return 'accepted'; });
+    store.tracking = tracking;
+    const gateway = gatewayFor(store);
+    gateway.options.detect = async () => [];
+    t.mock.method(gateway.account, 'summary', async () => ({ state: 'signed-in', plan, billingUnavailable: false }));
+    const http = transport(store, { tracking, runtimeRoot: pluginRoot });
+    const payload = { name: 'openmotion_capability_discover', arguments: { action: 'providers' } };
+    const callPhase1 = async (body: unknown) => {
+      const response = await http('/motion-api/phase1/call', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      assert.equal(response.status, 200);
+      return response.json();
+    };
+    const visibleUpgrade = (value: any) => {
+      assert.ok(value.upgrade);
+      assert.equal(value.upgrade.plan, 'plus');
+      // OpenGame links prefix od_entry_id with opengame-; the raw UUID stays the event entry_id.
+      assert.equal(new URL(value.upgrade.url).searchParams.get('od_entry_id'), `opengame-${value.upgrade.entryId}`);
+      assert.equal(Object.hasOwn(value, '_upgradeLinkResult'), false);
+    };
+    const upgradeEvents = () => events.filter(event => event.event === 'upgrade_link_result');
+    try {
+      visibleUpgrade(await callPhase1(payload));
+      const webTool = buildOpenMotionWebMcpTools(http).find(tool => tool.name === payload.name)!;
+      visibleUpgrade(await webTool.execute(payload.arguments));
+      const remote = await http('/mcp', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+        jsonrpc: '2.0', id: plan, method: 'tools/call', params: payload,
+      }) });
+      assert.equal(remote.status, 200);
+      const remoteResult: any = await remote.json();
+      visibleUpgrade(remoteResult.result.structuredContent);
+      assert.doesNotMatch(remoteResult.result.content[0].text, /_upgradeLinkResult/);
+      await tracking.flush();
+      assert.equal(upgradeEvents().length, 0);
+
+      await rpc({ jsonrpc: '2.0', id: 'init', method: 'initialize', params: { clientInfo: { name: 'codex-mcp-client', version: '1.2.3' } } }, store);
+      const result: any = await rpc({ jsonrpc: '2.0', id: plan, method: 'tools/call', params: payload }, store,
+        undefined, undefined, undefined, { callPhase1 });
+      visibleUpgrade(result.result.structuredContent);
+      assert.deepEqual(JSON.parse(result.result.content[0].text), result.result.structuredContent);
+      await tracking.flush();
+      assert.equal(upgradeEvents().length, 1);
+      assert.deepEqual(upgradeEvents()[0].properties, {
+        entry_from: `agent_media_upgrade_${plan}`, outcome: 'success', entry_id: result.result.structuredContent.upgrade.entryId,
+      });
+      assert.equal(upgradeEvents()[0].host_context?.host_agent, 'codex');
+    } finally {
+      await gateway.close();
+      tracking.close();
+    }
+  }));
+}
 
 test('template handoff admits observed results and rejects content, made-up outcomes and invalid identities', () => {
   const ids = { template_id: 'motion-example', operation_id: crypto.randomUUID(), handoff_attempt_id: crypto.randomUUID(), detail_view_id: crypto.randomUUID() };
