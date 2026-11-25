@@ -1,0 +1,104 @@
+
+jiqirenboss.png
+size: 941,378
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+beipao1
+  rotate: true
+  xy: 2, 2
+  size: 84, 94
+  orig: 84, 94
+  offset: 0, 0
+  index: -1
+beipao2
+  rotate: true
+  xy: 98, 2
+  size: 84, 94
+  orig: 84, 94
+  offset: 0, 0
+  index: -1
+jianjia
+  rotate: false
+  xy: 832, 5
+  size: 48, 45
+  orig: 48, 45
+  offset: 0, 0
+  index: -1
+shenzi
+  rotate: true
+  xy: 2, 88
+  size: 288, 369
+  orig: 288, 369
+  offset: 0, 0
+  index: -1
+tou
+  rotate: false
+  xy: 742, 210
+  size: 126, 166
+  orig: 126, 166
+  offset: 0, 0
+  index: -1
+weiba
+  rotate: true
+  xy: 373, 185
+  size: 191, 213
+  orig: 191, 213
+  offset: 0, 0
+  index: -1
+you1shou
+  rotate: false
+  xy: 194, 3
+  size: 94, 83
+  orig: 94, 83
+  offset: 0, 0
+  index: -1
+youshou2
+  rotate: false
+  xy: 588, 126
+  size: 152, 250
+  orig: 152, 250
+  offset: 0, 0
+  index: -1
+youtui1
+  rotate: false
+  xy: 870, 276
+  size: 68, 100
+  orig: 68, 100
+  offset: 0, 0
+  index: -1
+youtui2
+  rotate: true
+  xy: 580, 26
+  size: 97, 250
+  orig: 97, 250
+  offset: 0, 0
+  index: -1
+zuo1shou
+  rotate: true
+  xy: 832, 52
+  size: 71, 105
+  orig: 71, 105
+  offset: 0, 0
+  index: -1
+zuo2shou
+  rotate: true
+  xy: 373, 3
+  size: 180, 205
+  orig: 180, 205
+  offset: 0, 0
+  index: -1
+zuotui1
+  rotate: false
+  xy: 290, 16
+  size: 64, 70
+  orig: 64, 70
+  offset: 0, 0
+  index: -1
+zuotui2
+  rotate: true
+  xy: 742, 125
+  size: 83, 197
+  orig: 83, 197
+  offset: 0, 0
+  index: -1

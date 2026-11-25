@@ -1,0 +1,90 @@
+
+long.png
+size: 1007,900
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+daiji1
+  rotate: false
+  xy: 291, 226
+  size: 267, 333
+  orig: 330, 381
+  offset: 36, 23
+  index: -1
+daiji2
+  rotate: false
+  xy: 2, 551
+  size: 273, 347
+  orig: 330, 381
+  offset: 37, 17
+  index: -1
+daiji3
+  rotate: false
+  xy: 277, 561
+  size: 277, 337
+  orig: 330, 381
+  offset: 37, 17
+  index: -1
+daiji4
+  rotate: true
+  xy: 823, 614
+  size: 284, 182
+  orig: 330, 381
+  offset: 23, 30
+  index: -1
+daiji5
+  rotate: false
+  xy: 2, 25
+  size: 292, 183
+  orig: 330, 381
+  offset: 23, 36
+  index: -1
+daiji6
+  rotate: true
+  xy: 564, 292
+  size: 271, 236
+  orig: 330, 381
+  offset: 37, 34
+  index: -1
+gongji1
+  rotate: false
+  xy: 556, 565
+  size: 265, 333
+  orig: 446, 419
+  offset: 106, 48
+  index: -1
+gongji2
+  rotate: true
+  xy: 564, 2
+  size: 288, 211
+  orig: 446, 419
+  offset: 111, 59
+  index: -1
+gongji3
+  rotate: true
+  xy: 777, 7
+  size: 283, 213
+  orig: 446, 419
+  offset: 118, 59
+  index: -1
+gongji4
+  rotate: false
+  xy: 2, 210
+  size: 287, 339
+  orig: 446, 419
+  offset: 79, 37
+  index: -1
+gongji5
+  rotate: true
+  xy: 823, 320
+  size: 292, 165
+  orig: 446, 419
+  offset: 64, 38
+  index: -1
+gongji6
+  rotate: false
+  xy: 296, 2
+  size: 266, 222
+  orig: 446, 419
+  offset: 78, 34
+  index: -1

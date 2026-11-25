@@ -1,0 +1,13 @@
+
+junhuoku.png
+size: 221,86
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+junhuoku
+  rotate: false
+  xy: 2, 2
+  size: 217, 82
+  orig: 217, 82
+  offset: 0, 0
+  index: -1

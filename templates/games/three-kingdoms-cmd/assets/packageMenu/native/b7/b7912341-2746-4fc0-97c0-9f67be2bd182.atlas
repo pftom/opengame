@@ -1,0 +1,27 @@
+
+congratulate.png
+size: 892, 182
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+a
+  rotate: false
+  xy: 0, 7
+  size: 575, 177
+  orig: 575, 177
+  offset: 0, 0
+  index: -1
+xxx
+  rotate: false
+  xy: 577, 2
+  size: 52, 50
+  orig: 71, 60
+  offset: 8, 4
+  index: -1
+恭喜获得 拷贝
+  rotate: false
+  xy: 577, 54
+  size: 315, 130
+  orig: 324, 136
+  offset: 5, 3
+  index: -1

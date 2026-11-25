@@ -1,0 +1,27 @@
+
+jiaoxue.png
+size: 287,109
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+quan
+  rotate: false
+  xy: 2, 2
+  size: 105, 105
+  orig: 111, 111
+  offset: 4, 1
+  index: -1
+zhi1
+  rotate: false
+  xy: 193, 16
+  size: 92, 91
+  orig: 194, 151
+  offset: 102, 0
+  index: -1
+zhi2
+  rotate: true
+  xy: 109, 4
+  size: 103, 82
+  orig: 194, 151
+  offset: 91, 0
+  index: -1

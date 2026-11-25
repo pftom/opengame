@@ -1,0 +1,1 @@
+window._CCSettings={platform:"web-mobile",groupList:["default","player","ground"],collisionMatrix:[[true],[false,false,true],[false,true,false]],hasResourcesBundle:true,hasStartSceneBundle:false,remoteBundles:[],subpackages:[],launchScene:"db:/"+"/assets/scene/StartScene.fire",orientation:"",jsList:["assets/script/base/GamePlugIn.js"]};

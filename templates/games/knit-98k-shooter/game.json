@@ -1,0 +1,30 @@
+{
+  "id": "knit-98k-shooter",
+  "title": "Knit a 98K",
+  "description": "Merge yarn, craft outrageous handmade weapons from slingshots to sniper 98Ks, and put your quirky creations to the test on the firing range.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap to weave weapon parts, assemble upgrades, and aim on the range to blast mission targets.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "织个 98K",
+      "description": "脑洞爆笑创意爆款织个 98K：一针一线亲手织出从弹弓到 98K 狙击枪的奇葩神兵，上靶场实弹开火笑料百出！",
+      "controls": "点击编织并组装升级各类脑洞武器，前往靶场瞄准射击完成趣味挑战。"
+    }
+  }
+}

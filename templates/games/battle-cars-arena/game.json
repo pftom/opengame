@@ -1,0 +1,30 @@
+{
+  "id": "battle-cars-arena",
+  "title": "Battle Cars Arena",
+  "description": "Bolt sawblades, rockets, and turbo boosters onto custom battle rigs, then slam head-to-head against rival war machines in explosive arena duels.",
+  "genre": "racing",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drive, boost, and trigger mounted weapons to flip or wreck your opponent's battle vehicle.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "战斗汽车竞技场",
+      "description": "硬核改装对战战斗汽车竞技场：给战车焊上锯片火箭筒与装甲，开进竞技场正面硬刚撞翻所有对手！",
+      "controls": "控制战车冲撞走位并适时释放车载武器与加速，击毁对手战车赢得胜利。"
+    }
+  }
+}

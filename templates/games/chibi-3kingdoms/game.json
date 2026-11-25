@@ -1,0 +1,30 @@
+{
+  "id": "chibi-3kingdoms",
+  "title": "Chibi Three Kingdoms",
+  "description": "Recruit adorable chibi heroes of Wei, Shu, and Wu—chain dazzling ultimate combos in breezy side-scrolling brawls packed with loot.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "medieval",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap hero portraits when rage fills to unleash signature ultimates and push through each campaign stage.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "三国 Q 将",
+      "description": "萌系横版策略战斗三国 Q 将：收集软萌三国 Q 版名将组成梦幻战队，华丽全屏合击大招一路横推群雄！",
+      "controls": "排阵自动激战，怒气满格点击武将头像释放全屏华丽必杀技推图闯关。"
+    }
+  }
+}

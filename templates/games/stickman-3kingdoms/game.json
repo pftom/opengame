@@ -1,0 +1,30 @@
+{
+  "id": "stickman-3kingdoms",
+  "title": "Stickman Three Kingdoms",
+  "description": "Clash across lively stickman battlefields starring iconic Three Kingdoms warriors—unleash sweeping spear combos and rally legions to conquer China.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "medieval",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Use directional and attack/skill buttons to slash through rival stickman squads and command troops.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "火柴人三国",
+      "description": "魔性横版动作火柴人三国：简约带感的火柴人武将化身三国名将，大招连放率领大军冲锋陷阵爽感十足！",
+      "controls": "点击左右移动与攻击技能按钮操作火柴人武将冲锋斩敌，带领军团推平敌阵。"
+    }
+  }
+}
