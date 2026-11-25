@@ -55,12 +55,12 @@
     "Retro": "复古",
     "Search": "搜索",
     "Search games": "搜索游戏",
-    "Setting": "设定",
+    "Setting": "题材",
     "Shooter": "射击",
     "Showing the built-in games. Your games appear once the local game service is running.": "当前显示内置游戏。本地游戏服务运行后，你做的游戏会显示在这里。",
     "Start building": "开始制作",
     "Start the local game service to save reactions.": "启动本地游戏服务后才能保存点赞和收藏。",
-    "Story": "小说",
+    "Story": "剧情",
     "The Agent asks up to two questions, then proposes a visual direction.": "Agent 最多问两个问题，然后提出视觉方向。",
     "The local game service is not available. Update OpenMotion and try again.": "本地游戏服务不可用。请更新 OpenMotion 后重试。",
     "This game could not be loaded.": "这个游戏加载失败。",
@@ -147,7 +147,9 @@
     "Edit in Agent": "在 Agent 中编辑",
     "This game has no shareable link yet.": "这个游戏还没有可分享的链接。",
     "Local link copied. It only opens on this computer — use Share to publish online.": "本地链接已复制，仅限本机打开——点击“分享”即可发布到线上。",
-    "Local link copied. It only opens on this computer.": "本地链接已复制，仅限本机打开。"
+    "Local link copied. It only opens on this computer.": "本地链接已复制，仅限本机打开。",
+    "Art style": "画风",
+    "Playing": "试玩中"
   },
   "ja": {
     "3D": "3D",
@@ -297,7 +299,9 @@
     "Edit in Agent": "Agent で編集",
     "This game has no shareable link yet.": "このゲームにはまだ共有できるリンクがありません。",
     "Local link copied. It only opens on this computer — use Share to publish online.": "ローカルリンクをコピーしました。このパソコンでのみ開けます。オンライン公開には「共有」を使用してください。",
-    "Local link copied. It only opens on this computer.": "ローカルリンクをコピーしました。このパソコンでのみ開けます。"
+    "Local link copied. It only opens on this computer.": "ローカルリンクをコピーしました。このパソコンでのみ開けます。",
+    "Art style": "画風",
+    "Playing": "プレイ中"
   },
   "ko": {
     "3D": "3D",
@@ -447,7 +451,9 @@
     "Edit in Agent": "Agent에서 편집",
     "This game has no shareable link yet.": "이 게임에는 아직 공유할 수 있는 링크가 없습니다.",
     "Local link copied. It only opens on this computer — use Share to publish online.": "로컬 링크를 복사했습니다. 이 컴퓨터에서만 열 수 있으며, 온라인 게시는 공유를 사용하세요.",
-    "Local link copied. It only opens on this computer.": "로컬 링크를 복사했습니다. 이 컴퓨터에서만 열 수 있습니다."
+    "Local link copied. It only opens on this computer.": "로컬 링크를 복사했습니다. 이 컴퓨터에서만 열 수 있습니다.",
+    "Art style": "화풍",
+    "Playing": "플레이 중"
   },
   "de": {
     "3D": "3D",
@@ -597,7 +603,9 @@
     "Edit in Agent": "Im Agent bearbeiten",
     "This game has no shareable link yet.": "Dieses Spiel hat noch keinen teilbaren Link.",
     "Local link copied. It only opens on this computer — use Share to publish online.": "Lokaler Link kopiert. Er öffnet sich nur auf diesem Computer – nutze Teilen zum Veröffentlichen im Web.",
-    "Local link copied. It only opens on this computer.": "Lokaler Link kopiert. Er öffnet sich nur auf diesem Computer."
+    "Local link copied. It only opens on this computer.": "Lokaler Link kopiert. Er öffnet sich nur auf diesem Computer.",
+    "Art style": "Grafikstil",
+    "Playing": "Läuft"
   },
   "fr": {
     "3D": "3D",
@@ -747,7 +755,9 @@
     "Edit in Agent": "Modifier dans Agent",
     "This game has no shareable link yet.": "Ce jeu n’a pas encore de lien partageable.",
     "Local link copied. It only opens on this computer — use Share to publish online.": "Lien local copié. Il ne s’ouvre que sur cet ordinateur : utilisez Partager pour le publier en ligne.",
-    "Local link copied. It only opens on this computer.": "Lien local copié. Il ne s’ouvre que sur cet ordinateur."
+    "Local link copied. It only opens on this computer.": "Lien local copié. Il ne s’ouvre que sur cet ordinateur.",
+    "Art style": "Style visuel",
+    "Playing": "En cours"
   },
   "ru": {
     "3D": "3D",
@@ -897,7 +907,9 @@
     "Edit in Agent": "Изменить в Agent",
     "This game has no shareable link yet.": "У этой игры ещё нет ссылки для отправки.",
     "Local link copied. It only opens on this computer — use Share to publish online.": "Локальная ссылка скопирована. Она открывается только на этом компьютере — используйте «Поделиться» для публикации онлайн.",
-    "Local link copied. It only opens on this computer.": "Локальная ссылка скопирована. Она открывается только на этом компьютере."
+    "Local link copied. It only opens on this computer.": "Локальная ссылка скопирована. Она открывается только на этом компьютере.",
+    "Art style": "Стиль графики",
+    "Playing": "Игра запущена"
   },
   "es": {
     "3D": "3D",
@@ -1047,7 +1059,9 @@
     "Edit in Agent": "Editar en Agent",
     "This game has no shareable link yet.": "Este juego aún no tiene un enlace para compartir.",
     "Local link copied. It only opens on this computer — use Share to publish online.": "Enlace local copiado. Solo se abre en este ordenador; usa Compartir para publicarlo en línea.",
-    "Local link copied. It only opens on this computer.": "Enlace local copiado. Solo se abre en este ordenador."
+    "Local link copied. It only opens on this computer.": "Enlace local copiado. Solo se abre en este ordenador.",
+    "Art style": "Estilo visual",
+    "Playing": "Jugando"
   },
   "pt-BR": {
     "3D": "3D",
@@ -1197,7 +1211,9 @@
     "Edit in Agent": "Editar no Agent",
     "This game has no shareable link yet.": "Este jogo ainda não tem um link para compartilhar.",
     "Local link copied. It only opens on this computer — use Share to publish online.": "Link local copiado. Ele só abre neste computador — use Compartilhar para publicar online.",
-    "Local link copied. It only opens on this computer.": "Link local copiado. Ele só abre neste computador."
+    "Local link copied. It only opens on this computer.": "Link local copiado. Ele só abre neste computador.",
+    "Art style": "Estilo visual",
+    "Playing": "Jogando"
   },
   "it": {
     "3D": "3D",
@@ -1347,7 +1363,9 @@
     "Edit in Agent": "Modifica in Agent",
     "This game has no shareable link yet.": "Questo gioco non ha ancora un link da condividere.",
     "Local link copied. It only opens on this computer — use Share to publish online.": "Link locale copiato. Si apre solo su questo computer: usa Condividi per pubblicarlo online.",
-    "Local link copied. It only opens on this computer.": "Link locale copiato. Si apre solo su questo computer."
+    "Local link copied. It only opens on this computer.": "Link locale copiato. Si apre solo su questo computer.",
+    "Art style": "Stile grafico",
+    "Playing": "In gioco"
   },
   "tr": {
     "3D": "3D",
@@ -1497,6 +1515,8 @@
     "Edit in Agent": "Agent’ta düzenle",
     "This game has no shareable link yet.": "Bu oyunun henüz paylaşılabilir bağlantısı yok.",
     "Local link copied. It only opens on this computer — use Share to publish online.": "Yerel bağlantı kopyalandı. Yalnızca bu bilgisayarda açılır — çevrimiçi yayınlamak için Paylaş’ı kullanın.",
-    "Local link copied. It only opens on this computer.": "Yerel bağlantı kopyalandı. Yalnızca bu bilgisayarda açılır."
+    "Local link copied. It only opens on this computer.": "Yerel bağlantı kopyalandı. Yalnızca bu bilgisayarda açılır.",
+    "Art style": "Görsel stil",
+    "Playing": "Oynanıyor"
   }
 }

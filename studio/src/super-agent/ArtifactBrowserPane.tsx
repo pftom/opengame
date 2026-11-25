@@ -140,6 +140,20 @@ function normalizeBrowserAddress(raw: string): string | null {
   return null;
 }
 
+function artifactAddressDisplay(artifact: SuperAgentArtifact): string {
+  if (artifact.kind === 'game-project') {
+    if (!artifact.projectId && artifact.url && /^https?:\/\//i.test(artifact.url)) {
+      try {
+        return new URL(artifact.url).host;
+      } catch {
+        return artifact.title;
+      }
+    }
+    return artifact.title;
+  }
+  return artifactCanonicalAddress(artifact);
+}
+
 function searchWebUrl(query: string): string {
   return `https://www.bing.com/search?q=${encodeURIComponent(query.trim())}`;
 }
@@ -340,6 +354,7 @@ function ProjectPreviewCodeView({
   frameRef,
   iframeRef,
   onIframeLoad,
+  loadingBrand = false,
   overlay,
 }: {
   frameKey: string;
@@ -360,6 +375,7 @@ function ProjectPreviewCodeView({
   frameRef?: RefObject<HTMLDivElement | null>;
   iframeRef?: RefObject<HTMLIFrameElement | null>;
   onIframeLoad?: () => void;
+  loadingBrand?: boolean;
   overlay?: ReactNode;
 }) {
   const { t } = useI18n();
@@ -554,8 +570,18 @@ function ProjectPreviewCodeView({
     <div className="om-sa-iframe-stage" data-viewport={viewport}>
       <div className="om-sa-iframe-frame" ref={frameRef} style={frameStyle}>
         {!frameLoaded && (previewUrl || srcDoc) && (
-          <div className="om-sa-frame-skeleton" aria-hidden="true">
-            <Skeleton style={{ width: '100%', height: '100%' }} />
+          <div
+            className="om-sa-frame-skeleton"
+            data-game-loading={loadingBrand || undefined}
+            role={loadingBrand ? 'status' : undefined}
+            aria-label={loadingBrand ? t('Loading game…') : undefined}
+            aria-hidden={loadingBrand ? undefined : true}
+          >
+            {loadingBrand ? (
+              <OpenDesignLoadingMark height={26} />
+            ) : (
+              <Skeleton style={{ width: '100%', height: '100%' }} />
+            )}
           </div>
         )}
         <iframe
@@ -1157,6 +1183,7 @@ function GameProjectArtifactView({
       frameRef={bridge.frameRef}
       iframeRef={bridge.iframeRef}
       onIframeLoad={isExternalGame || bundledBlobUrl ? undefined : bridge.syncPickMode}
+      loadingBrand
       overlay={annotateActive && Boolean(projectId) && effectiveMode === 'preview' ? (
         <BrowserAnnotationOverlay
           mode="game-iframe"
@@ -1752,9 +1779,9 @@ export function ArtifactBrowserPane({
   const activeArtifact = showNewTab
     ? null
     : openTabs.find(item => item.id === activeTabId) ?? openTabs.at(-1) ?? null;
-  // Game publish wizard: one shared state per game, also read by the conversation cards.
-  const publishGameId = activeArtifact?.kind === 'game-project'
-    ? (activeArtifact.projectId || (activeArtifact.id.startsWith('game:') ? activeArtifact.id.slice('game:'.length) : ''))
+  // Game publish wizard: only local workspace game projects can be packaged/published to platforms.
+  const publishGameId = activeArtifact?.kind === 'game-project' && activeArtifact.projectId
+    ? activeArtifact.projectId
     : '';
   const publishSession = useGamePublishSession(publishGameId ? activeArtifact?.id : null);
   const publishPanelOpen = Boolean(publishGameId && publishSession?.open);
@@ -1809,7 +1836,7 @@ export function ArtifactBrowserPane({
     if (!['web', 'design-project', 'game-project'].includes(activeArtifact.kind)) {
       setConsoleOpen(false);
     }
-    setAddressDraft(artifactCanonicalAddress(activeArtifact));
+    setAddressDraft(artifactAddressDisplay(activeArtifact));
     const keepingCodeTarget = Boolean(pendingCodeFile && pendingCodeFile.artifactId === activeArtifact.id);
     if (activeArtifact.kind === 'design-project') {
       setViewMode(keepingCodeTarget ? 'code' : 'preview');
@@ -1887,8 +1914,8 @@ export function ArtifactBrowserPane({
   const supportsAnnotate = Boolean(
     activeArtifact && (
       activeArtifact.kind === 'web'
-      || ((activeArtifact.kind === 'design-project' || activeArtifact.kind === 'game-project')
-        && (viewMode === 'preview' || !activeArtifact.projectId))
+      || (activeArtifact.kind === 'design-project' && (viewMode === 'preview' || !activeArtifact.projectId))
+      || (activeArtifact.kind === 'game-project' && Boolean(activeArtifact.projectId) && viewMode === 'preview')
     ),
   );
   const canCaptureScreenshot = supportsAnnotate && Boolean(onAttachBrowserAnnotation);
@@ -2348,7 +2375,8 @@ export function ArtifactBrowserPane({
             onSubmit={event => {
               event.preventDefault();
               const trimmed = addressDraft.trim();
-              if (!trimmed || /^(?:design|motion|game|export|asset|brand):\/\//i.test(trimmed)) return;
+              const activeDisplay = activeArtifact ? artifactAddressDisplay(activeArtifact) : '';
+              if (!trimmed || trimmed === activeDisplay || /^(?:design|motion|game|export|asset|brand):\/\//i.test(trimmed)) return;
               const normalized = normalizeBrowserAddress(trimmed);
               setAddressEditing(false);
               addressInputRef.current?.blur();
@@ -2370,7 +2398,7 @@ export function ArtifactBrowserPane({
             />
           </form>
 
-          {addressEditing && addressDraft.trim() && !/^(?:design|motion|game|export|asset|brand):\/\//i.test(addressDraft.trim()) && (() => {
+          {addressEditing && addressDraft.trim() && addressDraft.trim() !== (activeArtifact ? artifactAddressDisplay(activeArtifact) : '') && !/^(?:design|motion|game|export|asset|brand):\/\//i.test(addressDraft.trim()) && (() => {
             const trimmed = addressDraft.trim();
             const normalized = normalizeBrowserAddress(trimmed);
             const q = trimmed.toLowerCase();

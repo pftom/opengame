@@ -15,7 +15,7 @@
     "Generates video clips from your description.": "根据你的描述生成视频片段。",
     "Generates audio from a script or a description of the sound.": "根据台词或声音描述生成音频。",
     "Create a playable game in minutes": "几分钟创建可以玩的游戏",
-    "Discover templates": "探索模版",
+    "Discover templates": "探索模板",
     "All resources": "全部资源",
     "Browse workspace resources": "浏览全部工作区资源",
     "Clear mode": "退出当前模式",
@@ -487,7 +487,7 @@
     "Based on {title}": "基于 {title}",
     "Any genre": "不限类型",
     "Any style": "不限画风",
-    "Any setting": "不限设定",
+    "Any setting": "不限题材",
     "All": "全部",
     "Errors": "错误",
     "Warnings": "警告",
@@ -981,7 +981,9 @@
     "Open Model providers to sign in or update your API key, then reply here to continue.": "打开模型供应商设置以登录账号或更新 API 密钥，完成后在此回复即可继续。",
     "Sign in to publish online": "登录以发布到线上",
     "Sign in with OpenDesign to publish a shareable web link.": "登录 OpenDesign 账号即可发布可分享的线上网页链接。",
-    "Sign in & publish": "登录并发布"
+    "Sign in & publish": "登录并发布",
+    "Any screen layout": "不限方向",
+    "Describe how to remix {title}, or send as is": "描述想如何改编《{title}》，或直接发送做同款"
   },
   "ja": {
     "Play again": "もう一度遊ぶ",
@@ -1965,7 +1967,9 @@
     "Open Model providers to sign in or update your API key, then reply here to continue.": "モデルプロバイダーを開いてサインインまたは API キーを更新し、ここで返信して続行してください。",
     "Sign in to publish online": "サインインしてオンライン公開",
     "Sign in with OpenDesign to publish a shareable web link.": "OpenDesign にサインインして共有可能な Web リンクを公開します。",
-    "Sign in & publish": "サインインして公開"
+    "Sign in & publish": "サインインして公開",
+    "Any screen layout": "向き指定なし",
+    "Describe how to remix {title}, or send as is": "「{title}」のアレンジ内容を入力、またはそのまま送信してリミックス"
   },
   "ko": {
     "Play again": "다시 플레이",
@@ -2949,7 +2953,9 @@
     "Open Model providers to sign in or update your API key, then reply here to continue.": "모델 공급자를 열어 로그인하거나 API 키를 업데이트한 뒤 여기에 답장해 계속하세요.",
     "Sign in to publish online": "로그인하여 온라인 게시",
     "Sign in with OpenDesign to publish a shareable web link.": "OpenDesign에 로그인하여 공유 가능한 웹 링크를 게시하세요.",
-    "Sign in & publish": "로그인 및 게시"
+    "Sign in & publish": "로그인 및 게시",
+    "Any screen layout": "방향 제한 없음",
+    "Describe how to remix {title}, or send as is": "「{title}」 리믹스 방향을 입력하거나 바로 전송하세요"
   },
   "de": {
     "Play again": "Erneut spielen",
@@ -3936,7 +3942,9 @@
     "Open Model providers to sign in or update your API key, then reply here to continue.": "Öffne Modellanbieter, um dich anzumelden oder deinen API-Schlüssel zu aktualisieren, und antworte dann hier.",
     "Sign in to publish online": "Zum Online-Veröffentlichen anmelden",
     "Sign in with OpenDesign to publish a shareable web link.": "Melde dich bei OpenDesign an, um einen teilbaren Weblink zu veröffentlichen.",
-    "Sign in & publish": "Anmelden & veröffentlichen"
+    "Sign in & publish": "Anmelden & veröffentlichen",
+    "Any screen layout": "Beliebige Ausrichtung",
+    "Describe how to remix {title}, or send as is": "Beschreibe deine Anpassungen für „{title}“ oder sende direkt für einen Remix"
   },
   "fr": {
     "Play again": "Rejouer",
@@ -4923,7 +4931,9 @@
     "Open Model providers to sign in or update your API key, then reply here to continue.": "Ouvrez Fournisseurs de modèles pour vous connecter ou mettre à jour votre clé API, puis répondez ici.",
     "Sign in to publish online": "Se connecter pour publier en ligne",
     "Sign in with OpenDesign to publish a shareable web link.": "Connectez-vous à OpenDesign pour publier un lien web partageable.",
-    "Sign in & publish": "Se connecter et publier"
+    "Sign in & publish": "Se connecter et publier",
+    "Any screen layout": "Toute orientation",
+    "Describe how to remix {title}, or send as is": "Décrivez comment remixer « {title} », ou envoyez tel quel"
   },
   "ru": {
     "Play again": "Сыграть ещё",
@@ -5912,7 +5922,9 @@
     "Open Model providers to sign in or update your API key, then reply here to continue.": "Откройте «Провайдеры моделей», чтобы войти или обновить API-ключ, затем ответьте здесь.",
     "Sign in to publish online": "Войдите для публикации онлайн",
     "Sign in with OpenDesign to publish a shareable web link.": "Войдите в OpenDesign, чтобы опубликовать общую веб-ссылку.",
-    "Sign in & publish": "Войти и опубликовать"
+    "Sign in & publish": "Войти и опубликовать",
+    "Any screen layout": "Любая ориентация",
+    "Describe how to remix {title}, or send as is": "Опишите, как изменить «{title}», или отправьте сразу для ремикса"
   },
   "es": {
     "Play again": "Volver a jugar",
@@ -6899,7 +6911,9 @@
     "Open Model providers to sign in or update your API key, then reply here to continue.": "Abre Proveedores de modelos para iniciar sesión o actualizar tu clave API y responde aquí para continuar.",
     "Sign in to publish online": "Inicia sesión para publicar en línea",
     "Sign in with OpenDesign to publish a shareable web link.": "Inicia sesión en OpenDesign para publicar un enlace web compartible.",
-    "Sign in & publish": "Iniciar sesión y publicar"
+    "Sign in & publish": "Iniciar sesión y publicar",
+    "Any screen layout": "Cualquier orientación",
+    "Describe how to remix {title}, or send as is": "Describe cómo remezclar «{title}» o envía directamente tal cual"
   },
   "pt-BR": {
     "Play again": "Jogar novamente",
@@ -7886,7 +7900,9 @@
     "Open Model providers to sign in or update your API key, then reply here to continue.": "Abra Provedores de modelos para entrar ou atualizar sua chave de API e responda aqui para continuar.",
     "Sign in to publish online": "Entre para publicar online",
     "Sign in with OpenDesign to publish a shareable web link.": "Entre no OpenDesign para publicar um link compartilhável na web.",
-    "Sign in & publish": "Entrar e publicar"
+    "Sign in & publish": "Entrar e publicar",
+    "Any screen layout": "Qualquer orientação",
+    "Describe how to remix {title}, or send as is": "Descreva como remixar “{title}” ou envie direto como está"
   },
   "it": {
     "Play again": "Gioca ancora",
@@ -8873,7 +8889,9 @@
     "Open Model providers to sign in or update your API key, then reply here to continue.": "Apri Provider di modelli per accedere o aggiornare la chiave API, poi rispondi qui per continuare.",
     "Sign in to publish online": "Accedi per pubblicare online",
     "Sign in with OpenDesign to publish a shareable web link.": "Accedi a OpenDesign per pubblicare un link web condivisibile.",
-    "Sign in & publish": "Accedi e pubblica"
+    "Sign in & publish": "Accedi e pubblica",
+    "Any screen layout": "Qualsiasi orientamento",
+    "Describe how to remix {title}, or send as is": "Descrivi come remixare «{title}» oppure invia subito così com’è"
   },
   "tr": {
     "Play again": "Tekrar oyna",
@@ -9857,6 +9875,8 @@
     "Open Model providers to sign in or update your API key, then reply here to continue.": "Giriş yapmak veya API anahtarınızı güncellemek için Model sağlayıcıları açın, ardından buraya yanıt verin.",
     "Sign in to publish online": "Çevrimiçi yayınlamak için giriş yap",
     "Sign in with OpenDesign to publish a shareable web link.": "Paylaşılabilir bir web bağlantısı yayınlamak için OpenDesign ile giriş yapın.",
-    "Sign in & publish": "Giriş yap ve yayınla"
+    "Sign in & publish": "Giriş yap ve yayınla",
+    "Any screen layout": "Herhangi bir yön",
+    "Describe how to remix {title}, or send as is": "“{title}” oyununu nasıl uyarlamak istediğini yaz veya doğrudan gönder"
   }
 }

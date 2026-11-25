@@ -1660,6 +1660,9 @@ export function SuperAgentWorkspace({
       if (activeTabId === tabId) {
         setActiveTabId(next.at(-1) ?? NEW_VIEWER_TAB_ID);
       }
+      if (next.length === 0 && (target?.kind === 'game-project' || !activeChat)) {
+        setViewerOpen(false);
+      }
       return next;
     });
   };
