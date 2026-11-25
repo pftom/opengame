@@ -2550,7 +2550,7 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
     await flush();
 
     // Verifies Game Studio hero, 6 genre strip buttons, top controls, and game market template cards
-    expect(container.querySelector('.om-sa-mode-hero-copy h2')?.textContent).toBe('Make games. Make money.');
+    expect(container.querySelector('.om-sa-mode-hero-copy h2')?.textContent).toBe('Build games. Turn play into pay.');
     expect(container.querySelector('.om-sa-mode-hero-copy p')).toBeNull();
     const genreCards = [...container.querySelectorAll('.om-sa-game-genre-card')];
     expect(genreCards.length).toBe(6);
