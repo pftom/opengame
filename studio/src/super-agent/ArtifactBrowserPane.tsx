@@ -1966,11 +1966,15 @@ export function ArtifactBrowserPane({
     void webRef.current?.command('set-touch', touch).catch(() => {});
   }, [activeArtifact?.kind, activeArtifact?.id, webDevicePreset]);
 
+  // Bundled and community templates are play-and-remix previews: the editing tools
+  // (view mode, annotate, viewport, screenshot, console) only apply to the user's own games.
+  const isTemplateGame = activeArtifact?.kind === 'game-project'
+    && (gameSourceKind === 'template' || gameSourceKind === 'community');
   const supportsAnnotate = Boolean(
     activeArtifact && (
       activeArtifact.kind === 'web'
       || (activeArtifact.kind === 'design-project' && (viewMode === 'preview' || !activeArtifact.projectId))
-      || (activeArtifact.kind === 'game-project' && Boolean(activeArtifact.projectId) && viewMode === 'preview')
+      || (activeArtifact.kind === 'game-project' && Boolean(activeArtifact.projectId) && !isTemplateGame && viewMode === 'preview')
     ),
   );
   const canCaptureScreenshot = supportsAnnotate && Boolean(onAttachBrowserAnnotation);
@@ -1979,8 +1983,7 @@ export function ArtifactBrowserPane({
   ));
   const toolbarGameAction = !showNewTab
     && activeArtifact?.kind === 'game-project'
-    && !activeArtifact.projectId
-    && gameSourceKind !== 'mine'
+    && (isTemplateGame || (!activeArtifact.projectId && gameSourceKind !== 'mine'))
     && !isMultiplayerGame
     ? onUseGameInAgent
     : undefined;
@@ -2524,7 +2527,8 @@ export function ArtifactBrowserPane({
 
         <div className="om-sa-context-actions">
           {(() => {
-            const hasModeSwitch = activeArtifact?.kind === 'design-project' || (activeArtifact?.kind === 'game-project' && Boolean(activeArtifact.projectId));
+            const hasModeSwitch = activeArtifact?.kind === 'design-project'
+              || (activeArtifact?.kind === 'game-project' && Boolean(activeArtifact.projectId) && !isTemplateGame);
             const gamePublishId = activeArtifact?.kind === 'game-project'
               ? (activeArtifact.projectId || (activeArtifact.id.startsWith('game:') ? activeArtifact.id.slice('game:'.length) : ''))
               : '';
