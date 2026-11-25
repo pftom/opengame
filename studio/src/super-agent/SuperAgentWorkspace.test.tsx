@@ -3414,14 +3414,25 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
   expect(gameInput.textContent).toBe('');
   expect(gameInput.getAttribute('data-placeholder')).not.toContain('Describe how to remix');
 
-  // Top fanned Hero carousel rotates smoothly via Next/Previous controls and side-card clicks
+  // The console screen shows one game; the D-pad steps to the next one
+  expect(container.querySelectorAll('.om-sa-game-fan-item')).toHaveLength(1);
   const initialCenterLabel = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-fan-card')?.getAttribute('aria-label');
-  const nextFanBtn = container.querySelector('.om-sa-game-fan-nav[data-side="next"]') as HTMLButtonElement;
+  const nextFanBtn = container.querySelector('.om-sa-game-console-dpad-key[data-side="next"]') as HTMLButtonElement;
   expect(nextFanBtn).toBeTruthy();
   await act(async () => nextFanBtn.click());
   await flush();
   const nextCenterLabel = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-fan-card')?.getAttribute('aria-label');
   expect(nextCenterLabel).not.toBe(initialCenterLabel);
+
+  // The B key switches to the AAA batch and headline; the A key switches back
+  const [moneyKey, epicKey] = Array.from(container.querySelectorAll<HTMLButtonElement>('.om-sa-game-console-key'));
+  await act(async () => epicKey.click());
+  await flush();
+  expect(epicKey.getAttribute('aria-checked')).toBe('true');
+  expect(container.querySelector('.om-sa-mode-hero-copy h2')?.textContent).toBe('Make your next AAA hit.');
+  await act(async () => moneyKey.click());
+  await flush();
+  expect(container.querySelector('.om-sa-mode-hero-copy h2')?.textContent).toBe('Build games. Turn play into pay.');
 
   // Clicking the center Hero card's Remix button selects it into the Agent composer, then clicking again deselects it
   const fanRemixBtn = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-tile-remix') as HTMLButtonElement;
@@ -3433,7 +3444,10 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
   await flush();
   expect(container.querySelector('.om-sa-composer-chips')).toBeNull();
 
-  // Clicking a bottom masonry card's Remix button selects it without modifying composer text, preserving user edits across toggles
+  // Clicking a bottom masonry card's Remix button selects it without modifying composer text, preserving user edits across toggles.
+  // The list follows the hero mode, so switch to the AAA batch that holds this community racer.
+  await act(async () => epicKey.click());
+  await flush();
   const racingGame = communityGames.find(game => game.id === 'community-turbo-kart')!;
   const racingRemixBtn = container.querySelector<HTMLButtonElement>(`.om-sa-game-tile-remix[aria-label="Remix: ${racingGame.title}"]`)!;
   await act(async () => racingRemixBtn.click());

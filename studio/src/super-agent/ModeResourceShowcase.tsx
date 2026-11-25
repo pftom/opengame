@@ -993,15 +993,23 @@ export function ModeResourceShowcase({
       ? (isPlayableAd(modeOptions) ? 'money' : 'epic')
       : lastGameThemeRef.current;
   lastGameThemeRef.current = gameTheme;
+  // The console screen and the template list below both follow the current mode's batch.
+  const modeGameTemplates = useMemo(
+    () => (mode.id === 'game' ? gameHeroBatch(publishedGameTemplates, gameTheme) : publishedGameTemplates),
+    [mode.id, publishedGameTemplates, gameTheme],
+  );
   const fannedGames = useMemo(
-    () => gameHeroBatch(publishedGameTemplates.filter(g => Boolean(coverUrl(g))), gameTheme),
-    [publishedGameTemplates, gameTheme],
+    () => modeGameTemplates.filter(g => Boolean(coverUrl(g))),
+    [modeGameTemplates],
   );
   // A new batch opens on its first card.
   const [shownGameTheme, setShownGameTheme] = useState(gameTheme);
   if (shownGameTheme !== gameTheme) {
     setShownGameTheme(gameTheme);
     setFanIndex(0);
+    // The list below switches batch too, so start it from the full batch.
+    if (activeFilter !== 'mine') setActiveFilter('all');
+    setGameQuery('');
   }
   const switchGameTheme = (next: GameHeroTheme) => {
     if (next === gameTheme || !onChangeModeOptions) return;
@@ -1175,15 +1183,15 @@ export function ModeResourceShowcase({
         ];
       }
       case 'game': {
-        const portraitCount = publishedGameTemplates.filter(g => g.orientation === 'portrait').length;
+        const portraitCount = modeGameTemplates.filter(g => g.orientation === 'portrait').length;
         return [
-          { id: 'all', label: 'All games', count: publishedGameTemplates.length },
+          { id: 'all', label: 'All games', count: modeGameTemplates.length },
           ...(myGames.length > 0 ? [{ id: 'mine', label: 'My games', count: myGames.length }] : []),
           ...gameGenres
             .map(g => ({
               id: `genre:${g}`,
               label: genreLabels[g],
-              count: publishedGameTemplates.filter(item => item.genre === g).length,
+              count: modeGameTemplates.filter(item => item.genre === g).length,
             }))
             .filter(item => item.count > 0),
           ...(portraitCount > 0 ? [{ id: 'portrait', label: 'Portrait games', count: portraitCount }] : []),
@@ -1216,7 +1224,7 @@ export function ModeResourceShowcase({
         ];
       }
     }
-  }, [mode.id, modeOptions?.designFormat, isPureVideoView, designTemplates, designProjects, designSkills, publishedGameTemplates, myGames, coveredMotion.catalog, motionCatalog, motionPurposes, isZh]);
+  }, [mode.id, modeOptions?.designFormat, isPureVideoView, designTemplates, designProjects, designSkills, modeGameTemplates, myGames, coveredMotion.catalog, motionCatalog, motionPurposes, isZh]);
 
   const brandKitList = useShowcaseResourceList('brand-kit', active && filters.some(filter => filter.id === 'brand-kit'));
   const resourceQuery = mode.id === 'design' || mode.id === 'research' || mode.id === 'visualization'
@@ -1478,10 +1486,10 @@ export function ModeResourceShowcase({
     const base = activeFilter === 'mine'
       ? myGames
       : activeFilter === 'portrait'
-        ? publishedGameTemplates.filter(g => g.orientation === 'portrait')
+        ? modeGameTemplates.filter(g => g.orientation === 'portrait')
         : activeFilter.startsWith('genre:')
-          ? publishedGameTemplates.filter(item => item.genre === (activeFilter.slice(6) as GameGenre))
-          : publishedGameTemplates;
+          ? modeGameTemplates.filter(item => item.genre === (activeFilter.slice(6) as GameGenre))
+          : modeGameTemplates;
     const ranked = needle
       ? rankSearchResults(base, needle, game => ({
           id: game.id,
@@ -1502,7 +1510,7 @@ export function ModeResourceShowcase({
     if (gameSort === 'newest') return [...matched].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     if (needle) return matched;
     return interleavePortrait(matched);
-  }, [showGameCards, activeFilter, publishedGameTemplates, myGames, gameQuery, gameSort, locale, t]);
+  }, [showGameCards, activeFilter, modeGameTemplates, myGames, gameQuery, gameSort, locale, t]);
 
   const totalCount = showGameCards
     ? filteredGames.length
@@ -1653,18 +1661,8 @@ export function ModeResourceShowcase({
               }
             }}
           >
-            {fannedGames.length > 1 && (
-              <IconButton
-                variant="plain"
-                type="button"
-                className="om-sa-game-fan-nav"
-                data-side="prev"
-                aria-label={t('Previous')}
-                onClick={() => setFanIndex(prev => (prev - 1 + fannedGames.length) % fannedGames.length)}
-                icon={<RemixIcon name="arrow-left-line" size={16} />}
-              />
-            )}
-            {fanSlots.map(({ game, index, offset }) => {
+            {/* The console screen shows one game at a time; the D-pad and auto-rotation step through the batch. */}
+            {fanSlots.filter(slot => slot.offset === 0).map(({ game, index, offset }) => {
               const title = localizedGameTitle(game, locale);
               const cover = coverUrl(game);
               const isSelected = modeOptions?.gameTemplate?.id === game.id;
@@ -1754,17 +1752,6 @@ export function ModeResourceShowcase({
                 </div>
               );
             })}
-            {fannedGames.length > 1 && (
-              <IconButton
-                variant="plain"
-                type="button"
-                className="om-sa-game-fan-nav"
-                data-side="next"
-                aria-label={t('Next')}
-                onClick={() => setFanIndex(prev => (prev + 1) % fannedGames.length)}
-                icon={<RemixIcon name="arrow-right-line" size={16} />}
-              />
-            )}
           </div>
               <span key={`static-${gameTheme}`} className="om-sa-game-console-static" aria-hidden="true" />
             </div>
