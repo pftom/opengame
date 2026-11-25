@@ -74,8 +74,9 @@ export const TIMELINE_VIEWPORT_BUDGETS: Readonly<TimelineViewportBudgets> = Obje
   richPreviewFrameCount: MAX_VISIBLE_THUMBNAIL_FRAMES,
   concurrentVideoDecodes: 2,
   concurrentMetadataJobs: 4,
-  concurrentCompositionFetches: 2,
-  concurrentServerPages: 1,
+  // Keep the two server capture slots fed while a request waits or decodes.
+  concurrentCompositionFetches: 4,
+  concurrentServerPages: 2,
   thumbnailLoadTimeoutMs: 30_000,
   thumbnailCacheBytes: 64 * MEBIBYTE,
   sharedFrameCacheBytes: 32 * MEBIBYTE,

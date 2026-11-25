@@ -10,6 +10,7 @@ import type { GatewayStatus, Model } from '../../../shared/gateway';
 import type { LocalAgent } from '../../../shared/local-agents';
 import {
   modeToSuperAgentIntent,
+  superAgentChatPresentation,
   superAgentIntentMeta,
   type SuperAgentActionCard,
   type SuperAgentArtifact,
@@ -51,8 +52,12 @@ import {
 import {
   communityRemixPrompt,
   composeBrief,
+  coverUrl,
   gameApi,
+  genreLabels,
   rememberInstruction,
+  settingLabels,
+  styleLabels,
 } from '../motion/game/gameCatalog';
 import {
   buildGameContextTags,
@@ -67,7 +72,7 @@ import { inspectBridgeAgent, notifyRuntimesChanged } from '../motion/useAgentRun
 import { notifyAgentsChanged } from '../motion/useLocalAgents';
 import { WorkspaceBack } from '../motion/WorkspaceBack';
 import { AgentModelPicker } from './AgentModelPicker';
-import { compactDirLabel } from './ChangedFilesTree';
+import { compactDirLabel, isInternalManagedStorageDir } from './ChangedFilesTree';
 import { ApprovalCard, ExecutionTimeline } from './ExecutionTimeline';
 import {
   ResourceThumbImage,
@@ -173,13 +178,12 @@ const EXTRA_STARTERS: {
   { key: 'image', id: 'design', designModule: 'image', tone: 'image', icon: 'image-line', title: 'Generate image' },
   { key: 'website', id: 'design', designModule: 'prototype', tone: 'image', icon: 'layout-line', title: 'Build a website' },
   { key: 'audio', id: 'audio', tone: 'audio', icon: 'music-2-line', title: 'Create audio' },
-  { key: 'media', id: 'media', tone: 'video', icon: 'clapperboard-line', title: 'Cinema video' },
   { key: 'coding', id: 'coding', tone: 'coding', icon: 'code-s-slash-line', title: 'Coding' },
 ];
 
-const COMPOSER_MODES = [...PRIMARY_STARTERS, ...EXTRA_STARTERS]
-  .map(starter => findSuperAgentMode(starter.id))
-  .filter((mode, index, all): mode is NonNullable<typeof mode> => mode !== null && all.findIndex(item => item?.id === mode.id) === index);
+const COMPOSER_MODES = (['game', 'design', 'motion', 'research', 'visualization', 'audio', 'media', 'coding'] satisfies SuperAgentCreationModeId[])
+  .map(findSuperAgentMode)
+  .filter(mode => mode !== null);
 
 export type AgentSelection = {
   runtimeId?: string;
@@ -455,47 +459,25 @@ export function ConversationStream({
   const pendingSampleUploadRef = useRef<Promise<void> | null>(null);
   const submittingRef = useRef(false);
   const activeMode = findSuperAgentMode(activeModeId);
-  const headerIntentMeta = superAgentIntentMeta(
-    chat?.intent ?? (
-      activeMode
-        ? activeMode.id === 'design'
-          ? (modeOptions.designFormat === 'image'
-            ? 'image'
-            : (modeOptions.designScenario === 'deck' || modeOptions.designScenario === 'document' ? 'slides' : 'design'))
-          : modeToSuperAgentIntent(activeMode.id)
-        : undefined
-    ),
-  );
+  const headerPresentation = chat ? superAgentChatPresentation(chat) : {
+    intent: activeMode?.id === 'design' && modeOptions.designFormat === 'image'
+      ? 'image' as const
+      : modeToSuperAgentIntent(activeMode?.id),
+    designScenario: activeMode?.id === 'design' && modeOptions.designFormat === 'html' ? modeOptions.designScenario : undefined,
+    isGeneratedVideo: (activeMode?.id === 'motion' && modeOptions.motionEngine === 'video-model')
+      || (activeMode?.id === 'media' && modeOptions.mediaSubMode === 'video'),
+  };
+  const headerIntentMeta = superAgentIntentMeta(headerPresentation.intent, headerPresentation);
   const modeOptionsRef = useRef<ModeComposerOptions>(modeOptions);
   modeOptionsRef.current = modeOptions;
   const [templateRevision, setTemplateRevision] = useState(0);
-  const templatePromptRef = useRef<string | null>(null);
   const updateModeOptions = useCallback((patch: Partial<ModeComposerOptions>) => {
-    if (patch.gameTemplate) {
-      const prompt = buildGameUserPrompt(patch.gameTemplate, locale);
-      templatePromptRef.current = prompt;
-      setText(prompt);
-      composerRef.current?.setPlainText(prompt);
-    } else if (patch.gameTemplate === null) {
-      const previousPrompt = templatePromptRef.current;
-      templatePromptRef.current = null;
-      // Removing a template clears its suggestion but keeps the user's edits.
-      if (previousPrompt !== null) {
-        setText(current => {
-          if (current === previousPrompt) {
-            composerRef.current?.clear();
-            return '';
-          }
-          return current;
-        });
-      }
-    }
     setModeOptions(prev => {
       const next = { ...prev, ...patch };
       modeOptionsRef.current = next;
       return next;
     });
-  }, [locale]);
+  }, []);
   const enterMode = useCallback((
     mode: SuperAgentCreationModeId | null,
     designModule?: SuperAgentDesignModuleId | null,
@@ -531,7 +513,6 @@ export function ConversationStream({
   useEffect(() => {
     if (!draftSeed || appliedDraftSeedRef.current === draftSeed.id) return;
     appliedDraftSeedRef.current = draftSeed.id;
-    templatePromptRef.current = null;
     setText(draftSeed.text);
     setSegments([]);
     setInlineMentions([]);
@@ -558,21 +539,16 @@ export function ConversationStream({
       setActiveModeId('game');
       updateModeOptions({
         gameTemplate: picked,
-        gameGenre: picked.genre,
-        gameStyle: picked.style,
-        gameSetting: picked.setting,
-        gameOrientation: picked.orientation ?? 'landscape',
-        gamePlayableAd: Boolean(picked.playableAd),
       });
     } else {
       if (!text.trim()) {
-        const remixPrompt = buildGameUserPrompt(picked, locale);
+        const remixPrompt = t('Remix · {title}', { title: localizedGameTitle(picked, locale) });
         setText(remixPrompt);
         composerRef.current?.setPlainText(remixPrompt);
       }
     }
     requestAnimationFrame(() => composerRef.current?.focus());
-  }, [gameTemplateSeed, chat?.messages.length, locale, updateModeOptions]);
+  }, [gameTemplateSeed, chat?.messages.length, locale, t, updateModeOptions]);
 
   useEffect(() => {
     if (!active) {
@@ -785,7 +761,6 @@ export function ConversationStream({
       setActiveModeId(null);
       pendingHiddenInstructionsRef.current = undefined;
       pendingContextTagsRef.current = undefined;
-      templatePromptRef.current = null;
       setModeOptions(prev => (prev.gameTemplate ? { ...prev, gameTemplate: null } : prev));
     }
     followRef.current = true;
@@ -1131,8 +1106,16 @@ export function ConversationStream({
         setScaffoldingGame(true);
         let gameScaffoldSent = false;
         try {
+          const localRemixOverrides = selectedTemplate && !selectedTemplate.external
+            ? {
+                ...(activeModeOptions.gameGenre ? { genre: activeModeOptions.gameGenre } : {}),
+                ...(activeModeOptions.gameStyle ? { style: activeModeOptions.gameStyle } : {}),
+                ...(activeModeOptions.gameSetting ? { setting: activeModeOptions.gameSetting } : {}),
+                ...(activeModeOptions.gameOrientation ? { orientation: activeModeOptions.gameOrientation } : {}),
+              }
+            : undefined;
           const created = selectedTemplate && !selectedTemplate.external
-            ? await gameApi.remix(selectedTemplate.id)
+            ? await gameApi.remix(selectedTemplate.id, localRemixOverrides)
             : await gameApi.create(
                 selectedTemplate?.external
                   ? {
@@ -1141,8 +1124,8 @@ export function ConversationStream({
                       style: activeModeOptions.gameStyle ?? selectedTemplate.style,
                       setting: activeModeOptions.gameSetting ?? selectedTemplate.setting,
                       multiplayer: false,
-                      orientation: activeModeOptions.gameOrientation,
-                      playableAd: isPlayableAd(activeModeOptions),
+                      orientation: activeModeOptions.gameOrientation ?? selectedTemplate.orientation ?? 'landscape',
+                      playableAd: isPlayableAd(activeModeOptions) || (activeModeOptions.gameOrientation === null && Boolean(selectedTemplate.playableAd)),
                     }
                   : {
                       prompt: snapText.trim() || gameBrief,
@@ -1150,7 +1133,7 @@ export function ConversationStream({
                       style: activeModeOptions.gameStyle,
                       setting: activeModeOptions.gameSetting,
                       multiplayer: false,
-                      orientation: activeModeOptions.gameOrientation,
+                      ...(activeModeOptions.gameOrientation ? { orientation: activeModeOptions.gameOrientation } : {}),
                       playableAd: isPlayableAd(activeModeOptions),
                     },
               );
@@ -1161,18 +1144,53 @@ export function ConversationStream({
             || (selectedTemplate
               ? t('Remix · {title}', { title: localizedGameTitle(selectedTemplate, locale) })
               : buildGameUserPrompt(created.game, locale));
+          const remixOverrideParts = selectedTemplate && !selectedTemplate.external
+            ? [
+                activeModeOptions.gameGenre && activeModeOptions.gameGenre !== selectedTemplate.genre
+                  ? `Genre: ${genreLabels[activeModeOptions.gameGenre]}`
+                  : '',
+                activeModeOptions.gameStyle && activeModeOptions.gameStyle !== selectedTemplate.style
+                  ? `Style: ${styleLabels[activeModeOptions.gameStyle]}`
+                  : '',
+                activeModeOptions.gameSetting && activeModeOptions.gameSetting !== selectedTemplate.setting
+                  ? `Setting: ${settingLabels[activeModeOptions.gameSetting]}`
+                  : '',
+                activeModeOptions.gameOrientation && activeModeOptions.gameOrientation !== (selectedTemplate.orientation ?? 'landscape')
+                  ? `Layout: ${activeModeOptions.gameOrientation === 'portrait' ? 'Portrait (9:16)' : 'Landscape (16:9)'}`
+                  : '',
+              ].filter(Boolean)
+            : [];
+          const remixUserNotes = [
+            remixOverrideParts.length > 0 ? `Requested remix overrides: ${remixOverrideParts.join(', ')}.` : '',
+            snapText.trim(),
+          ].filter(Boolean).join('\n');
+          const effectiveGameForInstructions = selectedTemplate && !selectedTemplate.external
+            ? {
+                ...created.game,
+                genre: activeModeOptions.gameGenre ?? created.game.genre,
+                style: activeModeOptions.gameStyle ?? created.game.style,
+                setting: activeModeOptions.gameSetting ?? created.game.setting,
+                orientation: activeModeOptions.gameOrientation ?? created.game.orientation,
+                playableAd: (activeModeOptions.gameOrientation ?? created.game.orientation) === 'landscape'
+                  ? false
+                  : created.game.playableAd,
+              }
+            : created.game;
           const hiddenInstructions = buildGameHiddenInstructions(
-            created.game,
+            effectiveGameForInstructions,
             created.agentInstruction,
-            selectedTemplate && snapText.trim() ? snapText.trim() : undefined,
+            selectedTemplate && remixUserNotes ? remixUserNotes : undefined,
           );
           const contextTags: SuperAgentContextTag[] = [
-            ...buildGameContextTags({ ...created.game, playableAd: isPlayableAd(activeModeOptions) }, t),
+            ...buildGameContextTags(
+              { ...effectiveGameForInstructions, playableAd: isPlayableAd(activeModeOptions) || Boolean(effectiveGameForInstructions.playableAd) },
+              t,
+            ),
             ...(selectedTemplate
               ? [{ kind: 'param' as const, label: `${t('Remix')} · ${localizedGameTitle(selectedTemplate, locale)}` }]
               : []),
           ];
-          const nextAttachments = [...cappedAttachments, toGameResourceAttachment(created.game, displayTitle)];
+          const nextAttachments = [...cappedAttachments, toGameResourceAttachment(effectiveGameForInstructions, displayTitle)];
           clearComposerAfterSubmit({ clearAttachments: true, resetMode: true });
           followRef.current = true;
           gameScaffoldSent = true;
@@ -1182,7 +1200,7 @@ export function ConversationStream({
             contextTags,
             mode: 'game',
             overrideAttachments: nextAttachments,
-            ...(ready ? { initialArtifact: toGameArtifact(created.game, displayTitle) } : {}),
+            ...(ready ? { initialArtifact: toGameArtifact(effectiveGameForInstructions, displayTitle) } : {}),
           });
           if (!ok) {
             restoreComposerDraft(draftSnapshot);
@@ -1447,6 +1465,7 @@ export function ConversationStream({
   };
 
   const hasModeLanding = Boolean(activeMode && !chat?.messages.length && !pendingSubmission && !loading && !loadFailed);
+  const hasInlineModeComposer = hasModeLanding && activeMode?.id !== 'game';
   const sendAction = (!busy || Boolean(editingQueuedId) || (isRunning && hasDraft)) && (
     <IconButton
       variant="plain"
@@ -1509,7 +1528,10 @@ export function ConversationStream({
         </div>
       )}
 
-      <header className="om-sa-stream-head">
+      <header
+        className="om-sa-stream-head"
+        data-compact-landing={(!chat && activeMode?.id === 'game' && !pendingSubmission && !loading && !loadFailed) || undefined}
+      >
         <div className="om-sa-stream-head-left">
           {onBack && <WorkspaceBack inline fallback={onBack} />}
           {!sidebarOpen && (
@@ -1565,7 +1587,7 @@ export function ConversationStream({
                 }}
               />
             </form>
-          ) : (
+          ) : (chat || activeMode?.id !== 'game' || Boolean(pendingSubmission) || loading || loadFailed) ? (
             <Button
               variant="plain"
               type="button"
@@ -1588,8 +1610,12 @@ export function ConversationStream({
               <span>{chat ? chat.title : t('New conversation')}</span>
               {chat && <RemixIcon name="edit-line" size={12} />}
             </Button>
-          )}
-          {chat && !renaming && chat.projectDir && (
+          ) : null}
+          {chat && !renaming && chat.projectDir && !isInternalManagedStorageDir(chat.projectDir) && (
+            chat.intent === 'coding'
+            || Boolean(chat.workingDir)
+            || !/^(?:games|design|projects|work)\/[0-9a-f]{8}-[0-9a-f]{4}-/i.test(compactDirLabel(chat.projectDir))
+          ) && (
             <Tooltip label={t('Project directory: {path}', { path: chat.projectDir })}>
               <Button
                 variant="plain"
@@ -1723,14 +1749,16 @@ export function ConversationStream({
               onToggleAttachment={toggleResourceAttachment}
               onPlayGame={onPlayGame}
               onDeployGame={onDeployGame}
-              composer={activeMode.id === 'coding'
-                ? <div className="om-sa-composer-placement" ref={mountComposer} />
-                : <DockableModeComposer ref={dockRef} scrollRef={listRef} mountEditor={mountComposer}
-                    focusEditor={focusEditor} templateRevision={templateRevision}
-                    preview={text.trim() || getModeComposerPlaceholder(activeMode, modeOptions, t)}
-                    action={sendAction} />}
+              composer={activeMode.id === 'game'
+                ? null
+                : activeMode.id === 'coding'
+                  ? <div className="om-sa-composer-placement" ref={mountComposer} />
+                  : <DockableModeComposer ref={dockRef} scrollRef={listRef} mountEditor={mountComposer}
+                      focusEditor={focusEditor} templateRevision={templateRevision}
+                      preview={text.trim() || getModeComposerPlaceholder(activeMode, modeOptions, t)}
+                      action={sendAction} />}
               onApplyTemplate={() => setTemplateRevision(value => value + 1)}
-              onFocusComposer={focusModeComposer}
+              onFocusComposer={activeMode.id === 'game' ? focusEditor : focusModeComposer}
               onPickPrompt={(prompt, meta) => {
                 setText(prompt);
                 composerRef.current?.setPlainText(prompt);
@@ -1866,7 +1894,7 @@ export function ConversationStream({
         })()}
       </div>
 
-      {!hasModeLanding && <div className="om-sa-composer-placement" ref={mountComposer} />}
+      {!hasInlineModeComposer && <div className="om-sa-composer-placement" ref={mountComposer} />}
       {createPortal(<div className="om-sa-composer-wrap">
         {hasPendingApproval && (
           <div className="om-sa-approval-dock" role="region" aria-label={t('Approval needed')}>
@@ -2069,24 +2097,34 @@ export function ConversationStream({
           {(() => {
             const inlineKeySet = new Set(inlineMentions.map(resourceKey));
             const trayAttachments = attachments.filter(att => !inlineKeySet.has(resourceKey(att)));
-            if (trayAttachments.length === 0 && !(activeMode?.id === 'game' && Boolean(modeOptions.gameTemplate))) {
+            const hasGameTemplateChip = activeMode?.id === 'game' && Boolean(modeOptions.gameTemplate);
+            const totalTrayCount = trayAttachments.length + (hasGameTemplateChip ? 1 : 0);
+            if (totalTrayCount === 0) {
               return null;
             }
             return (
               <div className="om-sa-composer-chips">
-                {activeMode?.id === 'game' && modeOptions.gameTemplate && (
-                  <span className="om-sa-attachment-chip">
-                    <RemixIcon name="gamepad-line" size={13} />
-                    <span>{t('Remix · {title}', { title: localizedGameTitle(modeOptions.gameTemplate, locale) })}</span>
-                    <IconButton
-                      variant="plain"
-                      className="om-sa-chip-remove"
-                      aria-label={t('Remove {title}', { title: localizedGameTitle(modeOptions.gameTemplate, locale) })}
-                      onClick={() => updateModeOptions({ gameTemplate: null })}
-                      icon={<RemixIcon name="close-line" size={12} />}
-                    />
-                  </span>
-                )}
+                {hasGameTemplateChip && modeOptions.gameTemplate && (() => {
+                  const tpl = modeOptions.gameTemplate;
+                  const tplTitle = localizedGameTitle(tpl, locale);
+                  return (
+                    <span className="om-sa-attachment-chip om-sa-game-remix-chip">
+                      <ResourceThumbImage
+                        className="om-sa-attachment-thumb"
+                        src={coverUrl(tpl)}
+                        fallback={<RemixIcon name="gamepad-line" size={13} />}
+                      />
+                      <span>{t('Remix · {title}', { title: tplTitle })}</span>
+                      <IconButton
+                        variant="plain"
+                        className="om-sa-chip-remove"
+                        aria-label={t('Remove {title}', { title: tplTitle })}
+                        onClick={() => updateModeOptions({ gameTemplate: null })}
+                        icon={<RemixIcon name="close-line" size={12} />}
+                      />
+                    </span>
+                  );
+                })()}
                 {trayAttachments.map(att => {
                   const key = resourceKey(att);
                   const isBrowserAnnotation = att.kind === 'browser-annotation';
@@ -2126,6 +2164,7 @@ export function ConversationStream({
                   }
 
                   const annot = att.annotation;
+                  const previewUrl = resourceImagePreviewUrl(att);
                   const sourceLoc = annot?.element?.sourceFile
                     ? `${annot.element.sourceFile}${typeof annot.element.sourceLine === 'number' ? `:${annot.element.sourceLine}` : ''}`
                     : '';
@@ -2138,7 +2177,7 @@ export function ConversationStream({
                     >
                       <ResourceThumbImage
                         className="om-sa-attachment-thumb"
-                        src={resourceImagePreviewUrl(att)}
+                        src={previewUrl}
                         fallback={<RemixIcon name={resourceIcon(att)} size={13} />}
                       />
                       <span>{chipTitle}</span>
@@ -2162,8 +2201,8 @@ export function ConversationStream({
                         trigger={chipTrigger}
                       >
                         <div className="om-sa-annot-preview-body">
-                          {att.previewUrl && (
-                            <img className="om-sa-annot-preview-img" src={att.previewUrl} alt={chipTitle} />
+                          {previewUrl && (
+                            <img className="om-sa-annot-preview-img" src={previewUrl} alt={chipTitle} />
                           )}
                           <div className="om-sa-annot-preview-meta">
                             <strong>{chipTitle}</strong>
@@ -2217,6 +2256,7 @@ export function ConversationStream({
                     </span>
                   );
                 })}
+                {totalTrayCount > 1 && (
                 <Button
                   variant="plain"
                   type="button"
@@ -2231,6 +2271,7 @@ export function ConversationStream({
                 >
                   {t('Clear')}
                 </Button>
+                )}
               </div>
             );
           })()}
@@ -2287,17 +2328,31 @@ export function ConversationStream({
           <ComposerPromptEditor
             ref={composerRef}
             ariaLabel={t('Message Super Agent')}
-            placeholder={
-              hasPendingApproval
-                ? t('Confirm or decline the pending action above to continue…')
-                : editingQueuedId
-                  ? t('Edit queued message…')
-                  : isRunning
-                    ? followUpBehavior === 'queue'
-                      ? t('Queue a follow-up message…')
-                      : t('Send a follow-up to steer the current run…')
-                    : getModeComposerPlaceholder(activeMode, modeOptions, t)
-            }
+            placeholder={(() => {
+              if (hasPendingApproval) return t('Confirm or decline the pending action above to continue…');
+              if (editingQueuedId) return t('Edit queued message…');
+              if (isRunning) {
+                return followUpBehavior === 'queue'
+                  ? t('Queue a follow-up message…')
+                  : t('Send a follow-up to steer the current run…');
+              }
+              if (activeMode?.id === 'game' && modeOptions.gameTemplate) {
+                return t('Describe how to remix {title}, or send as is', { title: localizedGameTitle(modeOptions.gameTemplate, locale) });
+              }
+              if (!activeMode && chat && chat.messages.length > 0) {
+                const primaryDeliverable = [...chat.artifacts].reverse().find(a => a.kind !== 'workspace-file' && a.kind !== 'web');
+                if (primaryDeliverable) {
+                  const rawLabel = (primaryDeliverable.title || chat.title || '').split('·')[0].trim();
+                  const shortTitle = rawLabel.length > 18 ? `${rawLabel.slice(0, 18)}…` : rawLabel;
+                  if (shortTitle) {
+                    return primaryDeliverable.kind === 'game-project'
+                      ? t('Continue tuning "{title}" — adjust controls, visuals, levels, or difficulty…', { title: shortTitle })
+                      : t('Describe changes for "{title}", or ask a follow-up…', { title: shortTitle });
+                  }
+                }
+              }
+              return getModeComposerPlaceholder(activeMode, modeOptions, t);
+            })()}
             disabled={loading || hasPendingApproval}
             mentionMenuOpen={mentionMenuOpen}
             onMenuKey={handleMenuKey}

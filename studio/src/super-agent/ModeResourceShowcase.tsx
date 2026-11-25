@@ -1,12 +1,13 @@
 import { Button } from 'open-design-ui/button';
 import { IconButton } from 'open-design-ui/icon-button';
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { preconnect } from 'react-dom';
 import { blackFridayTemplates } from '../../../shared/black-friday-collection';
 import type { GalleryTemplate } from '../../../shared/catalog';
 import { designScenarios, isDesignScenario } from '../../../shared/design-project';
 import { rankSearchResults } from '../../../shared/fuzzy-search';
 import { gameGenres, type GameCard, type GameGenre } from '../../../shared/game-contract';
+import type { Modality } from '../../../shared/gateway';
 import type { SuperAgentDesignModuleId, SuperAgentResourceAttachment } from '../../../shared/super-agent';
 import { Select } from '../components/ui/Select';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -28,7 +29,6 @@ import {
   genreLabels,
 } from '../motion/game/gameCatalog';
 import {
-  GAME_STUDIO_QUICK_IDEAS,
   localizedGameTitle,
   toGameResourceAttachment,
 } from '../motion/game/gameSuperAgent';
@@ -243,7 +243,7 @@ export const SUPER_AGENT_MODES: readonly SuperAgentModeSpec[] = [
     placeholder: 'Describe the game you want to make',
     defaultPrompt: 'Build a playable retro neon arcade space-shooter game in HTML5 Canvas with keyboard and mouse controls, score & wave HUD, particle explosions, and a restart button. Preview it in the Artifact Viewer.',
     pickerCategory: 'projects',
-    quickIdeas: GAME_STUDIO_QUICK_IDEAS,
+    quickIdeas: [],
   },
   {
     id: 'image',
@@ -791,29 +791,74 @@ const GAME_STATUS_LABELS: Partial<Record<GameCard['status'], string>> = {
 
 type ResourceListState =
   | { status: 'loading' | 'error' }
-  | { status: 'ready'; items: SuperAgentResourceAttachment[] };
+  | { status: 'ready'; items: SuperAgentResourceAttachment[]; total: number; nextOffset: number | null; pageError?: boolean };
 
-function useShowcaseResourceList(kind: 'asset' | 'brand-kit', enabled: boolean) {
-  const [state, setState] = useState<ResourceListState>({ status: 'loading' });
-  const [attempt, setAttempt] = useState(0);
+const loadingResources: ResourceListState = { status: 'loading' };
+
+function useShowcaseResourceList(kind: 'asset' | 'brand-kit', enabled: boolean, modality?: Modality, query = '') {
+  const key = JSON.stringify([kind, modality, query]);
+  const initial: { key: string; state: ResourceListState; offset: number; attempt: number } = {
+    key, state: loadingResources, offset: 0, attempt: 0,
+  };
+  const [request, setRequest] = useState(initial);
+  const { state, offset, attempt } = request.key === key ? request : initial;
+  if (request.key !== key) setRequest(initial);
+  const loadingMore = state.status === 'ready' && offset > 0 && state.nextOffset === offset && !state.pageError;
 
   useEffect(() => {
     if (!enabled) return;
-    let cancelled = false;
-    void fetchWorkspaceResources({ kind, limit: 1000 }).then(({ items }) => {
-      if (!Array.isArray(items)) throw new Error('Invalid workspace resource list');
-      if (!cancelled) setState({ status: 'ready', items });
-    }).catch(() => {
-      if (!cancelled) setState({ status: 'error' });
-    });
-    return () => { cancelled = true; };
-  }, [kind, enabled, attempt]);
+    const controller = new AbortController();
+    const load = () => {
+      void fetchWorkspaceResources({
+        kind, modality, query, offset, limit: kind === 'asset' ? PAGE_BATCH_SIZE : 1000, signal: controller.signal,
+      }).then(({ items, assetPage }) => {
+        if (!Array.isArray(items) || (kind === 'asset' && !assetPage)) throw new Error('Invalid workspace resource list');
+        if (controller.signal.aborted) return;
+        setRequest(previous => {
+          if (previous.key !== key) return previous;
+          const prior = offset && previous.state.status === 'ready' ? previous.state.items : [];
+          const merged = offset ? [...new Map([...prior, ...items].map(item => [item.id, item])).values()] : items;
+          return { ...previous, state: {
+            status: 'ready',
+            items: merged,
+            total: assetPage?.total ?? items.length,
+            nextOffset: assetPage?.nextOffset ?? null,
+          } };
+        });
+      }).catch(() => {
+        if (controller.signal.aborted) return;
+        setRequest(previous => previous.key !== key ? previous : {
+          ...previous,
+          state: offset && previous.state.status === 'ready'
+            ? { ...previous.state, pageError: true }
+            : { status: 'error' },
+        });
+      });
+    };
+    const timer = query && offset === 0 ? setTimeout(load, 160) : undefined;
+    if (timer === undefined) load();
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [kind, enabled, modality, query, key, offset, attempt]);
+
+  const loadMore = useCallback(() => {
+    if (state.status !== 'ready' || state.nextOffset === null || loadingMore) return;
+    const nextOffset = state.nextOffset;
+    if (state.pageError) {
+      setRequest(previous => ({ ...previous, state: { ...state, pageError: false }, attempt: previous.attempt + 1 }));
+      return;
+    }
+    setRequest(previous => ({ ...previous, offset: nextOffset }));
+  }, [loadingMore, state]);
 
   return {
     state,
+    loadingMore,
+    loadMore,
     retry: () => {
-      setState({ status: 'loading' });
-      setAttempt(value => value + 1);
+      setRequest(previous => ({ ...previous, state: loadingResources, offset: 0, attempt: previous.attempt + 1 }));
     },
   };
 }
@@ -888,10 +933,33 @@ export function ModeResourceShowcase({
   const [gameQuery, setGameQuery] = useState('');
   const [gameSort, setGameSort] = useState<GameSort>('relevance');
   const [visibleCount, setVisibleCount] = useState(PAGE_BATCH_SIZE);
-  const [fanIndex, setFanIndex] = useState(0);
+  // Start the hero fan offset from the top waterfall row so both shelves don't open on the exact same cover.
+  const [fanIndex, setFanIndex] = useState(() => (communityGames.length + bundledGames.length > 3 ? 3 : 0));
   const [fanPaused, setFanPaused] = useState(false);
-  const showcaseRef = useRef<HTMLElement | null>(null);
+  const [tabsOverflow, setTabsOverflow] = useState<{ start: boolean; end: boolean }>({ start: false, end: false });
+  const showcaseSectionRef = useRef<HTMLElement | null>(null);
+  const tabsRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToShowcase = (onlyWhenBelowTop = false) => {
+    const section = showcaseSectionRef.current;
+    if (!section) return;
+    const reducedMotion = typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const behavior: ScrollBehavior = reducedMotion ? 'auto' : 'smooth';
+    const scroller = section.closest<HTMLElement>('.om-sa-messages');
+    if (scroller && typeof scroller.scrollTo === 'function') {
+      const scrollerRect = scroller.getBoundingClientRect();
+      const sectionRect = section.getBoundingClientRect();
+      const offsetTop = sectionRect.top - scrollerRect.top;
+      if (onlyWhenBelowTop && offsetTop <= 48) return;
+      const targetTop = Math.max(0, scroller.scrollTop + offsetTop - 16);
+      scroller.scrollTo({ top: targetTop, behavior });
+      return;
+    }
+    section.scrollIntoView?.({ behavior, block: 'start' });
+  };
 
   const publishedGameTemplates = useMemo(
     () => gameCatalog.filter(g => g.source !== 'mine' && g.status === 'published'),
@@ -1078,7 +1146,6 @@ export function ModeResourceShowcase({
             }))
             .filter(item => item.count > 0),
           ...(portraitCount > 0 ? [{ id: 'portrait', label: 'Portrait games', count: portraitCount }] : []),
-          { id: 'brand-kit', label: 'Brand Kits' },
         ];
       }
       case 'motion':
@@ -1111,19 +1178,20 @@ export function ModeResourceShowcase({
   }, [mode.id, modeOptions?.designFormat, isPureVideoView, designTemplates, designProjects, designSkills, publishedGameTemplates, myGames, coveredMotion.catalog, motionCatalog, motionPurposes, isZh]);
 
   const brandKitList = useShowcaseResourceList('brand-kit', active && filters.some(filter => filter.id === 'brand-kit'));
-  const assetList = useShowcaseResourceList('asset', active && filters.some(filter => filter.id === 'asset'));
   const resourceQuery = mode.id === 'design' || mode.id === 'research' || mode.id === 'visualization'
     ? designQuery.trim().toLocaleLowerCase()
     : '';
   const assetModality = mode.id === 'audio' ? 'audio' : isPureVideoView ? 'video' : 'image';
+  const assetList = useShowcaseResourceList('asset', active && filters.some(filter => filter.id === 'asset'), assetModality, resourceQuery);
   const brandKits = useMemo(() => brandKitList.state.status === 'ready'
     ? filterByShowcaseQuery(brandKitList.state.items, resourceQuery)
     : null, [brandKitList.state, resourceQuery]);
-  const assets = useMemo(() => assetList.state.status === 'ready'
-    ? filterByShowcaseQuery(assetList.state.items.filter(asset => asset.modality === assetModality), resourceQuery)
-    : null, [assetList.state, assetModality, resourceQuery]);
+  const assets = assetList.state.status === 'ready' ? assetList.state.items : null;
   const activeResourceList = activeFilter === 'brand-kit' ? brandKitList : activeFilter === 'asset' ? assetList : null;
-  const workspaceCounts: Record<string, number | undefined> = { 'brand-kit': brandKits?.length, asset: assets?.length };
+  const workspaceCounts: Record<string, number | undefined> = {
+    'brand-kit': brandKits?.length,
+    asset: assetList.state.status === 'ready' ? assetList.state.total : undefined,
+  };
 
   // Reset active tab when switching mode.
   useEffect(() => {
@@ -1400,23 +1468,48 @@ export function ModeResourceShowcase({
     : curatedCards
       ? curatedCards.length
       : resourceItems.length;
-  const hasMore = visibleCount < totalCount;
+  const assetPage = activeFilter === 'asset' && assetList.state.status === 'ready' ? assetList.state : null;
+  const hasMore = assetPage ? assetPage.nextOffset !== null : visibleCount < totalCount;
+  const loadMore = useCallback(() => {
+    if (assetPage) assetList.loadMore();
+    else setVisibleCount(prev => Math.min(totalCount, prev + PAGE_BATCH_SIZE));
+  }, [assetPage, assetList.loadMore, totalCount]);
 
   // Automatic continuous scrolling via IntersectionObserver.
   useEffect(() => {
     const node = sentinelRef.current;
-    if (!node || !hasMore || typeof IntersectionObserver === 'undefined') return;
+    if (!node || !hasMore || assetPage?.pageError || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
       entries => {
         if (entries.some(entry => entry.isIntersecting)) {
-          setVisibleCount(prev => Math.min(totalCount, prev + PAGE_BATCH_SIZE));
+          loadMore();
         }
       },
       { rootMargin: '280px 0px' },
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, totalCount]);
+  }, [assetPage?.pageError, hasMore, loadMore]);
+
+  // Track horizontal overflow on the filter tab strip to reveal subtle edge fades without extra chrome.
+  useEffect(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const syncOverflow = () => {
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      const start = el.scrollLeft > 4;
+      const end = maxScroll - el.scrollLeft > 4;
+      setTabsOverflow(prev => (prev.start === start && prev.end === end ? prev : { start, end }));
+    };
+    syncOverflow();
+    el.addEventListener('scroll', syncOverflow, { passive: true });
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(syncOverflow) : null;
+    observer?.observe(el);
+    return () => {
+      el.removeEventListener('scroll', syncOverflow);
+      observer?.disconnect();
+    };
+  }, [filters, mode.id]);
 
   const isLoading = activeResourceList ? activeResourceList.state.status === 'loading' : !curatedCards
     && (
@@ -1447,15 +1540,6 @@ export function ModeResourceShowcase({
     const isSelected = modeOptions?.gameTemplate?.id === game.id;
     onChangeModeOptions?.({
       gameTemplate: isSelected ? null : game,
-      ...(!isSelected
-        ? {
-            gameGenre: game.genre,
-            gameStyle: game.style,
-            gameSetting: game.setting,
-            gameOrientation: game.orientation ?? 'landscape',
-            gamePlayableAd: Boolean(game.playableAd),
-          }
-        : {}),
     });
     if (!isSelected) {
       onApplyTemplate();
@@ -1470,20 +1554,24 @@ export function ModeResourceShowcase({
   }
   const visibleGames = showGameCards ? filteredGames.slice(0, visibleCount) : null;
   const visibleCurated = !showGameCards && curatedCards ? curatedCards.slice(0, visibleCount) : null;
-  const visibleResources = !showGameCards && !curatedCards ? resourceItems.slice(0, visibleCount) : [];
+  const visibleResources = !showGameCards && !curatedCards
+    ? assetPage ? resourceItems : resourceItems.slice(0, visibleCount)
+    : [];
 
   return (
     <div className="om-sa-mode-showcase">
       <div className="om-sa-mode-hero">
-        <div className="om-sa-mode-hero-close">
-          <IconButton
-            variant="ghost"
-            className="motion-icon-button"
-            aria-label={t('Close')}
-            onClick={onClose}
-            icon={<RemixIcon name="close-line" size={16} />}
-          />
-        </div>
+        {mode.id !== 'game' && (
+          <div className="om-sa-mode-hero-close">
+            <IconButton
+              variant="ghost"
+              className="motion-icon-button"
+              aria-label={t('Close')}
+              onClick={onClose}
+              icon={<RemixIcon name="close-line" size={16} />}
+            />
+          </div>
+        )}
         {mode.id === 'game' && fanSlots.length > 0 ? (
           <div
             className="om-sa-game-fan"
@@ -1542,31 +1630,41 @@ export function ModeResourceShowcase({
                     variant="plain"
                     type="button"
                     className="om-sa-game-fan-card"
-                    data-composer-source={isCenter && !game.multiplayer || undefined}
-                    aria-pressed={isCenter && !game.multiplayer ? isSelected : undefined}
                     aria-label={isCenter
-                      ? game.multiplayer ? t('Play {title}', { title }) : `${t('Remix')}: ${title}`
+                      ? (onPlayGame ? t('Try game: {title}', { title }) : t('Play {title}', { title }))
                       : title}
                     disabled={isCenter && game.multiplayer && !onPlayGame}
+                    onPointerEnter={() => { if (isCenter) preconnectGame(game); }}
+                    onFocus={() => { if (isCenter) preconnectGame(game); }}
                     onClick={() => {
                       if (!isCenter) {
                         setFanIndex(index);
                         return;
                       }
-                      if (game.multiplayer) {
-                        onPlayGame?.(game);
+                      if (onPlayGame) {
+                        onPlayGame(game);
                         return;
                       }
                       selectGameForAgent(game);
                     }}
                   >
                     {cover && <img src={cover} alt="" />}
-                    {isCenter && !game.multiplayer && (
-                      <ShowcaseActionCue label={isSelected ? t('Selected') : t('Remix')} selected={isSelected} />
+                    {isCenter && (
+                      <span
+                        className="om-sa-showcase-action-cue"
+                        data-playing={isPlaying || undefined}
+                        aria-hidden="true"
+                      >
+                        <RemixIcon name="play-fill" size={13} />
+                        <span>{isPlaying ? t('Playing') : t('Try game')}</span>
+                      </span>
                     )}
-                    <span className="om-sa-game-fan-label">{t(genreLabels[game.genre])}</span>
+                    <span className="om-sa-game-fan-caption">
+                      <span className="om-sa-game-fan-label">{t(genreLabels[game.genre])}</span>
+                      {isCenter && <strong className="om-sa-game-fan-title">{title}</strong>}
+                    </span>
                   </Button>
-                  {isCenter && (onPlayGame || onDeployGame) && (
+                  {isCenter && (!game.multiplayer || onDeployGame) && (
                     <div className="om-sa-game-tile-actions om-sa-game-fan-actions">
                       {onDeployGame && (game.status === 'ready' || game.status === 'published') && (
                         <IconButton
@@ -1579,20 +1677,20 @@ export function ModeResourceShowcase({
                           icon={<RemixIcon name="share-forward-line" size={13} />}
                         />
                       )}
-                      {onPlayGame && (
+                      {!game.multiplayer && (
                         <Button
                           variant="plain"
                           type="button"
-                          className="om-sa-game-tile-play"
-                          data-playing={isPlaying || undefined}
-                          title={t('Try game: {title}', { title })}
-                          aria-label={t('Try game: {title}', { title })}
-                          onPointerEnter={() => preconnectGame(game)}
-                          onFocus={() => preconnectGame(game)}
-                          onClick={() => onPlayGame(game)}
+                          className="om-sa-game-tile-remix"
+                          data-composer-source
+                          data-selected={isSelected || undefined}
+                          aria-pressed={isSelected}
+                          title={`${t('Remix')}: ${title}`}
+                          aria-label={`${t('Remix')}: ${title}`}
+                          onClick={() => selectGameForAgent(game)}
                         >
-                          <RemixIcon name="play-fill" size={12} />
-                          <span>{t('Try game')}</span>
+                          <RemixIcon name={isSelected ? 'check-line' : 'sparkling-line'} size={12} />
+                          <span>{isSelected ? t('Selected') : t('Remix')}</span>
                         </Button>
                       )}
                     </div>
@@ -1635,7 +1733,14 @@ export function ModeResourceShowcase({
                   className="om-sa-game-genre-card"
                   aria-pressed={selected}
                   data-active={selected || undefined}
-                  onClick={() => onChangeModeOptions?.({ gameGenre: selected ? null : id })}
+                  onClick={() => {
+                    const nextGenre = selected ? null : id;
+                    onChangeModeOptions?.({ gameGenre: nextGenre });
+                    setActiveFilter(nextGenre ? `genre:${nextGenre}` : 'all');
+                    if (nextGenre) {
+                      requestAnimationFrame(() => scrollToShowcase(false));
+                    }
+                  }}
                 >
                   <span className="om-sa-game-genre-art" aria-hidden="true">
                     {cover ? <img src={cover} alt="" /> : <RemixIcon name="gamepad-line" size={22} />}
@@ -1755,8 +1860,10 @@ export function ModeResourceShowcase({
         })()}
 
       </div>
+      {(composer || mode.id !== 'game') && (
       <div className="om-sa-mode-composer-group">
         {composer}
+        {mode.id !== 'game' && (
         <div className="om-sa-mode-ideas" data-composer-source>
           {mode.id === 'design' ? (
             DESIGN_MODULE_QUICK_IDEAS[
@@ -1771,31 +1878,6 @@ export function ModeResourceShowcase({
                   ...(idea.optionsPatch ? { optionsPatch: idea.optionsPatch } : {}),
                   referenceImage: null,
                 })}
-              >
-                <span className="om-sa-tone-icon" data-tone={mode.tone} aria-hidden="true">
-                  <RemixIcon name="sparkling-line" size={12} />
-                </span>
-                <span>{t(idea.title)}</span>
-              </Button>
-            ))
-          ) : mode.id === 'game' ? (
-            GAME_STUDIO_QUICK_IDEAS.map(idea => (
-              <Button
-                key={idea.title}
-                variant="plain"
-                type="button"
-                className="om-sa-idea-chip"
-                onClick={() => {
-                  onChangeModeOptions?.({
-                    gameGenre: idea.genre,
-                    gameStyle: idea.style,
-                    gameSetting: idea.setting,
-                    gameOrientation: idea.orientation,
-                    gamePlayableAd: Boolean(idea.playableAd),
-                    gameTemplate: null,
-                  });
-                  onPickPrompt(t(idea.prompt), { referenceImage: null });
-                }}
               >
                 <span className="om-sa-tone-icon" data-tone={mode.tone} aria-hidden="true">
                   <RemixIcon name="sparkling-line" size={12} />
@@ -1823,13 +1905,22 @@ export function ModeResourceShowcase({
             ))
           )}
         </div>
+        )}
       </div>
+      )}
 
       {mode.id !== 'coding' && (
-      <section ref={showcaseRef} className="om-sa-showcase-panel" aria-labelledby={templateHeadingId}>
+      <section ref={showcaseSectionRef} className="om-sa-showcase-panel" aria-labelledby={templateHeadingId}>
         <h3 id={templateHeadingId} className="om-sa-showcase-heading">{t('Discover templates')}</h3>
-        <div className="om-sa-showcase-bar" data-game-bar={showGameCards || undefined}>
-          <div className="om-sa-showcase-tabs" role="tablist" aria-label={t('Template filters')}>
+        <div className="om-sa-showcase-bar">
+          <div
+            ref={tabsRef}
+            className="om-sa-showcase-tabs"
+            data-overflow-start={tabsOverflow.start || undefined}
+            data-overflow-end={tabsOverflow.end || undefined}
+            role="tablist"
+            aria-label={t('Template filters')}
+          >
             {filters.map(({ id, label, count = workspaceCounts[id] }) => (
               <Button
                 key={id}
@@ -1841,6 +1932,9 @@ export function ModeResourceShowcase({
                 className="om-sa-showcase-tab"
                 onClick={() => {
                   setActiveFilter(id);
+                  if (mode.id === 'game' && id !== 'all') {
+                    requestAnimationFrame(() => scrollToShowcase(true));
+                  }
                   if (mode.id === 'design') {
                     if (modeOptions?.designFormat === 'image') {
                       if (
@@ -1916,17 +2010,47 @@ export function ModeResourceShowcase({
                 <RemixIcon name="arrow-right-up-line" size={13} />
               </Button>
             </div>
+          ) : showGameCards ? (
+            <div className="om-sa-game-bar-controls">
+              <span className="om-field om-sa-game-search">
+                <RemixIcon name="search-line" size={14} />
+                <input
+                  value={gameQuery}
+                  placeholder={t('Search')}
+                  aria-label={t('Search games')}
+                  onChange={event => setGameQuery(event.target.value)}
+                />
+                {gameQuery && (
+                  <IconButton
+                    variant="plain"
+                    className="om-sa-game-search-clear"
+                    aria-label={t('Clear')}
+                    onClick={() => setGameQuery('')}
+                    icon={<RemixIcon name="close-line" size={12} />}
+                  />
+                )}
+              </span>
+              {activeFilter !== 'mine' && (
+                <div className="om-sa-game-sort">
+                  <Select
+                    label={t('Sort')}
+                    value={gameSort}
+                    onCommit={next => setGameSort(next as GameSort)}
+                    options={[
+                      { value: 'relevance', label: t('Default sort') },
+                      { value: 'plays', label: t('Most played') },
+                      { value: 'newest', label: t('Newest') },
+                    ]}
+                  />
+                </div>
+              )}
+            </div>
           ) : (
             <Button
               variant="plain"
               type="button"
               className="om-sa-showcase-more"
               onClick={() => {
-                if (showGameCards) {
-                  setVisibleCount(totalCount);
-                  showcaseRef.current?.scrollIntoView?.({ block: 'start', inline: 'nearest' });
-                  return;
-                }
                 onOpenAllResources(
                   activeFilter === 'brand-kit' ? 'brand-kit'
                     : activeFilter === 'asset' ? 'asset'
@@ -1938,46 +2062,10 @@ export function ModeResourceShowcase({
               }}
             >
               <span>{t('View all')}</span>
-              <RemixIcon name={showGameCards ? 'arrow-down-s-line' : 'arrow-right-up-line'} size={13} />
+              <RemixIcon name="arrow-right-up-line" size={13} />
             </Button>
           )}
         </div>
-        {showGameCards && (
-          <div className="om-sa-game-bar-controls">
-            <span className="om-field om-sa-game-search">
-              <RemixIcon name="search-line" size={14} />
-              <input
-                value={gameQuery}
-                placeholder={t('Search')}
-                aria-label={t('Search games')}
-                onChange={event => setGameQuery(event.target.value)}
-              />
-              {gameQuery && (
-                <IconButton
-                  variant="plain"
-                  className="om-sa-game-search-clear"
-                  aria-label={t('Clear')}
-                  onClick={() => setGameQuery('')}
-                  icon={<RemixIcon name="close-line" size={12} />}
-                />
-              )}
-            </span>
-            {activeFilter !== 'mine' && (
-              <div className="om-sa-game-sort">
-                <Select
-                  label={t('Sort')}
-                  value={gameSort}
-                  onCommit={next => setGameSort(next as GameSort)}
-                  options={[
-                    { value: 'relevance', label: t('Default sort') },
-                    { value: 'plays', label: t('Most played') },
-                    { value: 'newest', label: t('Newest') },
-                  ]}
-                />
-              </div>
-            )}
-          </div>
-        )}
 
         {isMotionGraphicsView && activeFilter === 'skills' && (
           <div className="om-sa-showcase-subtabs" role="tablist" aria-label={t('Skill categories')}>
@@ -2049,13 +2137,11 @@ export function ModeResourceShowcase({
                       variant="plain"
                       type="button"
                       className="om-sa-game-tile-cover"
-                      data-composer-source={!game.multiplayer || undefined}
-                      aria-pressed={game.multiplayer ? undefined : isSelected}
-                      aria-label={game.multiplayer
-                        ? t('Play {title}', { title })
-                        : `${t(isMine ? 'Attach' : 'Remix')}: ${title}`}
+                      aria-label={onPlayGame ? t('Try game: {title}', { title }) : t('Play {title}', { title })}
                       disabled={game.multiplayer && !onPlayGame}
-                      onClick={() => game.multiplayer ? onPlayGame?.(game) : selectGameForAgent(game)}
+                      onPointerEnter={() => preconnectGame(game)}
+                      onFocus={() => preconnectGame(game)}
+                      onClick={() => (onPlayGame ? onPlayGame(game) : selectGameForAgent(game))}
                     >
                       {/* Portrait games share the 16:9 card: the cover sits whole in the middle over a blurred copy of itself. */}
                       {cover && game.orientation === 'portrait' && (
@@ -2069,8 +2155,18 @@ export function ModeResourceShowcase({
                           <span>{title}</span>
                         </div>
                       )}
-                      {!game.multiplayer && (
-                        <ShowcaseActionCue label={isSelected ? t('Selected') : isMine ? t('Attach') : t('Remix')} selected={isSelected} />
+                      <span
+                        className="om-sa-showcase-action-cue"
+                        data-playing={isPlaying || undefined}
+                        aria-hidden="true"
+                      >
+                        <RemixIcon name="play-fill" size={13} />
+                        <span>{isPlaying ? t('Playing') : t('Try game')}</span>
+                      </span>
+                      {!isPlaying && !isSelected && (
+                        <span className="om-sa-game-tile-play-badge" aria-hidden="true">
+                          <RemixIcon name="play-fill" size={11} />
+                        </span>
                       )}
                       {status && (
                         <span className="om-sa-game-status" data-tone={game.status}>
@@ -2092,8 +2188,8 @@ export function ModeResourceShowcase({
                       )}
                     </Button>
 
-                    {(onPlayGame || onDeployGame) && (
-                      <div className="om-sa-game-tile-actions">
+                    {(!game.multiplayer || onDeployGame) && (
+                      <div className="om-sa-game-tile-actions" data-visible={isSelected || undefined}>
                         {onDeployGame && (game.status === 'ready' || game.status === 'published') && (
                           <IconButton
                             variant="plain"
@@ -2105,20 +2201,20 @@ export function ModeResourceShowcase({
                             icon={<RemixIcon name="share-forward-line" size={13} />}
                           />
                         )}
-                        {onPlayGame && (
+                        {!game.multiplayer && (
                           <Button
                             variant="plain"
                             type="button"
-                            className="om-sa-game-tile-play"
-                            data-playing={isPlaying || undefined}
-                            title={t('Try game: {title}', { title })}
-                            aria-label={t('Try game: {title}', { title })}
-                            onPointerEnter={() => preconnectGame(game)}
-                            onFocus={() => preconnectGame(game)}
-                            onClick={() => onPlayGame(game)}
+                            className="om-sa-game-tile-remix"
+                            data-composer-source
+                            data-selected={isSelected || undefined}
+                            aria-pressed={isSelected}
+                            title={`${t(isMine ? 'Attach' : 'Remix')}: ${title}`}
+                            aria-label={`${t(isMine ? 'Attach' : 'Remix')}: ${title}`}
+                            onClick={() => selectGameForAgent(game)}
                           >
-                            <RemixIcon name="play-fill" size={12} />
-                            <span>{t('Try game')}</span>
+                            <RemixIcon name={isSelected ? 'check-line' : isMine ? 'add-line' : 'sparkling-line'} size={12} />
+                            <span>{isSelected ? t('Selected') : isMine ? t('Attach') : t('Remix')}</span>
                           </Button>
                         )}
                       </div>
@@ -2270,10 +2366,11 @@ export function ModeResourceShowcase({
               variant="plain"
               type="button"
               className="om-sa-load-more-btn"
-              onClick={() => setVisibleCount(prev => Math.min(totalCount, prev + PAGE_BATCH_SIZE))}
+              disabled={Boolean(assetPage && assetList.loadingMore)}
+              onClick={loadMore}
             >
-              <span>{t('Load more')}</span>
-              <span className="om-sa-tab-count">{totalCount - visibleCount}</span>
+              <span>{assetPage?.pageError ? t('Retry') : t('Load more')}</span>
+              <span className="om-sa-tab-count">{assetPage ? Math.max(0, assetPage.total - assetPage.items.length) : totalCount - visibleCount}</span>
             </Button>
           </div>
         )}

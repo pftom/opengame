@@ -20,16 +20,10 @@ const TASK_STATUS_LABELS = {
 
 function ConversationRowContent({ item, resultRead }: { item: SuperAgentChatSummary; resultRead: boolean }) {
   const { t } = useI18n();
-  const intent = superAgentIntentMeta(item.intent);
+  const intent = superAgentIntentMeta(item.intent, item);
   const state = item.state === 'idle' && item.messageCount > 0 && !resultRead ? 'completed' : item.state;
   const statusLabel = state === 'idle' ? undefined : t(TASK_STATUS_LABELS[state]);
   const labelledStatus = state === 'waiting' || state === 'failed' || state === 'cancelled';
-  const leadingIcon = state === 'waiting'
-    ? 'alert-line'
-    : state === 'failed'
-      ? 'error-warning-line'
-      : intent.icon;
-
   return (
     <>
       <span className="om-sa-chat-icon-wrap" aria-hidden="true">
@@ -37,10 +31,9 @@ function ConversationRowContent({ item, resultRead }: { item: SuperAgentChatSumm
           className="om-sa-chat-icon"
           data-tone={intent.tone}
           data-intent={item.intent ?? 'chat'}
-          data-state={state !== 'idle' ? state : undefined}
-          title={statusLabel ?? t(intent.label)}
+          title={t(intent.label)}
         >
-          <RemixIcon name={leadingIcon} size={14} />
+          <RemixIcon name={intent.icon} size={14} />
         </span>
       </span>
       <span className="om-sa-chat-title">{item.title}</span>

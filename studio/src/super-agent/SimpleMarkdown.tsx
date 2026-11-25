@@ -173,9 +173,18 @@ function parseBlocks(source: string): Block[] {
   return blocks;
 }
 
+function isInternalAppHref(raw: string): boolean {
+  const trimmed = raw.trim();
+  return trimmed.startsWith('/api/') || trimmed.startsWith('/motion-api/');
+}
+
 function safeHref(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (isInternalAppHref(trimmed)) {
+    return trimmed;
+  }
   try {
-    const parsed = new URL(raw);
+    const parsed = new URL(trimmed);
     return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : null;
   } catch {
     return null;
@@ -184,7 +193,7 @@ function safeHref(raw: string): string | null {
 
 function safeImageSrc(raw: string): string | null {
   const trimmed = raw.trim();
-  if (trimmed.startsWith('/api/') || trimmed.startsWith('/motion-api/')) {
+  if (isInternalAppHref(trimmed)) {
     return trimmed;
   }
   return safeHref(trimmed);
@@ -202,9 +211,10 @@ function stripFileTargetMeta(raw: string): string {
 function isLocalFileLinkTarget(raw: string): boolean {
   const trimmed = raw.trim();
   if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) return false;
+  if (isInternalAppHref(trimmed)) return false;
   if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return false;
   const clean = stripFileTargetMeta(trimmed);
-  if (!clean) return false;
+  if (!clean || isInternalAppHref(clean)) return false;
   return clean.startsWith('./') || clean.startsWith('../') || clean.startsWith('/') || LOCAL_FILE_EXT_RE.test(clean);
 }
 
@@ -240,6 +250,27 @@ function renderLink(
   href: string,
   opts: InlineRenderOptions,
 ): ReactNode {
+  if (isInternalAppHref(href)) {
+    const isGameHref = /^\/(?:motion-api|api)\/games\//i.test(href);
+    return (
+      <Button
+        key={key}
+        variant="plain"
+        type="button"
+        className="om-sa-file-chip om-sa-artifact-inline-chip"
+        onClick={() => {
+          if (opts.onOpenWebUrl) {
+            opts.onOpenWebUrl(href);
+          } else {
+            window.open(href, '_blank', 'noopener,noreferrer');
+          }
+        }}
+      >
+        <RemixIcon name={isGameHref ? 'play-fill' : 'eye-line'} size={12} />
+        <span>{label}</span>
+      </Button>
+    );
+  }
   return (
     <span key={key} className="om-sa-link-group">
       <a
@@ -301,7 +332,7 @@ function renderFileChip(
 
 function renderInline(text: string, opts: InlineRenderOptions): ReactNode[] {
   const tokens: ReactNode[] = [];
-  const pattern = /(!\[[^\]]*\]\([^\s)]+\)|`[^`\n]+`|\[[^\]]+\]\([^)\s]+\)|\*\*[^*\n]+\*\*|~~[^~\n]+~~|\*[^*\n]+\*|https?:\/\/[^\s<>()]+|file:\/\/\/[^\s<>()]+|(?:\/|\.{1,2}\/)?(?:[A-Za-z0-9_@.-]+\/)*[A-Za-z0-9_@.-]+\.(?:md|markdown|mdx)(?:#[A-Za-z0-9_./:-]+)?(?![A-Za-z0-9_./:-]))/gi;
+  const pattern = /(!\[[^\]]*\]\((?:<[^>\n]+>|[^\s)]+)\)|`[^`\n]+`|\[[^\]]+\]\((?:<[^>\n]+>|file:\/\/\/[^)\n]+|\/[^)\n]+|\.{1,2}\/[^)\n]+|[^)\s]+)\)|\*\*[^*\n]+\*\*|~~[^~\n]+~~|\*[^*\n]+\*|https?:\/\/[^\s<>()]+|file:\/\/\/[^\s<>()]+|(?:\/|\.{1,2}\/)?(?:[A-Za-z0-9_@.-]+\/)*[A-Za-z0-9_@.-]+\.(?:md|markdown|mdx)(?:#[A-Za-z0-9_./:-]+)?(?![A-Za-z0-9_./:-]))/gi;
   let last = 0;
   let match: RegExpExecArray | null;
   let key = 0;
@@ -313,7 +344,7 @@ function renderInline(text: string, opts: InlineRenderOptions): ReactNode[] {
     if (full.startsWith('![')) {
       const altEnd = full.indexOf('](');
       const alt = full.slice(2, altEnd);
-      const rawUrl = full.slice(altEnd + 2, -1);
+      const rawUrl = full.slice(altEnd + 2, -1).trim().replace(/^<([\s\S]*)>$/, '$1');
       const src = safeImageSrc(rawUrl);
       if (src) {
         tokens.push(
@@ -342,7 +373,7 @@ function renderInline(text: string, opts: InlineRenderOptions): ReactNode[] {
     } else if (full.startsWith('[')) {
       const labelEnd = full.indexOf('](');
       const label = full.slice(1, labelEnd);
-      const rawTarget = full.slice(labelEnd + 2, -1);
+      const rawTarget = full.slice(labelEnd + 2, -1).trim().replace(/^<([\s\S]*)>$/, '$1');
       if (rawTarget.startsWith('file://') || isLocalFileLinkTarget(rawTarget)) {
         tokens.push(renderFileChip(key++, rawTarget, label, opts));
       } else {

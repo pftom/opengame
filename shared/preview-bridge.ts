@@ -1,16 +1,20 @@
+import { DESIGN_ANNOTATION_BRIDGE } from './design-annotation-bridge.ts';
+import { DESIGN_DECK_BRIDGE } from './design-deck-bridge.ts';
+
 const BRIDGE_TOKEN_RE = /^[a-zA-Z0-9_-]{8,64}$/;
 
 export function isValidPreviewBridgeToken(raw: unknown): raw is string {
   return typeof raw === 'string' && BRIDGE_TOKEN_RE.test(raw);
 }
 
-export function buildPreviewBridgeScript(token: string): string {
+export function buildPreviewBridgeScript(token: string, designAnnotations = false): string {
   const safeToken = JSON.stringify(token);
   return `<script data-om-preview-bridge>
 (function(){
   if (window.__omPreviewBridgeInstalled) return;
   window.__omPreviewBridgeInstalled = true;
   var TOKEN = ${safeToken};
+${designAnnotations ? DESIGN_ANNOTATION_BRIDGE + DESIGN_DECK_BRIDGE : ''}
   var pick = false;
   var consoleSent = 0;
   var MAX_CONSOLE = 200;
@@ -251,7 +255,7 @@ export function buildPreviewBridgeScript(token: string): string {
       token: TOKEN,
       element: described,
       viewport: described.viewport,
-      rect: described.rect
+      rect: described.rect${designAnnotations ? ',\n      scroll: designAnnotationScroll(el.parentElement)' : ''}
     }, '*');
   }, true);
 
@@ -313,11 +317,11 @@ export function buildPreviewBridgeScript(token: string): string {
 </script>`;
 }
 
-export function injectPreviewBridgeHtml(rawHtml: Buffer | string, token: string): Buffer {
+export function injectPreviewBridgeHtml(rawHtml: Buffer | string, token: string, designAnnotations = false): Buffer {
   const buf = Buffer.isBuffer(rawHtml) ? rawHtml : Buffer.from(rawHtml, 'utf8');
   if (!isValidPreviewBridgeToken(token)) return buf;
   const html = buf.toString('utf8');
-  const script = buildPreviewBridgeScript(token);
+  const script = buildPreviewBridgeScript(token, designAnnotations);
   let out: string;
   if (/<head\b[^>]*>/i.test(html)) {
     out = html.replace(/<head\b[^>]*>/i, match => `${match}\n${script}`);

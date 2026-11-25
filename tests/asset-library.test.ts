@@ -123,25 +123,39 @@ test('workspace generation keeps job identity and pinned references without requ
   await gateway.close();
 }, false));
 
-test('workspace asset catalog lists past one asset page and propagates read errors', () => fixture(async store => {
+test('workspace asset catalog filters before pagination, counts all matches, and propagates read errors', () => fixture(async store => {
   const records = path.join(store.directory, 'asset-library', 'records');
   await mkdir(records, { recursive: true });
-  const ids = Array.from({ length: 101 }, (_, index) => `00000000-0000-0000-0000-${String(index).padStart(12, '0')}`);
+  const ids = Array.from({ length: 1001 }, (_, index) => `00000000-0000-0000-0000-${String(index).padStart(12, '0')}`);
   await Promise.all(ids.map((id, index) => writeFile(path.join(records, `${id}.json`), JSON.stringify({
-    id, name: index === 0 ? 'Oldest kitchen poster' : `Poster ${index}`, modality: 'image', versions: [], updatedAt: index,
+    id, name: index === 0 ? 'Oldest kitchen video' : `Poster ${index}`, modality: index === 0 ? 'video' : 'image', versions: [], updatedAt: index,
   }))));
 
   const fetch = transport(store);
   const endpoint = '/motion-api/super-agent/resources?kind=asset';
-  const catalog = await (await fetch(`${endpoint}&limit=600`)).json();
+  const catalog = await (await fetch(`${endpoint}&limit=1000`)).json();
   assert.equal(catalog.counts.assets, ids.length);
-  assert.equal(catalog.items.length, ids.length);
-  const matching = await (await fetch(`${endpoint}&limit=1&query=kitchen`)).json();
-  assert.deepEqual(matching.items.map(item => item.id), [ids[0]]);
+  assert.equal(catalog.items.length, 1000);
+  assert.deepEqual(catalog.assetPage, { total: 1001, nextOffset: 1000 });
+  const oldPage = await (await fetch(`${endpoint}&offset=1000`)).json();
+  assert.deepEqual(oldPage.items.map(item => item.id), [ids[0]]);
+  assert.deepEqual(oldPage.assetPage, { total: 1001, nextOffset: null });
+
+  for (const filter of ['modality=video', 'limit=1&query=kitchen', 'modality=video&query=kitchen']) {
+    const matching = await (await fetch(`${endpoint}&${filter}`)).json();
+    assert.deepEqual(matching.items.map(item => item.id), [ids[0]]);
+    assert.deepEqual(matching.assetPage, { total: 1, nextOffset: null });
+    assert.equal(matching.counts.assets, ids.length);
+  }
+  const noMatches = await (await fetch(`${endpoint}&modality=image&query=kitchen`)).json();
+  assert.deepEqual(noMatches.items, []);
+  assert.deepEqual(noMatches.assetPage, { total: 0, nextOffset: null });
+  const unified = await (await fetch('/motion-api/super-agent/resources?query=kitchen')).json();
+  assert.ok(unified.items.some(item => item.id === ids[0]));
   await assert.rejects(new AssetLibrary(store).list({ limit: 101 }), /Invalid asset pagination/);
 
   await writeFile(path.join(records, `${ids[0]}.json`), '{');
-  const failed = await fetch(`${endpoint}&limit=600`);
+  const failed = await fetch(`${endpoint}&modality=video`);
   assert.equal(failed.ok, false);
   assert.equal(typeof (await failed.json()).error, 'string');
 }));

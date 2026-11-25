@@ -1,5 +1,5 @@
 import type { BrowserPickedElement, BrowserRect } from './browser.ts';
-import type { DesignScenarioId } from './design-project.ts';
+import { findDesignScenario, type DesignScenarioId } from './design-project.ts';
 import type { ProviderSetupEntry } from './workspace-url.ts';
 
 export const SUPER_AGENT_API = '/motion-api/super-agent';
@@ -85,6 +85,7 @@ export type SuperAgentBrowserAnnotation = {
   strokeBounds?: BrowserRect;
   screenshotUrl?: string;
   screenshotPath?: string;
+  screenshotSource?: 'saved-design-comment';
   consoleErrors?: string[];
   artifactId?: string;
   artifactKind?: SuperAgentArtifactKind;
@@ -162,6 +163,7 @@ export type SuperAgentResourceCatalog = {
   counts: SuperAgentResourceCounts;
   items: SuperAgentResourceAttachment[];
   generatedAt: number;
+  assetPage?: { total: number; nextOffset: number | null };
 };
 
 export type SuperAgentArtifactKind =
@@ -191,6 +193,7 @@ export type SuperAgentArtifact = {
   versionId?: string;
   kitId?: string;
   jobId?: string;
+  exportRequestedAt?: number;
   url?: string;
   downloadUrl?: string;
   mimeType?: string;
@@ -300,6 +303,7 @@ export type SuperAgentContextTag = {
   kind: 'mode' | 'param' | 'skill';
   label: string;
   icon?: string;
+  designScenario?: DesignScenarioId;
   tone?: 'coding' | 'agent' | 'image' | 'video' | 'audio';
 };
 
@@ -439,6 +443,8 @@ export type SuperAgentChatSummary = {
   id: string;
   title: string;
   intent?: SuperAgentIntent;
+  designScenario?: DesignScenarioId;
+  isGeneratedVideo?: boolean;
   pinned?: boolean;
   runtimeId?: string;
   engine: SuperAgentEngine;
@@ -451,13 +457,44 @@ export type SuperAgentChatSummary = {
   createdAt: number;
 };
 
+export function superAgentChatPresentation(chat: SuperAgentChat): Pick<SuperAgentChatSummary, 'intent' | 'designScenario' | 'isGeneratedVideo'> {
+  const { intent } = chat;
+  if (intent === 'video') {
+    return { intent, ...(isSuperAgentGeneratedVideo(chat) ? { isGeneratedVideo: true } : {}) };
+  }
+  if (intent && intent !== 'chat' && intent !== 'design' && intent !== 'website' && intent !== 'slides') return { intent };
+
+  const prompt = chat.messages.find(message => message.role === 'user');
+  const mode = prompt?.contextTags?.find(tag => tag.kind === 'mode');
+  if (mode?.icon === 'book-open-line') return { intent: 'research' };
+  if (mode?.icon === 'bar-chart-box-line') return { intent: 'visualization' };
+
+  const projects = chat.artifacts.filter(item => item.kind === 'design-project' && findDesignScenario(item.scenario));
+  const project = projects.find(item => item.id === chat.activeArtifactId) ?? projects.at(-1);
+  const attachedProject = prompt?.attachments?.find(item => item.kind === 'design-project' && findDesignScenario(item.scenario));
+  const template = prompt?.attachments?.find(item => item.kind === 'design-template' && findDesignScenario(item.scenario));
+  const designScenario = findDesignScenario(project?.scenario ?? attachedProject?.scenario ?? mode?.designScenario ?? template?.scenario)?.id;
+  return { intent, ...(designScenario ? { designScenario } : {}) };
+}
+
+function isSuperAgentGeneratedVideo(chat: Pick<SuperAgentChat, 'messages' | 'artifacts' | 'projectKind'>): boolean {
+  const mode = chat.messages.find(message => message.role === 'user')
+    ?.contextTags?.find(tag => tag.kind === 'mode' && tag.tone === 'video');
+  if (mode?.icon === 'clapperboard-line') return true;
+  if (mode?.icon === 'movie-line') return false;
+
+  if (chat.projectKind === 'motion' || chat.artifacts.some(artifact =>
+    artifact.kind === 'motion-project' || artifact.kind === 'motion-export')) return false;
+  return chat.artifacts.some(artifact => artifact.kind === 'asset-video');
+}
+
 export function summarizeSuperAgentChat(chat: SuperAgentChat): SuperAgentChatSummary {
   const messages = chat.messages.filter(message => message.role !== 'tool' && message.role !== 'reasoning');
   const lastTurnId = chat.requestReceipts?.at(-1)?.requestId ?? messages.at(-1)?.id;
   return {
     id: chat.id,
     title: chat.title,
-    intent: chat.intent,
+    ...superAgentChatPresentation(chat),
     ...(chat.pinned ? { pinned: true } : {}),
     ...(chat.runtimeId ? { runtimeId: chat.runtimeId } : {}),
     engine: chat.engine,
@@ -1548,11 +1585,19 @@ export function generateSuperAgentTitle(input: {
   return 'New conversation';
 }
 
-export function superAgentIntentMeta(intent?: SuperAgentIntent): {
+export function superAgentIntentMeta(
+  intent?: SuperAgentIntent,
+  { designScenario, isGeneratedVideo }: Pick<SuperAgentChatSummary, 'designScenario' | 'isGeneratedVideo'> = {},
+): {
   icon: string;
   tone: 'neutral' | 'coding' | 'image' | 'video' | 'audio' | 'agent';
   label: string;
 } {
+  const scenario = findDesignScenario(designScenario);
+  if (scenario) {
+    const tone = scenario.id === 'deck' || scenario.id === 'document' ? 'audio' : 'agent';
+    return { icon: scenario.icon, tone, label: scenario.label };
+  }
   switch (intent) {
     case 'coding':
       return { icon: 'code-s-slash-line', tone: 'coding', label: 'Coding' };
@@ -1565,7 +1610,9 @@ export function superAgentIntentMeta(intent?: SuperAgentIntent): {
     case 'image':
       return { icon: 'image-line', tone: 'image', label: 'Image' };
     case 'video':
-      return { icon: 'movie-line', tone: 'video', label: 'Video' };
+      return isGeneratedVideo
+        ? { icon: 'clapperboard-line', tone: 'video', label: 'Make a video' }
+        : { icon: 'movie-line', tone: 'video', label: 'Video' };
     case 'audio':
       return { icon: 'music-2-line', tone: 'audio', label: 'Audio' };
     case 'game':
@@ -1575,7 +1622,7 @@ export function superAgentIntentMeta(intent?: SuperAgentIntent): {
     case 'slides':
       return { icon: 'slideshow-line', tone: 'audio', label: 'Slides & Docs' };
     case 'brand':
-      return { icon: 'palette-line', tone: 'image', label: 'Brand Kit' };
+      return { icon: 'brush-line', tone: 'image', label: 'Brand Kit' };
     case 'chat':
     default:
       return { icon: 'chat-1-line', tone: 'neutral', label: 'Chat' };

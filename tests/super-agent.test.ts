@@ -30,13 +30,59 @@ import {
   saveCapabilityOverrides,
   unregisterCapabilityScriptExecutor,
 } from '../gateway/capability-center.ts';
-import { classifySuperAgentTool, describeSuperAgentApproval, formatSuperAgentToolLabel, type SuperAgentResourceCatalog } from '../shared/super-agent.ts';
+import {
+  classifySuperAgentTool, describeSuperAgentApproval, formatSuperAgentToolLabel,
+  summarizeSuperAgentChat, superAgentIntentMeta, type SuperAgentChat, type SuperAgentResourceCatalog,
+} from '../shared/super-agent.ts';
+import { designScenarios } from '../shared/design-project.ts';
 import { execute } from '../hyperframes.ts';
 import { verificationBinaries } from '../scripts/verify-export.ts';
 import { AssetAgentRpc } from '../gateway/asset-chat.ts';
 import { buildSuperAgentHandoff } from '../shared/capability-hub.ts';
 import { fixture } from './fixtures.ts';
 import { transport } from './http.ts';
+
+test('Super Agent uses distinct task icons for design scenarios, media, and standalone modes', () => {
+  const chat: SuperAgentChat = {
+    id: 'task', title: 'Task', engine: 'codex', permissionMode: 'auto',
+    state: 'running', messages: [], artifacts: [], approvals: [], createdAt: 1, updatedAt: 1,
+  };
+  const icon = (overrides: Partial<SuperAgentChat>) => {
+    const summary = summarizeSuperAgentChat({ ...chat, ...overrides });
+    return superAgentIntentMeta(summary.intent, summary).icon;
+  };
+  const designIcons = designScenarios.map(scenario => {
+    const designIcon = icon({
+      intent: 'website',
+      artifacts: [{ id: 'project', kind: 'design-project', title: 'Project', scenario: scenario.id, createdAt: 1, updatedAt: 1 }],
+    });
+    assert.equal(designIcon, scenario.icon);
+    return designIcon;
+  });
+  const otherIcons = (['chat', 'coding', 'design', 'research', 'visualization', 'image', 'video', 'audio', 'game', 'brand'] as const)
+    .map(intent => icon({ intent }));
+  const generatedVideoIcon = icon({
+    intent: 'video',
+    artifacts: [{ id: 'video', kind: 'asset-video', title: 'Video', createdAt: 1, updatedAt: 1 }],
+  });
+  const icons = [...designIcons, ...otherIcons, generatedVideoIcon];
+  assert.equal(new Set(icons).size, icons.length);
+
+  const firstPrompt = { id: 'prompt', role: 'user', text: 'Make this', createdAt: 1 } as const;
+  assert.equal(icon({
+    intent: 'design',
+    messages: [{ ...firstPrompt, contextTags: [{ kind: 'mode', label: 'Design Studio', designScenario: 'document' }] }],
+  }), 'file-text-line');
+  assert.equal(icon({
+    intent: 'website',
+    messages: [{ ...firstPrompt, attachments: [{ id: 'template', kind: 'design-template', title: 'Template', scenario: 'web-clone' }] }],
+  }), 'global-line');
+  assert.equal(icon({
+    intent: 'slides',
+    artifacts: [{ id: 'report', kind: 'design-project', title: 'Report', scenario: 'document', createdAt: 1, updatedAt: 1 }],
+    messages: [{ ...firstPrompt, contextTags: [{ kind: 'mode', label: 'Research', icon: 'book-open-line' }] }],
+  }), 'book-open-line');
+});
 
 test('collectWorkspaceResources and buildResourceContextManifest aggregate workspace inputs and filter cleanly', () => fixture(async store => {
   await designProjectsFor(store.directory).create({
@@ -467,6 +513,101 @@ test('local Claude runtime enforces on-request approvals for paid generation thr
   assert.equal(generationExecuted, true);
   assert.equal(done.state, 'idle');
   await service.close();
+}));
+
+test('Super Agent limits saved Design comment mutations to the current message attachments', () => fixture(async store => {
+  const { readFile } = await import('node:fs/promises');
+  const origin = 'http://127.0.0.1:4173';
+  const phase1 = new Phase1Service(store, pluginRoot, {
+    origin: () => origin,
+    nativeUrl: () => undefined,
+    openProject: async () => {},
+    mutation: async fn => fn(),
+    cancel: async () => ({ id: 'x', state: 'cancelled' } as any),
+  });
+  const design = designProjectsFor(store.directory);
+  const project = await design.create({ scenario: 'deck', title: 'Review scope', requestId: 'review-scope' });
+  const addComment = (text: string, requestId: string) => design.createComment(project.id, {
+    text, requestId, expectedRevision: project.revision,
+    anchor: {
+      filePath: project.entry,
+      viewport: { id: 'desktop', width: 800, height: 450 },
+      region: { x: 10, y: 20, width: 100, height: 50 },
+    },
+  });
+  const { comment: attached } = await addComment('Edit this heading', 'selected-comment');
+  const { comment: other } = await addComment('Keep this second comment open', 'other-comment');
+  const otherTarget = { projectId: project.id, commentId: other.id };
+  let turn = 0;
+  const service = new SuperAgentConversations(store, {
+    resolveAgent: async () => '/fake/claude',
+    runClaude: async ({ mcpConfigPath, prompt }) => {
+      const config = JSON.parse(await readFile(mcpConfigPath, 'utf8'));
+      const server = config.mcpServers.openmotion;
+      let id = 0;
+      const call = async (args: Record<string, unknown>) => {
+        const res = await fetch(server.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...server.headers },
+          body: JSON.stringify({
+            jsonrpc: '2.0', id: ++id, method: 'tools/call',
+            params: { name: 'openmotion_design_comments', arguments: args },
+          }),
+        });
+        const body = await res.json() as { result: { isError: boolean; content: { text: string }[] } };
+        return body.result;
+      };
+      if (++turn === 1) {
+        assert.match(prompt, /saved Design comments attached to the current message/);
+        assert.equal((await call({ action: 'list', projectId: project.id })).isError, false);
+        const denied = await call({ ...otherTarget, action: ' update ', status: 'resolved' });
+        assert.equal(denied.isError, true);
+        assert.match(denied.content[0].text, /attached to the current message/);
+        assert.equal((await call({ ...otherTarget, action: 'delete' })).isError, true);
+        const wrongProject = await call({
+          action: 'update', status: 'resolved',
+          projectId: '11111111-1111-4111-8111-111111111111',
+          commentId: attached.id,
+        });
+        assert.equal(wrongProject.isError, true);
+        assert.match(wrongProject.content[0].text, /attached to the current message/);
+        assert.equal((await call({
+          action: 'update', status: 'resolved', expectedCommentRevision: attached.commentRevision,
+          projectId: project.id.toUpperCase(), commentId: attached.id.toUpperCase(),
+        })).isError, false);
+      } else {
+        assert.doesNotMatch(prompt, /saved Design comments attached to the current message/);
+        assert.equal((await call({ ...otherTarget, action: 'update', status: 'resolved' })).isError, false);
+      }
+    },
+  });
+  try {
+    const chat = await service.create({ engine: 'claude' });
+    const runtime = { origin, phase1: () => phase1 };
+    await service.start(chat.id, {
+      requestId: 'review-scoped',
+      text: 'Apply the attached comment.',
+      attachments: [{
+        id: 'saved-design-comment',
+        kind: 'browser-annotation',
+        title: attached.text,
+        annotation: {
+          mode: 'design-comment', pageUrl: project.previewUrl, projectId: project.id, commentId: attached.id,
+        },
+      }],
+    }, runtime);
+    const scopedTurn = await service.waitForChat(chat.id);
+    assert.equal(scopedTurn.state, 'idle', scopedTurn.error);
+    const states = async () => (await design.listComments(project.id)).comments.map(({ id, status }) => [id, status]);
+    assert.deepEqual(await states(), [[attached.id, 'resolved'], [other.id, 'open']]);
+
+    await service.start(chat.id, { requestId: 'review-unbound', text: 'Resolve the remaining comment.' }, runtime);
+    const unboundTurn = await service.waitForChat(chat.id);
+    assert.equal(unboundTurn.state, 'idle', unboundTurn.error);
+    assert.deepEqual(await states(), [[attached.id, 'resolved'], [other.id, 'resolved']]);
+  } finally {
+    await service.close();
+  }
 }));
 
 test('deleting a conversation during an in-flight tool call prevents recreating the chat file', () => fixture(async store => {

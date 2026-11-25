@@ -1,5 +1,5 @@
 import { Button } from 'open-design-ui/button';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   designScenarios,
   findDesignScenario,
@@ -143,8 +143,8 @@ export type ModeComposerOptions = {
   gameGenre: GameGenre | null;
   gameStyle: GameStyle | null;
   gameSetting: GameSetting | null;
-  gameOrientation: 'landscape' | 'portrait';
-  /** Portrait only: build a playable ad. On by default, matching Game Studio. */
+  gameOrientation: 'landscape' | 'portrait' | null;
+  /** Portrait only: build a playable ad. */
   gamePlayableAd: boolean;
   gameTemplate: GameCard | null;
 
@@ -225,7 +225,7 @@ export const DEFAULT_MODE_COMPOSER_OPTIONS: ModeComposerOptions = {
   gameGenre: null,
   gameStyle: null,
   gameSetting: null,
-  gameOrientation: 'landscape',
+  gameOrientation: null,
   gamePlayableAd: false,
   gameTemplate: null,
 
@@ -948,7 +948,9 @@ export function formatModePromptPrefix(
     if (options.gameGenre) parts.push(`Genre: ${genreLabels[options.gameGenre]}`);
     if (options.gameStyle) parts.push(`Style: ${styleLabels[options.gameStyle]}`);
     if (options.gameSetting) parts.push(`Setting: ${settingLabels[options.gameSetting]}`);
-    parts.push(`Layout: ${options.gameOrientation === 'portrait' ? 'Portrait (9:16)' : 'Landscape (16:9)'}`);
+    if (options.gameOrientation) {
+      parts.push(`Layout: ${options.gameOrientation === 'portrait' ? 'Portrait (9:16)' : 'Landscape (16:9)'}`);
+    }
     parts.push(`Players: ${isPlayableAd(options) ? 'Playable ad' : 'Single player'}`);
     if (options.gameTemplate) parts.push(`Template: ${options.gameTemplate.title}`);
   } else {
@@ -1025,7 +1027,9 @@ export function buildModeContextTags(
     if (options.gameGenre) tags.push({ kind: 'param', label: t(genreLabels[options.gameGenre]) });
     if (options.gameStyle) tags.push({ kind: 'param', label: t(styleLabels[options.gameStyle]) });
     if (options.gameSetting) tags.push({ kind: 'param', label: t(settingLabels[options.gameSetting]) });
-    tags.push({ kind: 'param', label: options.gameOrientation === 'portrait' ? '9:16' : '16:9' });
+    if (options.gameOrientation) {
+      tags.push({ kind: 'param', label: options.gameOrientation === 'portrait' ? '9:16' : '16:9' });
+    }
     const playableAd = canChoosePlayableAd(options) ? isPlayableAd(options) : options.gameTemplate?.playableAd;
     tags.push({
       kind: 'param',
@@ -1039,7 +1043,13 @@ export function buildModeContextTags(
   }
 
   if (mode.id === 'design') {
-    tags.push({ kind: 'mode', label: t('Design Studio'), icon: 'palette-line', tone: 'image' });
+    tags.push({
+      kind: 'mode',
+      label: t('Design Studio'),
+      icon: 'palette-line',
+      tone: 'image',
+      ...(options.designFormat === 'html' ? { designScenario: options.designScenario } : {}),
+    });
     if (options.designFormat === 'image') {
       tags.push({ kind: 'param', label: t('Image design') });
       const sceneChoice = IMAGE_SCENE_CHOICES.find(item => item.id === options.imageScene);
@@ -1200,6 +1210,7 @@ export function ModeComposerTopBar({
   onOpenModelSettings: () => void;
 }) {
   const { t } = useI18n();
+  const preAdOrientationRef = useRef<'landscape' | 'portrait' | null | undefined>(undefined);
   const needsMediaCatalog = active && (
     modeId === 'image'
     || modeId === 'media'
@@ -3451,27 +3462,6 @@ export function ModeComposerTopBar({
     const playableAd = isPlayableAd(options);
     return (
       <div className="om-sa-composer-top-bar" role="group" aria-label={t('Game studio options')}>
-        {canChoosePlayableAd(options) && (
-          <Tooltip
-            label={t('Create an instantly playable portrait game with “Play again” and “Go to store” buttons added automatically.')}
-            preview={<PlayableAdPreview />}
-          >
-            <label
-              className="om-sa-composer-top-pill cursor-pointer"
-              data-active={playableAd || undefined}
-            >
-              <span>{t('Playable ad')}</span>
-              <Toggle
-                label={t('Playable ad')}
-                checked={playableAd}
-                disabled={disabled}
-                onCommit={enabled => onChange(enabled
-                  ? { gameOrientation: 'portrait', gamePlayableAd: true }
-                  : { gamePlayableAd: false })}
-              />
-            </label>
-          </Tooltip>
-        )}
         {renderGameArtPicker({
           menuKey: 'game-genre',
           fallbackIcon: 'gamepad-line',
@@ -3486,7 +3476,7 @@ export function ModeComposerTopBar({
         {renderGameArtPicker({
           menuKey: 'game-style',
           fallbackIcon: 'brush-line',
-          label: 'Style',
+          label: 'Art style',
           clearLabel: 'Any style',
           selectedId: options.gameStyle,
           items: gameStyles,
@@ -3517,16 +3507,29 @@ export function ModeComposerTopBar({
               variant="plain"
               type="button"
               className="om-sa-composer-top-pill"
-              data-active={openMenu === 'game-orientation' || undefined}
+              data-active={Boolean(options.gameOrientation) || openMenu === 'game-orientation' || undefined}
               data-open={openMenu === 'game-orientation' || undefined}
               aria-haspopup="listbox"
               aria-expanded={openMenu === 'game-orientation'}
               disabled={disabled}
             >
-              <span key={options.gameOrientation} className="om-sa-pill-swap">
-                <RemixIcon name={options.gameOrientation === 'portrait' ? 'smartphone-line' : 'computer-line'} size={13} />
+              <span key={options.gameOrientation ?? 'any'} className="om-sa-pill-swap">
+                <RemixIcon
+                  name={
+                    options.gameOrientation === 'portrait'
+                      ? 'smartphone-line'
+                      : options.gameOrientation === 'landscape'
+                        ? 'computer-line'
+                        : 'layout-2-line'
+                  }
+                  size={13}
+                />
                 <span className="om-sa-composer-top-pill-label">
-                  {t(options.gameOrientation === 'portrait' ? 'Portrait' : 'Landscape')}
+                  {options.gameOrientation === 'portrait'
+                    ? t('Portrait')
+                    : options.gameOrientation === 'landscape'
+                      ? t('Landscape')
+                      : t('Screen layout')}
                 </span>
               </span>
               <RemixIcon name="arrow-down-s-line" size={14} className="om-sa-pill-chevron" />
@@ -3536,6 +3539,20 @@ export function ModeComposerTopBar({
           <div className="om-sa-mode-menu">
             <div className="om-sa-mode-menu-head">
               <span className="om-sa-popover-label">{t('Screen layout')}</span>
+              {options.gameOrientation && (
+                <Button
+                  variant="plain"
+                  type="button"
+                  className="om-sa-popover-pill"
+                  onClick={() => {
+                    preAdOrientationRef.current = undefined;
+                    onChange({ gameOrientation: null, gamePlayableAd: false });
+                    setOpenMenu(null);
+                  }}
+                >
+                  {t('Any screen layout')}
+                </Button>
+              )}
             </div>
             <div className="om-sa-game-choice-list" role="listbox" aria-label={t('Screen layout')}>
               {([
@@ -3563,10 +3580,11 @@ export function ModeComposerTopBar({
                     data-active={selected || undefined}
                     className="om-sa-game-choice-row"
                     onClick={() => {
-                      // Choosing portrait selects Playable ad by default, every time (like Game Studio).
-                      onChange(item.id === 'portrait' && options.gameOrientation !== 'portrait'
-                        ? { gameOrientation: item.id, gamePlayableAd: true }
-                        : { gameOrientation: item.id });
+                      preAdOrientationRef.current = undefined;
+                      const nextOrientation = selected ? null : item.id;
+                      onChange(nextOrientation === 'portrait'
+                        ? { gameOrientation: 'portrait' }
+                        : { gameOrientation: nextOrientation, gamePlayableAd: false });
                       setOpenMenu(null);
                     }}
                   >
@@ -3589,6 +3607,36 @@ export function ModeComposerTopBar({
             </div>
           </div>
         </Popover>
+        {canChoosePlayableAd(options) && (
+          <Tooltip
+            label={t('Create an instantly playable portrait game with “Play again” and “Go to store” buttons added automatically.')}
+            preview={<PlayableAdPreview />}
+          >
+            <label
+              className="om-sa-composer-top-pill cursor-pointer"
+              data-active={playableAd || undefined}
+            >
+              <span>{t('Playable ad')}</span>
+              <Toggle
+                label={t('Playable ad')}
+                checked={playableAd}
+                disabled={disabled}
+                onCommit={enabled => {
+                  if (enabled) {
+                    preAdOrientationRef.current = options.gameOrientation;
+                    onChange({ gameOrientation: 'portrait', gamePlayableAd: true });
+                  } else {
+                    const restore = preAdOrientationRef.current;
+                    preAdOrientationRef.current = undefined;
+                    onChange(restore !== undefined && restore !== 'portrait'
+                      ? { gameOrientation: restore, gamePlayableAd: false }
+                      : { gamePlayableAd: false });
+                  }
+                }}
+              />
+            </label>
+          </Tooltip>
+        )}
       </div>
     );
   }

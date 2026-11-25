@@ -24,6 +24,12 @@ export function makeRequestId(prefix = 'design') {
     : `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+export function readCommentPreviewSlideIndex(response: Response): number | undefined {
+  const header = response.headers.get('X-OpenMotion-Slide-Index');
+  const index = header === null ? NaN : Number(header);
+  return Number.isSafeInteger(index) && index >= 0 ? index : undefined;
+}
+
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...init,
@@ -221,13 +227,17 @@ export const designClient = {
       `${designRoutes.versions(id)}${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
     ),
   restoreVersion: (id: string, versionId: string, expectedRevision: string) =>
-    requestJson<{ project: DesignProjectDetail; version: DesignVersion }>(designRoutes.restore(id, versionId), {
+    requestJson<{ project: DesignProjectDetail; version: DesignVersion; changed: boolean }>(designRoutes.restore(id, versionId), {
       method: 'POST',
       body: JSON.stringify({ expectedRevision, requestId: makeRequestId('restore-ver') }),
     }),
 
   // Comments
   listComments: (id: string) => requestJson<{ comments: DesignComment[]; sourceRevision: string }>(designRoutes.comments(id)),
+  getCommentPreviewSlideIndex: async (projectId: string, commentId: string) => {
+    const response = await fetch(designRoutes.commentPreview(projectId, commentId), { method: 'HEAD', cache: 'no-store' });
+    return response.ok ? readCommentPreviewSlideIndex(response) : undefined;
+  },
   createComment: (id: string, input: { text: string; anchor: DesignCommentAnchor; expectedRevision: string; requestId?: string }) =>
     requestJson<{ comment: DesignComment; comments: DesignComment[] }>(designRoutes.comments(id), {
       method: 'POST',

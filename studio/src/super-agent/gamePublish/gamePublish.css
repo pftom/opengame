@@ -10,6 +10,7 @@
 }
 
 .om-gp-panel {
+  position: relative;
   flex: 0 0 min(360px, 52%);
   min-width: 280px;
   min-height: 0;
@@ -19,6 +20,19 @@
   border-left: 1px solid var(--motion-border-subtle);
   color: var(--motion-text);
   font-size: var(--motion-text-sm);
+}
+
+@container sa-viewer (max-width: 920px) {
+  .om-gp-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(360px, 90%);
+    min-width: 0;
+    z-index: 6;
+    box-shadow: var(--motion-shadow-lg);
+  }
 }
 
 .om-gp-head {
@@ -138,13 +152,22 @@
   background: var(--motion-inset);
 }
 
-.om-gp-hero img,
+.om-gp-hero img {
+  flex: none;
+  width: 96px;
+  height: 54px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--motion-radius-md);
+  display: block;
+  background: var(--motion-panel);
+}
+
 .om-gp-hero-placeholder {
   flex: none;
-  width: 72px;
-  height: 72px;
-  object-fit: cover;
-  border-radius: var(--motion-radius-lg);
+  width: 54px;
+  height: 54px;
+  border-radius: var(--motion-radius-md);
   display: grid;
   place-items: center;
   background: var(--motion-panel);
@@ -395,8 +418,6 @@
 .om-gp-result-card .om-gp-primary { margin-top: var(--motion-space-6); }
 
 /* Missing developer tool dialog: covers the publish panel until the tool is found or skipped. */
-.om-gp-panel { position: relative; }
-
 .om-gp-dialog-scrim {
   position: absolute;
   inset: 0;

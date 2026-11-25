@@ -6,7 +6,7 @@ import { lstatSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { WorkspaceStore, projectPath } from '../workspace.ts';
@@ -44,7 +44,9 @@ export async function startWorkspaceStudio(runtimeRoot: string, dataDirectory: s
   const preparePreviewFonts = createPreviewFontPreparation(injectDeterministicFontFaces);
   const { create: parseFont } = require('fontkit');
   const fonts = createFontCatalog(fontDirectories().flatMap(directory => collectFontFileEntries(directory).map(entry => entry.path)), parseFont);
-  const historyModule = path.join(path.dirname(require.resolve('@hyperframes/studio-server/package.json')), 'dist/history/index.js');
+  const studioServerRoot = path.dirname(require.resolve('@hyperframes/studio-server/package.json'));
+  const { createStudioApi, requestSubPath } = await import(pathToFileURL(path.join(studioServerRoot, 'dist/index.js')).href);
+  const historyModule = path.join(studioServerRoot, 'dist/history/index.js');
   const { DEFAULT_HISTORY_ROOT } = await import(pathToFileURL(historyModule).href);
   const historyRoot = process.env.HYPERFRAMES_HISTORY_ROOT ?? DEFAULT_HISTORY_ROOT;
   const store = new WorkspaceStore(dataDirectory);
@@ -84,6 +86,7 @@ export async function startWorkspaceStudio(runtimeRoot: string, dataDirectory: s
           return result;
         };
         const nativeApp = host.app;
+        let parallelThumbnails: ReturnType<typeof createStudioApi> | undefined;
         const attempts = new StudioRenderAttempts(scoped.projectDirectory, async attempt => {
           if (attempt.workId) await workRounds.exported(id, attempt.workId, 'studio');
         });
@@ -106,6 +109,23 @@ export async function startWorkspaceStudio(runtimeRoot: string, dataDirectory: s
           }
         };
         host.app = new Hono().get('/api/fonts', async c => c.json({ fonts: await fonts.families() }))
+          .get('/api/projects/:id/thumbnail/*', c => {
+            const url = new URL(c.req.url);
+            const query = url.searchParams;
+            if (query.has('selector') || query.has('cached') || query.get('output') === 'source' || query.get('format') === 'png') {
+              return nativeApp.fetch(c.req.raw);
+            }
+            let composition = requestSubPath(url.href, 'projects/:id/thumbnail');
+            if (composition && !composition.includes('.')) composition += '.html';
+            // Keep each composition on one queue, including aliases and different seek times.
+            const lane = createHash('sha256').update(composition).digest()[0] % 2;
+            if (lane === 0) return nativeApp.fetch(c.req.raw);
+            // The standalone API and the CLI bundle each own a single capture slot.
+            // Both use the same project adapter, native renderer and on-disk cache.
+            parallelThumbnails ??= createStudioApi(host.adapter);
+            url.pathname = url.pathname.slice('/api'.length);
+            return parallelThumbnails.fetch(new Request(url, { headers: c.req.raw.headers, signal: c.req.raw.signal }));
+          })
           .post('/api/projects/:id/render', async c => {
             const busy = () => c.json({ code: 'EXPORT_BUSY', applied: false, error: 'An export is already in progress. Check the original task.' }, 409);
             if (attempts.hasActiveWorker()) return busy();

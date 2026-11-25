@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { act } from 'react';
+import { act, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { SuperAgentChat, SuperAgentChatSummary, SuperAgentResourceCatalog } from '../../../shared/super-agent';
@@ -9,14 +9,15 @@ import { translate } from '../i18n/messages';
 import { ApplicationHeader } from '../motion/ApplicationChrome';
 import { communityGames } from '../motion/game/gameCatalog';
 import { WorkspaceChromeContext } from '../motion/WorkspaceChromeContext';
-import { SUPER_AGENT_API } from '../../../shared/super-agent';
+import { SUPER_AGENT_API, summarizeSuperAgentChat } from '../../../shared/super-agent';
 import { buildSuperAgentHandoff } from '../../../shared/capability-hub';
 import { queueSuperAgentHandoff } from '../motion/superAgentHandoff';
-import { clampSuperAgentViewerWidth, SuperAgentWorkspace } from './SuperAgentWorkspace';
+import { clampSuperAgentViewerWidth, stackedArtifactViewerHeight, SuperAgentWorkspace } from './SuperAgentWorkspace';
 import { ExecutionTimeline, formatElapsedDuration, SuperAgentLiveProgressDock } from './ExecutionTimeline';
 import { SimpleMarkdown } from './SimpleMarkdown';
 import { DEFAULT_MODE_COMPOSER_OPTIONS, getModeComposerPlaceholder } from './ModeComposerControls';
 import { SUPER_AGENT_MODES } from './ModeResourceShowcase';
+import { ArtifactBrowserPane } from './ArtifactBrowserPane';
 import { clearSuperAgentCache, peekCachedSuperAgentChat } from './superAgentClient';
 import { designClient } from '../design/designClient';
 import { setClientCacheOverrideForTest } from '../utils/clientCacheMode';
@@ -347,6 +348,100 @@ async function flush() {
   });
 }
 
+it('keeps each MP4 source playable when switching directly between export tabs', async () => {
+  const artifacts: SuperAgentChat['artifacts'] = ['first', 'second', 'third'].map(jobId => ({
+    id: `export:${jobId}`,
+    kind: 'motion-export',
+    title: 'Motion · MP4',
+    jobId,
+    downloadUrl: `/api/exports/${jobId}/file`,
+    createdAt: 1000,
+    updatedAt: 1000,
+  }));
+  const noop = () => {};
+  function Viewer() {
+    const [activeTabId, setActiveTabId] = useState(artifacts[0].id);
+    return <ArtifactBrowserPane
+      chatId={null} artifacts={artifacts} openTabIds={artifacts.map(artifact => artifact.id)}
+      activeTabId={activeTabId} expanded={false} workspaceItems={[]}
+      onSelectTab={setActiveTabId} onCloseTab={noop} onNewTab={noop} onOpenWebUrl={noop}
+      onOpenArtifact={noop} onOpenResource={noop} onToggleExpand={noop} onClosePane={noop}
+      onAttachArtifact={noop} onOpenInDesignStudio={noop} onOpenInMotionStudio={noop}
+      onOpenInAssets={noop} onOpenInBrandKit={noop}
+    />;
+  }
+  await act(async () => root.render(<I18nProvider initialLocale="en"><Viewer /></I18nProvider>));
+  const tabs = [...container.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+  for (const index of [0, 1, 2, 0]) {
+    await act(async () => tabs[index].click());
+    expect(container.querySelector('video')?.getAttribute('src')).toBe(artifacts[index].downloadUrl);
+  }
+  const player = container.querySelector('video');
+  await act(async () => root.render(null));
+  expect(player?.getAttribute('src')).toBeNull();
+});
+
+it('shows only the newest completed MP4 per project in the chat and viewer', async () => {
+  const chatId = '32b46dfe-acd6-4fa8-84da-21861c8bcdf5';
+  const motionExport = (jobId: string, projectId: string, createdAt: number, exportRequestedAt?: number): SuperAgentChat['artifacts'][number] => ({
+    id: `export:${jobId}`,
+    kind: 'motion-export',
+    title: jobId,
+    projectId,
+    jobId,
+    downloadUrl: `/api/exports/${jobId}/file`,
+    createdAt,
+    updatedAt: createdAt,
+    exportRequestedAt,
+  });
+  const first = motionExport('First review', 'motion-a', 2000);
+  const second = motionExport('Second review', 'motion-a', 3000);
+  const other = motionExport('Other project', 'motion-b', 4000);
+  const latest = motionExport('Final export', 'motion-a', 5000, 4500);
+  const late = motionExport('Older job reported late', 'motion-a', 6000, 4200);
+  const initial: SuperAgentChat = {
+    ...sampleChat, id: chatId, state: 'idle', approvals: [],
+    messages: [{ id: 'export-prompt', role: 'user', text: 'Export the video', createdAt: 1000 }],
+    artifacts: [first, second, other], activeArtifactId: first.id, updatedAt: 4000,
+  };
+  const baseFetch = globalThis.fetch;
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => (
+    String(input) === `${SUPER_AGENT_API}/chats/${chatId}`
+      ? Response.json({ conversation: initial })
+      : baseFetch(input, init)
+  ));
+
+  await act(async () => root.render(
+    <I18nProvider initialLocale="en">
+      <SuperAgentWorkspace active chatId={chatId} onChatIdChange={vi.fn()}
+        onOpenDesignProject={vi.fn()} onOpenMotionProject={vi.fn()} onOpenAsset={vi.fn()}
+        onOpenBrandKit={vi.fn()} onOpenAgentSettings={vi.fn()} onOpenMcp={vi.fn()}
+      />
+    </I18nProvider>,
+  ));
+  await flush();
+  const openViewer = container.querySelector<HTMLButtonElement>('[aria-label="Artifact Viewer"]')!;
+  await act(async () => openViewer.click());
+  const cards = () => [...container.querySelectorAll('.om-sa-deliverable-card[data-kind="motion-export"] strong')]
+    .map(item => item.textContent);
+  const tabs = () => [...container.querySelectorAll('.om-sa-viewer-tabs [role="tab"]')]
+    .map(item => item.textContent);
+  const playing = () => container.querySelector('.om-sa-media-stage video')?.getAttribute('src');
+  await vi.waitFor(() => expect(playing()).toBe(second.downloadUrl));
+  expect(cards()).toEqual(['Second review', 'Other project']);
+  expect(tabs()).toEqual(['Second review', 'Other project']);
+
+  const listeners = MockEventSource.instances.at(-1)!.listeners.get('chat')!;
+  await act(async () => {
+    const next = { ...initial, artifacts: [...initial.artifacts, latest, late], activeArtifactId: late.id, updatedAt: 6000 };
+    for (const listener of listeners) listener({ data: JSON.stringify(next) } as MessageEvent);
+  });
+  await flush();
+  expect(cards()).toEqual(['Other project', 'Final export']);
+  expect(tabs()).toEqual(['Final export', 'Other project']);
+  expect(playing()).toBe(latest.downloadUrl);
+});
+
 function getComposerEditor(rootEl: ParentNode = container): HTMLElement {
   return rootEl.querySelector<HTMLElement>('.om-sa-composer .om-sa-composer-editor')!;
 }
@@ -625,7 +720,7 @@ it('shows Chinese image controls and keeps the draft when switching creation mod
   const slot = group.querySelector<HTMLElement>('.om-sa-dock-slot')!;
   expect(slot.contains(composer)).toBe(true);
   expect(slot.nextElementSibling?.classList.contains('om-sa-mode-ideas')).toBe(true);
-  expect(group.nextElementSibling?.querySelector('h3')?.textContent).toBe('探索模版');
+  expect(group.nextElementSibling?.querySelector('h3')?.textContent).toBe('探索模板');
   const scroll = container.querySelector<HTMLElement>('.om-sa-messages')!;
   Object.defineProperty(scroll, 'clientHeight', { value: 600 });
   vi.spyOn(slot, 'getBoundingClientRect').mockImplementation(() => new DOMRect(0, 100 - scroll.scrollTop, 700, 150));
@@ -1128,6 +1223,21 @@ it('clamps Artifact Viewer width against docked sidebar and center stream across
   expect(clampSuperAgentViewerWidth(400, 420, 0)).toBe(240);
 });
 
+it('sizes the stacked Artifact Viewer within the available height', () => {
+  expect(stackedArtifactViewerHeight(701, null)).toEqual({ min: 160, max: 480, value: 364 });
+  expect(stackedArtifactViewerHeight(701, 20).value).toBe(160);
+  expect(stackedArtifactViewerHeight(701, 600).value).toBe(480);
+  expect(stackedArtifactViewerHeight(406, 350)).toEqual({ min: 141, max: 185, value: 185 });
+  expect(stackedArtifactViewerHeight(301, 210)).toEqual({ min: 105, max: 126, value: 126 });
+  expect(stackedArtifactViewerHeight(0, 400)).toEqual({ min: 0, max: 0, value: 0 });
+});
+
+it('gives an embedded Motion editor more height while respecting the chat and manual resizing', () => {
+  expect(stackedArtifactViewerHeight(701, null, true)).toEqual({ min: 160, max: 480, value: 480 });
+  expect(stackedArtifactViewerHeight(681, null, true).value).toBe(460);
+  expect(stackedArtifactViewerHeight(701, 300, true).value).toBe(300);
+});
+
 it('renders ExecutionTimeline live status, grouped Work Log with diffs/commands, deliverables, and enhanced SimpleMarkdown', async () => {
   const onCopyText = vi.fn();
   const onOpenArtifactId = vi.fn();
@@ -1598,6 +1708,56 @@ it('enters pure Coding mode from Explore more and renders sidebar/header intent 
       updatedAt: 3000,
       createdAt: 1000,
     },
+    summarizeSuperAgentChat({
+      ...sampleChat,
+      id: 'e02bd75e-6976-4c50-9324-a8d7cbe35f40',
+      title: 'Mobile prototype',
+      intent: 'website',
+      state: 'idle',
+      activeArtifactId: sampleChat.artifacts[0].id,
+      artifacts: [{ ...sampleChat.artifacts[0], scenario: 'mobile-app' }],
+    }),
+    summarizeSuperAgentChat({
+      ...sampleChat,
+      id: '2923b1ec-3847-4d43-889c-2c3af5dceb2d',
+      title: 'Editable document',
+      intent: 'website',
+      state: 'waiting',
+      artifacts: [{ ...sampleChat.artifacts[0], scenario: 'document' }],
+    }),
+    summarizeSuperAgentChat({
+      ...sampleChat,
+      id: '9d71301a-2eb7-4bea-b87b-4d6c801f2552',
+      title: 'Generated product video',
+      intent: 'video',
+      state: 'idle',
+      messages: [],
+      artifacts: [{ id: 'generated', kind: 'asset-video', title: 'Product clip', createdAt: 1000, updatedAt: 1000 }],
+    }),
+    summarizeSuperAgentChat({
+      ...sampleChat,
+      id: '491ee881-b25c-4bf4-bcab-aa1b4e183a4c',
+      title: 'Video model draft',
+      intent: 'video',
+      state: 'running',
+      artifacts: [],
+      messages: [{
+        id: 'video-prompt',
+        role: 'user',
+        text: 'Show the product in motion',
+        createdAt: 1000,
+        contextTags: [{ kind: 'mode', label: 'Video', tone: 'video', icon: 'clapperboard-line' }],
+      }],
+    }),
+    summarizeSuperAgentChat({
+      ...sampleChat,
+      id: '51ac4baa-0d92-4f70-8ba4-0666af5fb3b5',
+      title: 'Exported motion graphics',
+      intent: 'video',
+      state: 'idle',
+      messages: [],
+      artifacts: [{ id: 'export', kind: 'motion-export', title: 'Motion · MP4', createdAt: 1000, updatedAt: 1000 }],
+    }),
     {
       id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
       title: 'Promo Reel',
@@ -1698,6 +1858,18 @@ it('enters pure Coding mode from Explore more and renders sidebar/header intent 
   expect(document.querySelector('.om-sa-chat-status-badge[data-state="failed"]')?.textContent).toBe('Stopped');
   expect(document.querySelector('.om-sa-chat-icon[data-intent="chat"][data-tone="neutral"]')).toBeTruthy();
 
+  const iconForTask = (title: string) => [...container.querySelectorAll('.om-sa-chat-row-btn')]
+    .find(row => row.querySelector('.om-sa-chat-title')?.textContent === title)
+    ?.querySelector('.om-sa-chat-icon svg')?.getAttribute('data-remix-icon');
+  expect(iconForTask('Landing Prototype')).toBe('layout-line');
+  expect(iconForTask('Mobile prototype')).toBe('smartphone-line');
+  expect(iconForTask('Editable document')).toBe('file-text-line');
+  expect(document.querySelector('.om-sa-chat-status-badge[data-state="waiting"]')?.textContent).toBe('Approval needed');
+  expect(iconForTask('Promo Reel')).toBe('movie-line');
+  expect(iconForTask('Generated product video')).toBe('clapperboard-line');
+  expect(iconForTask('Video model draft')).toBe('clapperboard-line');
+  expect(iconForTask('Exported motion graphics')).toBe('movie-line');
+
   const more = container.querySelector<HTMLButtonElement>('.om-sa-starter-card-more')!;
   await act(async () => more.click());
   const items = [...document.querySelectorAll<HTMLButtonElement>('.om-sa-more-menu .om-sa-more-item')];
@@ -1708,7 +1880,6 @@ it('enters pure Coding mode from Explore more and renders sidebar/header intent 
     'Generate image',
     'Build a website',
     'Create audio',
-    'Cinema video',
     'Coding',
   ]);
   const codingItem = items.find(item => item.textContent === 'Coding')!;
@@ -2386,37 +2557,54 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
 
     const filters = container.querySelector('.om-sa-showcase-tabs')!;
     const gameTab = [...filters.querySelectorAll('button')].find(tab => tab.textContent?.includes('All games'))!;
-    const brandTab = [...filters.querySelectorAll('button')].find(tab => tab.textContent?.includes('Brand Kits'))!;
-    const viewAll = container.querySelector<HTMLButtonElement>('.om-sa-showcase-bar .om-sa-showcase-more')!;
+    expect([...filters.querySelectorAll('button')].find(tab => tab.textContent?.includes('Brand Kits'))).toBeUndefined();
     const gameCount = Number(gameTab.querySelector('.om-sa-tab-count')?.textContent);
-    expect(viewAll.textContent).toBe('View all');
+    expect(container.querySelector('.om-sa-showcase-bar .om-sa-showcase-more')).toBeNull();
+    expect(container.querySelector('.om-sa-showcase-bar .om-sa-game-bar-controls .om-sa-game-search')).toBeTruthy();
+    expect(container.querySelector('.om-sa-showcase-bar .om-sa-game-bar-controls .om-sa-game-sort')).toBeTruthy();
     expect(container.querySelectorAll('.om-sa-game-showcase-card').length).toBeLessThan(gameCount);
-    await act(async () => viewAll.click());
+    while (container.querySelector<HTMLButtonElement>('.om-sa-load-more-btn')) {
+      const loadMore = container.querySelector<HTMLButtonElement>('.om-sa-load-more-btn')!;
+      await act(async () => loadMore.click());
+    }
     expect(container.querySelectorAll('.om-sa-game-showcase-card')).toHaveLength(gameCount);
-    const legacyCard = container.querySelector('[aria-label="Play Legacy Arena"]')?.closest('article');
+    const legacyCard = container.querySelector('[aria-label="Try game: Legacy Arena"]')?.closest('article');
     expect(legacyCard).toBeTruthy();
     expect(legacyCard?.querySelector('.om-sa-game-tile-remix')).toBeNull();
-    expect(container.querySelector('.om-sa-mode-ideas')?.textContent).not.toContain('Co-op 3D crystal defense');
-    await act(async () => brandTab.click());
-    expect(container.querySelector('.om-sa-showcase-more')).toBe(viewAll);
-    expect(container.querySelector('.om-sa-game-search')).toBeNull();
-    await act(async () => gameTab.click());
-    expect(container.querySelector('.om-sa-showcase-more')).toBe(viewAll);
-    expect(container.querySelector('.om-sa-game-search')).toBeTruthy();
+    expect(container.querySelector('.om-sa-mode-ideas')).toBeNull();
+    // Game mode keeps the composer pinned at the bottom so templates remain visible above the fold.
+    expect(container.querySelector('.om-sa-mode-composer-group')).toBeNull();
+    expect(container.querySelector('.om-sa-stream > .om-sa-messages + .om-sa-composer-placement .om-sa-composer-editor')).toBeTruthy();
+
+    // Clicking a Hero genre badge updates both composer options and the template filter tab, scrolls to templates, and toggles back cleanly.
+    const scroller = container.querySelector<HTMLElement>('.om-sa-messages')!;
+    const scrollToSpy = vi.fn();
+    scroller.scrollTo = scrollToSpy;
+    const shooterBadge = [...container.querySelectorAll<HTMLButtonElement>('.om-sa-game-genre-card')]
+      .find(card => card.textContent?.includes('Shooter'))!;
+    await act(async () => {
+      shooterBadge.click();
+      await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
+    });
+    expect(filters.querySelector('[aria-selected="true"]')?.textContent).toContain('Shooter');
+    expect(scrollToSpy).toHaveBeenCalled();
+    await act(async () => shooterBadge.click());
+    expect(filters.querySelector('[aria-selected="true"]')?.textContent).toContain('All games');
 
     const topBar = container.querySelector('.om-sa-composer-top-bar')!;
     expect(topBar).toBeTruthy();
     expect(topBar.textContent).toContain('Genre');
     expect(topBar.textContent).not.toContain('Shooter');
-    expect(topBar.textContent).toContain('Style');
+    expect(topBar.textContent).toContain('Art style');
     expect(topBar.textContent).toContain('Setting');
-    expect(topBar.textContent).toContain('Landscape');
+    expect(topBar.textContent).toContain('Screen layout');
+    expect(topBar.textContent).not.toContain('Landscape');
     const adSwitch = topBar.querySelector<HTMLElement>('[role="switch"][aria-label="Playable ad"]')!;
     const adSwitchLabel = adSwitch.closest('label')!;
     expect(adSwitch.getAttribute('aria-checked')).toBe('false');
 
-    // Open Style popover and pick Pixel art
-    const styleTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Style')) as HTMLButtonElement;
+    // Open Art style popover and pick Pixel art
+    const styleTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Art style')) as HTMLButtonElement;
     await act(async () => styleTrigger.click());
     await flush();
     const pixelOption = [...document.querySelectorAll('.om-sa-game-art-option')].find(b => b.textContent?.includes('Pixel art')) as HTMLButtonElement;
@@ -2424,9 +2612,10 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
     await act(async () => pixelOption.click());
     await flush();
 
-    // Open Orientation dropdown and select Portrait (9:16)
-    const orientationTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Landscape')) as HTMLButtonElement;
+    // Open Screen layout dropdown: both Landscape and Portrait are explicit active choices, and Any screen layout clears back to neutral.
+    const orientationTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Screen layout')) as HTMLButtonElement;
     expect(orientationTrigger.getAttribute('aria-haspopup')).toBe('listbox');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(false);
     await act(async () => orientationTrigger.click());
     await flush();
     const portraitOption = [...document.querySelectorAll('.om-sa-game-choice-row')].find(b => b.textContent?.includes('Portrait')) as HTMLButtonElement;
@@ -2435,18 +2624,39 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
     await act(async () => portraitOption.click());
     await flush();
     expect(topBar.textContent).toContain('Portrait');
-    expect(adSwitch.getAttribute('aria-checked')).toBe('true');
-    await act(async () => adSwitchLabel.click());
-    await flush();
-    expect(topBar.textContent).toContain('Portrait');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(true);
     expect(adSwitch.getAttribute('aria-checked')).toBe('false');
 
+    // Select Landscape -> also highlighted as active; clicking Any screen layout clears back to unselected neutral state.
     const portraitTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Portrait'))!;
     await act(async () => portraitTrigger.click());
     await flush();
     const landscapeOption = [...document.querySelectorAll<HTMLButtonElement>('.om-sa-game-choice-row')].find(b => b.querySelector('strong')?.textContent === 'Landscape')!;
     await act(async () => landscapeOption.click());
     await flush();
+    expect(topBar.textContent).toContain('Landscape');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(true);
+    expect(adSwitch.getAttribute('aria-checked')).toBe('false');
+
+    await act(async () => orientationTrigger.click());
+    await flush();
+    const clearLayoutBtn = [...document.querySelectorAll<HTMLButtonElement>('.om-sa-popover-pill')].find(b => b.textContent?.includes('Any screen layout'))!;
+    expect(clearLayoutBtn).toBeTruthy();
+    await act(async () => clearLayoutBtn.click());
+    await flush();
+    expect(topBar.textContent).toContain('Screen layout');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(false);
+
+    // Toggle Playable ad on from unselected layout -> sets Portrait, toggling off restores unselected Screen layout.
+    await act(async () => adSwitchLabel.click());
+    await flush();
+    expect(topBar.textContent).toContain('Portrait');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(true);
+    expect(adSwitch.getAttribute('aria-checked')).toBe('true');
+    await act(async () => adSwitchLabel.click());
+    await flush();
+    expect(topBar.textContent).toContain('Screen layout');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(false);
     expect(adSwitch.getAttribute('aria-checked')).toBe('false');
     await act(async () => adSwitchLabel.click());
     await flush();
@@ -3101,8 +3311,10 @@ it('renders persistent live progress dock, ticking step timers, and Continue rec
 });
 
 it('auto-enters Game mode when opened from Game Studio, plays games in Artifact Viewer without creating empty chats, and supports remix selection', async () => {
+  const jsonResponse = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
   let chatCreateCalls = 0;
-  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const method = (init?.method || 'GET').toUpperCase();
     if (url.includes('/motion-api/super-agent/chats') && method === 'POST') {
@@ -3110,11 +3322,25 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
     }
     if (url.includes('/motion-api/super-agent/chats')) return jsonResponse({ conversations: [] });
     if (url.includes('/motion-api/super-agent/resources')) return jsonResponse({ items: [], counts: { assets: 0, designProjects: 0, motionProjects: 0, brandKits: 0, templates: 0, skills: 0, total: 0 } });
-    if (url.includes('/motion-api/settings/agents')) return jsonResponse({ agents: [{ id: 'codex', label: 'Codex', installed: true, auth: 'signed-in', models: [] }] });
-    if (url.includes('/motion-api/settings/agent-runtimes')) return jsonResponse({ localDirectAvailable: true, runtimes: [] });
+    if (url.includes('/settings/agents')) {
+      return jsonResponse({ agents: [{ id: 'codex', label: 'Codex', icon: 'codex', installed: true, auth: 'signed-in', models: [{ id: 'gpt-5', label: 'GPT-5', reasoning: ['medium'] }] }] });
+    }
+    if (url.includes('/agent-runtimes')) {
+      return jsonResponse({
+        localDirectAvailable: true,
+        runtimes: [{
+          id: 'local-direct',
+          kind: 'local-direct',
+          name: 'This computer',
+          status: 'online',
+          agents: [{ id: 'codex', label: 'Codex', icon: 'codex', installed: true, auth: 'signed-in', models: [] }],
+          runnableAgentIds: ['codex'],
+        }],
+      });
+    }
     if (url.includes('/motion-api/games')) return jsonResponse({ games: [] });
     return jsonResponse({});
-  }));
+  });
 
   await act(async () => {
     root.render(
@@ -3141,7 +3367,7 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
   // Auto-switched into Game mode with fanned hero, search input, sort combobox, and masonry waterfall
   expect(container.querySelector('.om-sa-stream')?.getAttribute('data-mode')).toBe('game');
   expect(container.querySelectorAll('.om-sa-game-fan-card').length).toBeGreaterThan(0);
-  expect(container.querySelectorAll('.om-sa-game-fan-actions .om-sa-game-tile-play').length).toBe(1);
+  expect(container.querySelectorAll('.om-sa-game-fan-actions .om-sa-game-tile-remix').length).toBe(1);
   expect(container.querySelector('.om-sa-game-search input')).toBeTruthy();
   expect(container.querySelector('.om-sa-game-sort [role="combobox"]')).toBeTruthy();
   expect(container.querySelectorAll('.om-sa-game-tile').length).toBeGreaterThan(0);
@@ -3150,18 +3376,39 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
   const viewer = container.querySelector('.om-sa-viewer');
   expect(viewer).toBeTruthy();
   expect(viewer?.textContent).toContain('The Little Prince: Star Journey');
+  expect(viewer?.querySelector('.om-sa-publish-trigger')).toBeNull();
+  expect(viewer?.querySelector<HTMLInputElement>('input[aria-label="Artifact address bar"]')?.value).toBe('littleprince.dev');
   expect(chatCreateCalls).toBe(0);
 
-  // Clicking "Remix" inside the Artifact Viewer selects the playing game into the Agent composer
+  // Clicking "Remix" inside the Artifact Viewer attaches a remix cartridge chip without auto-filling template copy or overwriting top-bar params
   const viewerUseBtn = viewer?.querySelector('.om-sa-game-use-btn') as HTMLButtonElement;
   expect(viewerUseBtn).toBeTruthy();
   expect(viewerUseBtn.textContent).toContain('Remix');
   await act(async () => viewerUseBtn.click());
   await flush();
-  expect(container.querySelector('.om-sa-composer-chips')?.textContent).toContain('The Little Prince: Star Journey');
+  const remixChip = container.querySelector('.om-sa-composer-chips .om-sa-game-remix-chip');
+  expect(remixChip?.textContent).toContain('The Little Prince: Star Journey');
+  expect(remixChip?.querySelector('.om-sa-attachment-thumb')).toBeTruthy();
+  // Single chip relies on its own × remove button without a redundant Clear button
+  expect(container.querySelector('.om-sa-composer-chips .om-sa-chip-clear')).toBeNull();
 
   const gameInput = getComposerEditor(container);
-  expect(gameInput.textContent).toBe(communityGames.find(game => game.id === 'community-little-prince')!.description);
+  expect(gameInput.textContent).toBe('');
+  expect(gameInput.getAttribute('data-placeholder')).toBe('Describe how to remix The Little Prince: Star Journey, or send as is');
+  expect((container.querySelector('.om-sa-send-btn') as HTMLButtonElement).disabled).toBe(false);
+  const topBarAfterRemix = container.querySelector('.om-sa-composer-top-bar')!;
+  expect(topBarAfterRemix.textContent).toContain('Genre');
+  expect(topBarAfterRemix.textContent).toContain('Art style');
+  expect(topBarAfterRemix.textContent).toContain('Screen layout');
+  expect(topBarAfterRemix.querySelectorAll('[data-active]').length).toBe(0);
+
+  // Removing the Remix chip clears the chip tray and restores the default Game placeholder
+  const removeRemixChip = container.querySelector<HTMLButtonElement>('.om-sa-composer-chips .om-sa-chip-remove')!;
+  await act(async () => removeRemixChip.click());
+  await flush();
+  expect(container.querySelector('.om-sa-composer-chips')).toBeNull();
+  expect(gameInput.textContent).toBe('');
+  expect(gameInput.getAttribute('data-placeholder')).not.toContain('Describe how to remix');
 
   // Top fanned Hero carousel rotates smoothly via Next/Previous controls and side-card clicks
   const initialCenterLabel = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-fan-card')?.getAttribute('aria-label');
@@ -3172,55 +3419,223 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
   const nextCenterLabel = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-fan-card')?.getAttribute('aria-label');
   expect(nextCenterLabel).not.toBe(initialCenterLabel);
 
-  // Clicking the center Hero card selects it into the Agent composer (not jarring auto-play)
-  const fanCenterCard = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-fan-card') as HTMLButtonElement;
-  expect(fanCenterCard).toBeTruthy();
-  await act(async () => fanCenterCard.click());
+  // Clicking the center Hero card's Remix button selects it into the Agent composer, then clicking again deselects it
+  const fanRemixBtn = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-tile-remix') as HTMLButtonElement;
+  expect(fanRemixBtn).toBeTruthy();
+  await act(async () => fanRemixBtn.click());
   await flush();
   expect(container.querySelector('.om-sa-composer-chips')?.textContent).toContain('Remix ·');
-
-  // Clicking a bottom masonry card cover selects it into the composer. The Try game button opens the viewer.
-  const listCoverBtn = container.querySelector('.om-sa-game-tile .om-sa-game-tile-cover') as HTMLButtonElement;
-  expect(listCoverBtn).toBeTruthy();
-  await act(async () => listCoverBtn.click());
+  await act(async () => fanRemixBtn.click());
   await flush();
-  expect(container.querySelector('.om-sa-composer-chips')?.textContent).toContain('Remix ·');
+  expect(container.querySelector('.om-sa-composer-chips')).toBeNull();
 
+  // Clicking a bottom masonry card's Remix button selects it without modifying composer text, preserving user edits across toggles
   const racingGame = communityGames.find(game => game.id === 'community-turbo-kart')!;
-  const racingCard = container.querySelector<HTMLButtonElement>(`.om-sa-game-tile-cover[aria-label="Remix: ${racingGame.title}"]`)!;
-  await act(async () => racingCard.click());
-  expect(gameInput.textContent).toBe(racingGame.description);
-  await act(async () => racingCard.click());
+  const racingRemixBtn = container.querySelector<HTMLButtonElement>(`.om-sa-game-tile-remix[aria-label="Remix: ${racingGame.title}"]`)!;
+  await act(async () => racingRemixBtn.click());
   expect(gameInput.textContent).toBe('');
-  await act(async () => racingCard.click());
-  await typeInComposer(gameInput, ' Make the race three laps.');
-  await act(async () => racingCard.click());
-  expect(gameInput.textContent).toBe(`${racingGame.description} Make the race three laps.`);
+  expect(gameInput.getAttribute('data-placeholder')).toBe(`Describe how to remix ${racingGame.title}, or send as is`);
+  await act(async () => racingRemixBtn.click());
+  expect(container.querySelector('.om-sa-composer-chips')).toBeNull();
+  await act(async () => racingRemixBtn.click());
+  await typeInComposer(gameInput, 'Make the race three laps.');
+  await act(async () => racingRemixBtn.click());
+  expect(gameInput.textContent).toBe('Make the race three laps.');
 
-  const listPlayBtn = container.querySelector('.om-sa-game-tile .om-sa-game-tile-play') as HTMLButtonElement;
-  expect(listPlayBtn).toBeTruthy();
-  expect(listPlayBtn.textContent).toContain('Try game');
-  await act(async () => listPlayBtn.click());
-  await flush();
-  expect(container.querySelector('.om-sa-viewer')).toBeTruthy();
+  // Selecting another template when user has already typed preserves their prompt text untouched
+  await act(async () => racingRemixBtn.click());
+  expect(gameInput.textContent).toBe('Make the race three laps.');
 
+  // Clicking a masonry card cover opens it directly in the viewer (with preconnect on focus)
   const evensong = communityGames.find(game => game.id === 'community-evensong')!;
-  const evensongPlay = container.querySelector<HTMLButtonElement>(`button[aria-label="Try game: ${evensong.title}"]`)!;
+  const evensongCover = container.querySelector<HTMLButtonElement>(`.om-sa-game-tile-cover[aria-label="Try game: ${evensong.title}"]`)!;
   const origin = new URL(evensong.external!.url).origin;
-  await act(async () => evensongPlay.focus());
+  await act(async () => evensongCover.focus());
   expect(document.head.querySelector(`link[rel="preconnect"][href="${origin}"]`)).toBeTruthy();
 
-  await act(async () => evensongPlay.click());
+  await act(async () => evensongCover.click());
   const gameFrame = () => container.querySelector<HTMLIFrameElement>(`iframe[title="${evensong.title}"]`);
   const originalFrame = gameFrame();
   expect(originalFrame?.getAttribute('src')).toBe(evensong.external!.url);
 
-  await act(async () => evensongPlay.click());
+  await act(async () => evensongCover.click());
   expect(gameFrame()).toBe(originalFrame);
 
   const reload = container.querySelector<HTMLButtonElement>('.om-sa-viewer button[aria-label="Reload"]')!;
   await act(async () => reload.click());
   expect(gameFrame()).not.toBe(originalFrame);
+
+  // Closing the last game preview tab collapses the split viewer back to the full homepage
+  while (container.querySelector<HTMLButtonElement>('.om-sa-viewer-tab-close')) {
+    const closeTab = container.querySelector<HTMLButtonElement>('.om-sa-viewer-tab-close')!;
+    await act(async () => closeTab.click());
+    await flush();
+  }
+  expect(container.querySelector('.om-sa-viewer')).toBeNull();
+});
+
+it('forwards explicit composer parameter overrides when remixing a local built-in game template', async () => {
+  const REMIX_CHAT_ID = '22222222-2222-2222-2222-222222222222';
+  const REMIXED_GAME_ID = '33333333-3333-3333-3333-333333333333';
+  const localTemplate = {
+    id: 'local-lantern-hop',
+    title: 'Lantern Hop',
+    description: 'Leap across lantern rooftops at dusk.',
+    genre: 'platformer',
+    style: 'illustrated',
+    setting: 'fantasy',
+    multiplayer: false,
+    maxPlayers: 1,
+    orientation: 'landscape',
+    playableAd: false,
+    status: 'published',
+    cover: '/games/local-lantern-hop/cover.png',
+    playUrl: '/motion-api/games/local-lantern-hop/play/index.html',
+    plays: 120,
+    likes: 12,
+    dislikes: 0,
+    reaction: 0,
+    favorite: false,
+    source: 'template',
+    remixOf: null,
+    controls: '',
+    createdAt: '2026-11-22T00:00:00.000Z',
+    updatedAt: '2026-11-22T00:00:00.000Z',
+  };
+  let remixEndpointCalls = 0;
+  let remixRequestBody: any = null;
+  let turnBody: any = null;
+  const createdChat: SuperAgentChat = {
+    id: REMIX_CHAT_ID,
+    title: 'Remix · Lantern Hop',
+    engine: 'codex',
+    model: 'gpt-5',
+    intent: 'game',
+    permissionMode: 'auto',
+    createdAt: 1000,
+    updatedAt: 1000,
+    state: 'idle',
+    messages: [],
+    artifacts: [],
+    approvals: [],
+  };
+
+  const jsonResponse = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = (init?.method || 'GET').toUpperCase();
+    if (url.includes('/motion-api/super-agent/chats') && method === 'POST' && !url.includes('/turn')) {
+      return jsonResponse({ conversation: createdChat });
+    }
+    if (url.includes(`/motion-api/super-agent/chats/${REMIX_CHAT_ID}/turn`) && method === 'POST') {
+      turnBody = JSON.parse(String(init?.body ?? '{}'));
+      return jsonResponse({ conversation: { ...createdChat, state: 'running' } });
+    }
+    if (url.includes(`/motion-api/super-agent/chats/${REMIX_CHAT_ID}`)) return jsonResponse({ conversation: createdChat });
+    if (url.includes('/motion-api/super-agent/chats')) return jsonResponse({ conversations: [] });
+    if (url.includes('/motion-api/super-agent/resources')) return jsonResponse({ items: [], counts: { assets: 0, designProjects: 0, motionProjects: 0, brandKits: 0, templates: 0, skills: 0, total: 0 } });
+    if (url.includes('/settings/agents')) {
+      return jsonResponse({ agents: [{ id: 'codex', label: 'Codex', icon: 'codex', installed: true, auth: 'signed-in', models: [{ id: 'gpt-5', label: 'GPT-5', reasoning: ['medium'] }] }] });
+    }
+    if (url.includes('/agent-runtimes')) {
+      return jsonResponse({
+        localDirectAvailable: true,
+        runtimes: [{
+          id: 'local-direct',
+          kind: 'local-direct',
+          name: 'This computer',
+          status: 'online',
+          agents: [{ id: 'codex', label: 'Codex', icon: 'codex', installed: true, auth: 'signed-in', models: [] }],
+          runnableAgentIds: ['codex'],
+        }],
+      });
+    }
+    if (url.endsWith('/motion-api/games/local-lantern-hop/remix') && method === 'POST') {
+      remixEndpointCalls += 1;
+      remixRequestBody = JSON.parse(String(init?.body ?? '{}'));
+      return jsonResponse({
+        game: {
+          ...localTemplate,
+          ...remixRequestBody,
+          id: REMIXED_GAME_ID,
+          source: 'mine',
+          remixOf: localTemplate.id,
+          playUrl: `/motion-api/games/${REMIXED_GAME_ID}/play/index.html`,
+        },
+        agentInstruction: 'Use openmotion_game_* tools to remix Lantern Hop.',
+      });
+    }
+    if (url.includes('/motion-api/games')) return jsonResponse({ games: [localTemplate] });
+    return jsonResponse({});
+  });
+
+  await act(async () => {
+    root.render(
+      <I18nProvider initialLocale="en">
+        <SuperAgentWorkspace
+          active
+          chatId={null}
+          requestedMode="game"
+          onChatIdChange={vi.fn()}
+          onOpenDesignProject={vi.fn()}
+          onOpenMotionProject={vi.fn()}
+          onOpenAsset={vi.fn()}
+          onOpenBrandKit={vi.fn()}
+          onOpenAgentSettings={vi.fn()}
+          onOpenMcp={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+  });
+  await flush();
+  await flush();
+
+  // Filter to Platformer so the local template is immediately visible and click Remix
+  const platformerTab = [...container.querySelectorAll<HTMLButtonElement>('.om-sa-showcase-tabs button')]
+    .find(tab => tab.textContent?.includes('Platformer'))!;
+  await act(async () => platformerTab.click());
+  await flush();
+
+  const localRemixBtn = container.querySelector<HTMLButtonElement>('.om-sa-game-tile-remix[aria-label="Remix: Lantern Hop"]')!;
+  expect(localRemixBtn).toBeTruthy();
+  await act(async () => localRemixBtn.click());
+  await flush();
+
+  // Top bar stays neutral until the user explicitly chooses overrides
+  const topBar = container.querySelector('.om-sa-composer-top-bar')!;
+  expect(topBar.querySelectorAll('[data-active]').length).toBe(0);
+
+  // Pick Art style = Pixel art and Screen layout = Portrait as remix overrides
+  const styleTrigger = [...topBar.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.includes('Art style'))!;
+  await act(async () => styleTrigger.click());
+  await flush();
+  const pixelOption = [...document.querySelectorAll<HTMLButtonElement>('.om-sa-game-art-option')].find(b => b.textContent?.includes('Pixel art'))!;
+  await act(async () => pixelOption.click());
+  await flush();
+
+  const layoutTrigger = [...topBar.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.includes('Screen layout'))!;
+  await act(async () => layoutTrigger.click());
+  await flush();
+  const portraitOption = [...document.querySelectorAll<HTMLButtonElement>('.om-sa-game-choice-row')].find(b => b.textContent?.includes('Portrait'))!;
+  await act(async () => portraitOption.click());
+  await flush();
+
+  // Send with empty composer text -> uses "Remix · Lantern Hop" and forwards the explicit overrides to hiddenInstructions and contextTags
+  const sendBtn = container.querySelector<HTMLButtonElement>('.om-sa-send-btn')!;
+  expect(sendBtn.disabled).toBe(false);
+  await act(async () => sendBtn.click());
+  await flush();
+
+  expect(remixEndpointCalls).toBe(1);
+  expect(remixRequestBody).toEqual({ style: 'pixel', orientation: 'portrait' });
+  expect(turnBody?.text).toBe('Remix · Lantern Hop');
+  expect(turnBody?.hiddenInstructions).toContain('Requested remix overrides: Style: Pixel art, Layout: Portrait (9:16).');
+  expect(turnBody?.hiddenInstructions).toContain('style=pixel');
+  expect(turnBody?.hiddenInstructions).toContain('orientation=portrait 9:16');
+  expect(turnBody?.contextTags?.map((tag: any) => tag.label)).toContain('Pixel art');
+  expect(turnBody?.contextTags?.map((tag: any) => tag.label)).toContain('9:16');
+  expect(turnBody?.contextTags?.map((tag: any) => tag.label)).toContain('Remix · Lantern Hop');
 });
 
 it('consumes Cloud deploy requests across viewer remounts and aborts deploy when opening a game fails', async () => {
@@ -3288,10 +3703,10 @@ it('consumes Cloud deploy requests across viewer remounts and aborts deploy when
   expect(container.querySelector('.om-sa-viewer')).toBeNull();
   expect(document.querySelector('.om-web-publish-popover')).toBeNull();
 
-  // Click Play on a masonry game card -> viewer remounts, but Cloud share popover must stay closed
-  const playBtn = container.querySelector('.om-sa-game-tile .om-sa-game-tile-play') as HTMLButtonElement;
-  expect(playBtn).toBeTruthy();
-  await act(async () => playBtn.click());
+  // Click a masonry game card cover to play -> viewer remounts, but Cloud share popover must stay closed
+  const playCover = container.querySelector('.om-sa-game-tile .om-sa-game-tile-cover') as HTMLButtonElement;
+  expect(playCover).toBeTruthy();
+  await act(async () => playCover.click());
   await flush();
   expect(container.querySelector('.om-sa-viewer')).toBeTruthy();
   expect(document.querySelector('.om-web-publish-popover')).toBeNull();
@@ -3595,6 +4010,11 @@ it('FilesChangedCard renders collapsible folder tree, inline diff/image preview,
   expect(card.textContent).toContain('Files changed (9)');
   expect(card.textContent).toContain('+45');
   expect(card.textContent).toContain('-1');
+  // Creative game turns collapse changed files by default above the deliverable card
+  expect(card.querySelector('.om-sa-files-changed-list')).toBeNull();
+  const initialExpandBtn = card.querySelector<HTMLButtonElement>('.om-sa-files-changed-head-btn')!;
+  await act(async () => initialExpandBtn.click());
+  await flush();
 
   const folderNames = [...card.querySelectorAll('.om-sa-file-folder-name')].map(el => el.textContent);
   expect(folderNames).toEqual(['assets', 'design']);
@@ -3765,7 +4185,12 @@ it('SuperAgentWorkspace shows task project directory in header and opens changed
   await act(async () => dirHeaderBtn.click());
   expect(navigator.clipboard.writeText).toHaveBeenCalledWith('/tmp/data/games/game-neon-1');
 
-  // Click Open in Code Viewer on style.css
+  // Expand collapsed changed-files summary on creative game turn, then click Open in Code Viewer on style.css
+  const filesHeadBtn = container.querySelector<HTMLButtonElement>('.om-sa-files-changed-head-btn')!;
+  expect(filesHeadBtn.getAttribute('aria-expanded')).toBe('false');
+  await act(async () => filesHeadBtn.click());
+  await flush();
+
   const openStyleBtn = [...container.querySelectorAll<HTMLButtonElement>('.om-sa-file-copy-btn')].find(
     btn => btn.getAttribute('aria-label') === 'Open in Code Viewer' && btn.closest('.om-sa-file-change-row')?.textContent?.includes('style.css'),
   )!;
@@ -3782,7 +4207,7 @@ it('SuperAgentWorkspace shows task project directory in header and opens changed
   expect(container.textContent).toContain('.hud { color: red; }');
 });
 
-function setupDesignStudioMocks({ assetLoadFailures = 0 } = {}) {
+function setupDesignStudioMocks({ assetLoadFailures = 0, extraVideoAssets = 0, assetPageFailures = 0 } = {}) {
   const createdChats: any[] = [];
   const turnBodies: any[] = [];
   let chatCounter = 0;
@@ -3898,6 +4323,12 @@ function setupDesignStudioMocks({ assetLoadFailures = 0 } = {}) {
       versionId: 'v1',
       previewUrl: '/motion-api/assets/asset-clip-1/versions/v1/file',
     },
+    ...Array.from({ length: extraVideoAssets }, (_, index) => ({
+      id: `extra-video-${index + 1}`,
+      kind: 'asset',
+      title: `Extra Video ${index + 1}`,
+      modality: 'video',
+    })),
   ];
 
   const json = (body: unknown, status = 200) =>
@@ -3965,6 +4396,23 @@ function setupDesignStudioMocks({ assetLoadFailures = 0 } = {}) {
         assetLoadFailures -= 1;
         return json({ error: 'Resource fetch failed' }, 503);
       }
+      if (kind === 'asset') {
+        const offset = Number(parsed.searchParams.get('offset') ?? 0);
+        if (offset && assetPageFailures > 0) {
+          assetPageFailures -= 1;
+          return json({ error: 'Resource fetch failed' }, 503);
+        }
+        const modality = parsed.searchParams.get('modality');
+        const query = parsed.searchParams.get('query') ?? '';
+        const limit = Number(parsed.searchParams.get('limit') ?? 60);
+        const matches = assets.filter(asset => (!modality || asset.modality === modality) && asset.title.toLowerCase().includes(query));
+        return json({
+          counts: sampleResources.counts,
+          items: matches.slice(offset, offset + limit),
+          assetPage: { total: matches.length, nextOffset: offset + limit < matches.length ? offset + limit : null },
+          generatedAt: Date.now(),
+        });
+      }
       const items = kind === 'design-template'
         ? designItems
         : kind === 'design-project'
@@ -3973,9 +4421,7 @@ function setupDesignStudioMocks({ assetLoadFailures = 0 } = {}) {
             ? brandKits
             : kind === 'design-skill'
               ? designSkills
-              : kind === 'asset'
-                ? assets
-                : [...designItems, ...designProjects, ...brandKits, ...designSkills, ...assets];
+              : [...designItems, ...designProjects, ...brandKits, ...designSkills, ...assets];
       return json({ counts: sampleResources.counts, items, generatedAt: Date.now() });
     }
     if (url === `${SUPER_AGENT_API}/chats` && method === 'GET') {
@@ -4106,7 +4552,7 @@ it('enters Design Studio from starter card with all 8 modules, floating option p
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(imageSearch, 'Vercel');
       imageSearch.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    expect(badge(assetTab)).toBe('0');
+    await vi.waitFor(() => expect(badge(assetTab)).toBe('0'));
     expect(badge(brandTab)).toBe('1');
     expect(imageGrid.textContent).toContain('No matching resources found');
     await act(async () => brandTab.click());
@@ -6457,7 +6903,7 @@ it('clamps out-of-range bounded numeric SSOT parameters on blur and emits clampe
 });
 
 it('exposes Motion graphics as a primary entry, moves Create audio into Explore more, and separates AI Video vs Motion Graphics templates', async () => {
-  setupDesignStudioMocks();
+  setupDesignStudioMocks({ extraVideoAssets: 24, assetPageFailures: 1 });
   const flushMore = async () => {
     await flush();
     await flush();
@@ -6548,10 +6994,21 @@ it('exposes Motion graphics as a primary entry, moves Create audio into Explore 
     tab => tab.textContent?.startsWith('Workspace Assets'),
   )!;
   await act(async () => assetTab.click());
+  expect(assetTab.querySelector('.om-sa-tab-count')?.textContent).toBe('25');
   const videoCard = container.querySelector('.om-sa-showcase-grid .om-sa-showcase-card')!;
   expect(videoCard.textContent).toContain('Product Video');
   expect(videoCard.querySelector('[data-modality="video"] [data-thumbnail-loading]')).toBeTruthy();
   expect(videoCard.querySelector('video')).toBeNull();
+  const loadMore = container.querySelector<HTMLButtonElement>('.om-sa-showcase-load-more button')!;
+  expect(loadMore.textContent).toContain('Load more');
+  await act(async () => loadMore.click());
+  await flushMore();
+  expect(loadMore.textContent).toContain('Retry');
+  expect(videoCard.textContent).toContain('Product Video');
+  await act(async () => loadMore.click());
+  await flushMore();
+  expect(container.querySelector('.om-sa-showcase-grid')?.textContent).toContain('Extra Video 24');
+  expect(container.querySelector('.om-sa-showcase-load-more')).toBeNull();
 });
 
 it('embeds Motion Studio Editor in Super Agent without remounting on revision updates and supports selection attach + open-file', async () => {
@@ -7354,4 +7811,97 @@ it('formats measured step durations without a minimum or a 60-second remainder',
   expect(formatElapsedDuration(1)).toBe('1ms');
   expect(formatElapsedDuration(8)).toBe('8ms');
   expect(formatElapsedDuration(119_999)).toBe('2m 0s');
+});
+
+it('folds intermediate progress notes into WorkLogSection, renders 16:9 game cover deliverable at turn bottom, and routes /motion-api/games links without file errors', async () => {
+  const container = document.createElement('div');
+  document.body.append(container);
+  const root = createRoot(container);
+  const onOpenArtifactId = vi.fn();
+  const onOpenWebUrl = vi.fn();
+  const onOpenFilePath = vi.fn();
+  try {
+    await act(async () => root.render(
+      <I18nProvider initialLocale="zh-CN">
+        <ExecutionTimeline
+          chat={{
+            ...sampleChat,
+            id: 'tidepost-chat',
+            intent: 'game',
+            state: 'idle',
+            projectDir: '/tmp/Library/Application Support/OpenDesign-dev/games/b0789372-b520-472b-acc9-ceca1dabeadf',
+            lastTurnUsage: { totalTokens: 2_232_924 },
+            approvals: [],
+            artifacts: [
+              {
+                id: 'game:b0789372-b520-472b-acc9-ceca1dabeadf',
+                kind: 'game-project',
+                title: '潮汐邮差 · Tidepost',
+                subtitle: 'platformer · Game Studio',
+                projectId: 'b0789372-b520-472b-acc9-ceca1dabeadf',
+                url: '/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html',
+                revision: 'rev-tide',
+                createdAt: 2000,
+                updatedAt: 5000,
+              },
+            ],
+            turnChangedFiles: {
+              u1: [{ action: 'create', path: 'index.html', addedLines: 12, artifactId: 'game:b0789372-b520-472b-acc9-ceca1dabeadf' }],
+            },
+            messages: [
+              { id: 'u1', role: 'user', text: '打造像素平台跳跃游戏', createdAt: 1000 },
+              { id: 'a-mid', role: 'assistant', text: '我会用 OpenMotion Game Skill 先搭建跳跃物理。', createdAt: 1500, status: 'completed' },
+              {
+                id: 't1',
+                role: 'tool',
+                text: 'Updated game source files',
+                createdAt: 2000,
+                toolEvent: { callId: 'c1', tool: 'openmotion_game_write_files', label: 'Updated game source files', status: 'completed', startedAt: 2000 },
+              },
+              {
+                id: 'a-final',
+                role: 'assistant',
+                text: '《潮汐邮差》已可试玩，支持点击 [开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html) 直接进入关卡，详见 [验收记录](</tmp/Library/Application Support/OpenDesign-dev/games/b0789372-b520-472b-acc9-ceca1dabeadf/design/verification.md>) 与 `openmotion-game/SKILL.md`。[开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html)',
+                createdAt: 3000,
+                status: 'completed',
+              },
+            ],
+          }}
+          busy={false}
+          sending={false}
+          engineLabel="GPT-5.4"
+          onOpenArtifactId={onOpenArtifactId}
+          onOpenWebUrl={onOpenWebUrl}
+          onOpenFilePath={onOpenFilePath}
+          onPreviewAttachment={vi.fn()}
+          onCopyText={vi.fn()}
+          onApprove={vi.fn()}
+        />
+      </I18nProvider>,
+    ));
+
+    const outerAssistantText = [...container.querySelectorAll('.om-sa-assistant-content')].map(el => el.textContent).join('\n');
+    expect(outerAssistantText).not.toContain('先搭建跳跃物理');
+    expect(outerAssistantText).toContain('《潮汐邮差》已可试玩');
+    expect(outerAssistantText).toContain('验收记录');
+    expect(outerAssistantText).toContain('openmotion-game/SKILL.md');
+    expect(outerAssistantText).not.toContain('Application Support');
+
+    const inlinePlayChip = container.querySelector<HTMLButtonElement>('.om-sa-artifact-inline-chip')!;
+    expect(inlinePlayChip).toBeTruthy();
+    await act(async () => inlinePlayChip.click());
+    expect(onOpenWebUrl).toHaveBeenCalledWith('/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html');
+    expect(onOpenFilePath).not.toHaveBeenCalled();
+
+    const deliverable = container.querySelector('.om-sa-deliverable-card')!;
+    expect(deliverable.getAttribute('data-wide-cover')).toBe('true');
+    expect(deliverable.textContent).toContain('HTML 游戏 · 平台跳跃');
+    expect(deliverable.textContent).not.toContain('Game Studio');
+    expect(deliverable.textContent).toContain('开始试玩');
+
+    expect(container.querySelector('.om-sa-turn-meta')?.textContent).not.toContain('2,232,924');
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
+  }
 });

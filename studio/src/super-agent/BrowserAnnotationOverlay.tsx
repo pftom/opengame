@@ -162,7 +162,10 @@ export function BrowserAnnotationOverlay({
   onClose: () => void;
 }) {
   const { t } = useI18n();
-  const [tool, setTool] = useState<AnnotationOverlayTool>(canSelectElement ? 'select' : 'region');
+  const defaultTool: AnnotationOverlayTool = mode === 'game-iframe'
+    ? 'region'
+    : (canSelectElement ? 'select' : 'region');
+  const [tool, setTool] = useState<AnnotationOverlayTool>(defaultTool);
   const [hoverElement, setHoverElement] = useState<BrowserPickedElement | null>(null);
   const [pinnedElement, setPinnedElement] = useState<BrowserPickedElement | null>(null);
   const [pinnedRegion, setPinnedRegion] = useState<BrowserRect | null>(null);
@@ -172,6 +175,7 @@ export function BrowserAnnotationOverlay({
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [layoutTick, setLayoutTick] = useState(0);
+  const [frozenFrameUrl, setFrozenFrameUrl] = useState<string | null>(null);
 
   const layerRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
@@ -180,9 +184,10 @@ export function BrowserAnnotationOverlay({
   const inspectInFlightRef = useRef(false);
   const inspectSeqRef = useRef(0);
   const pointerDownClientRef = useRef<{ x: number; y: number } | null>(null);
+  const preFocusBaseShotRef = useRef<string | null>(null);
 
   useEffect(() => {
-    setTool(canSelectElement ? 'select' : 'region');
+    setTool(mode === 'game-iframe' ? 'region' : (canSelectElement ? 'select' : 'region'));
     setHoverElement(null);
     setPinnedElement(null);
     setPinnedRegion(null);
@@ -190,7 +195,21 @@ export function BrowserAnnotationOverlay({
     setStrokes([]);
     setActiveStroke(null);
     setComment('');
-  }, [canSelectElement, mode]);
+    setFrozenFrameUrl(null);
+    preFocusBaseShotRef.current = null;
+    if (mode === 'game-iframe') {
+      let cancelled = false;
+      void captureBaseScreenshot().then(shot => {
+        if (cancelled || !shot) return;
+        preFocusBaseShotRef.current = shot;
+        setFrozenFrameUrl(shot);
+      }).catch(() => {});
+      return () => {
+        cancelled = true;
+      };
+    }
+    return undefined;
+  }, [canSelectElement, mode, captureBaseScreenshot]);
 
   useEffect(() => {
     if (!externalPickedElement) return;
@@ -239,6 +258,7 @@ export function BrowserAnnotationOverlay({
     setStrokes([]);
     setActiveStroke(null);
     setComment('');
+    preFocusBaseShotRef.current = null;
   };
 
   useEffect(() => {
@@ -279,7 +299,8 @@ export function BrowserAnnotationOverlay({
       const bounds = getContentBounds();
       const vpWidth = pinnedElement?.viewport.width || bounds?.vpWidth || 1280;
       const vpHeight = pinnedElement?.viewport.height || bounds?.vpHeight || 800;
-      const baseShot = await captureBaseScreenshot().catch(() => null);
+      const baseShot = preFocusBaseShotRef.current
+        ?? await captureBaseScreenshot().catch(() => null);
       let compositedDataUrl: string | null = baseShot;
       if (baseShot && layerRef.current) {
         const computed = getComputedStyle(layerRef.current);
@@ -401,6 +422,11 @@ export function BrowserAnnotationOverlay({
     if (tool === 'region') {
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
+      if (mode === 'game-iframe' && !preFocusBaseShotRef.current) {
+        void captureBaseScreenshot().then(shot => {
+          if (shot) preFocusBaseShotRef.current = shot;
+        }).catch(() => {});
+      }
       dragStartRef.current = { x: mapped.x, y: mapped.y };
       setDragRegion({ x: mapped.x, y: mapped.y, width: 0, height: 0 });
       return;
@@ -408,6 +434,11 @@ export function BrowserAnnotationOverlay({
     if (tool === 'draw') {
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
+      if (mode === 'game-iframe' && !preFocusBaseShotRef.current) {
+        void captureBaseScreenshot().then(shot => {
+          if (shot) preFocusBaseShotRef.current = shot;
+        }).catch(() => {});
+      }
       setActiveStroke({ id: `s-${Date.now()}`, points: [{ x: mapped.x, y: mapped.y }] });
       return;
     }
@@ -565,9 +596,20 @@ export function BrowserAnnotationOverlay({
       data-passthrough={backdropPassThrough || undefined}
       aria-label={t('Annotation overlay')}
     >
+      {mode === 'game-iframe' && frozenFrameUrl && !backdropPassThrough && (
+        <img
+          src={frozenFrameUrl}
+          alt=""
+          aria-hidden="true"
+          className="om-sa-annot-frozen-frame"
+        />
+      )}
       <div
         className="om-sa-annot-backdrop"
         style={backdropPassThrough ? { pointerEvents: 'none' } : undefined}
+        onMouseDown={event => {
+          if (!backdropPassThrough) event.preventDefault();
+        }}
         onPointerDown={handleBackdropPointerDown}
         onPointerMove={handleBackdropPointerMove}
         onPointerUp={handleBackdropPointerUp}
@@ -621,7 +663,12 @@ export function BrowserAnnotationOverlay({
 
       {renderSvgStrokes()}
 
-      <div className="om-sa-annot-toolbar" role="toolbar" aria-label={t('Annotation tools')}>
+      <div
+        className="om-sa-annot-toolbar"
+        role="toolbar"
+        aria-label={t('Annotation tools')}
+        onMouseDown={event => event.preventDefault()}
+      >
         {canSelectElement && (
           <Button
             variant="plain"

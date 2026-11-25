@@ -25,7 +25,21 @@ const anchorSchema = obj({
     width: { type: 'number', minimum: 1, maximum: 16384 },
     height: { type: 'number', minimum: 1, maximum: 16384 },
   }, ['id', 'width', 'height']),
+  scroll: obj({
+    x: { type: 'number' },
+    y: { type: 'number' },
+    containers: {
+      type: 'array',
+      maxItems: 24,
+      items: obj({
+        selector: { type: 'string', minLength: 1, maxLength: 1000 },
+        x: { type: 'number' },
+        y: { type: 'number' },
+      }, ['selector', 'x', 'y']),
+    },
+  }, ['x', 'y']),
   slideIndex: { type: 'integer', minimum: 0, maximum: 1000 },
+  isolatedSlide: { type: 'boolean' },
   element: obj({
     selector: { type: 'string', minLength: 1, maxLength: 500 },
     elementId: { type: 'string', minLength: 1, maxLength: 200 },
@@ -95,7 +109,7 @@ export const designTools = [
   {
     name: 'openmotion_design_edit',
     title: 'OpenMotion · Design Edit',
-    description: 'Read and edit files in an HTML Design Studio project with revision protection and version history. Always read the project first (openmotion_design_project action=get) to obtain current expectedRevision. Every action=write atomically persists files and creates a new immutable vN version snapshot. action=restore_version restores an older snapshot as a NEW version without erasing history. action=import_asset copies a pinned workspace asset version (assetId+versionId from openmotion_assets_use) into the project as a binary file and returns its project-relative path for use in HTML; requires expectedRevision; creates a new version.',
+    description: 'Read and edit files in an HTML Design Studio project with revision protection and version history. Always read the project first (openmotion_design_project action=get) to obtain current expectedRevision. Every action=write atomically persists files and creates a new immutable vN version snapshot. action=restore_version makes the selected version current and preserves every saved version. It returns changed=false when the target is already current and its files and entry point match. action=import_asset copies a pinned workspace asset version (assetId+versionId from openmotion_assets_use) into the project as a binary file and returns its project-relative path for use in HTML; requires expectedRevision; creates a new version.',
     inputSchema: obj({
       action: { enum: ['read_file', 'write', 'list_versions', 'restore_version', 'import_asset'] },
       projectId: uuid,

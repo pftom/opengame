@@ -1,7 +1,7 @@
 import { Dialog } from '@base-ui/react/dialog';
 import { Button } from 'open-design-ui/button';
 import { IconButton } from 'open-design-ui/icon-button';
-import { Suspense, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useEffectEvent, useId, useMemo, useRef, useState } from 'react';
 import { LOCAL_DIRECT_RUNTIME_ID, type AgentRuntimeInfo } from '../../../shared/agent-runtimes';
 import { pickPreferredLocalAgent } from '../../../shared/local-agents';
 import { assetMediaUrl } from '../../../shared/asset-library';
@@ -85,6 +85,27 @@ function modeChatIntent(mode?: SuperAgentCreationModeId | null): SuperAgentInten
   return undefined;
 }
 
+function presentChatArtifacts(artifacts: SuperAgentArtifact[]) {
+  const motionExports = artifacts.filter((item): item is SuperAgentArtifact & { projectId: string } =>
+    item.kind === 'motion-export' && Boolean(item.projectId && item.downloadUrl));
+  const latestByProject = new Map<string, SuperAgentArtifact>();
+  for (const item of motionExports) {
+    const latest = latestByProject.get(item.projectId);
+    if (!latest || (item.exportRequestedAt ?? item.createdAt) >= (latest.exportRequestedAt ?? latest.createdAt)) {
+      latestByProject.set(item.projectId, item);
+    }
+  }
+  const replaced = new Map<string, string>();
+  for (const item of motionExports) {
+    const latest = latestByProject.get(item.projectId);
+    if (latest && latest.id !== item.id) replaced.set(item.id, latest.id);
+  }
+  return {
+    artifacts: replaced.size ? artifacts.filter(item => !replaced.has(item.id)) : artifacts,
+    replaced,
+  };
+}
+
 const ArtifactBrowserPane = preloadableLazyWithChunkReload(() =>
   import('./ArtifactBrowserPane').then(m => ({ default: m.ArtifactBrowserPane })),
 );
@@ -93,8 +114,12 @@ export const preloadArtifactBrowserPane = ArtifactBrowserPane.preload;
 
 const MIN_CENTER_WIDTH = 300;
 const MIN_VIEWER_WIDTH = 320;
-const RESIZER_WIDTH = 1;
+const RESIZER_SIZE = 1;
 const COMPACT_THREE_PANE_WIDTH = 1180;
+const COMPACT_STAGE_THREE_PANE_WIDTH = 1440;
+const MIN_STACKED_CHAT_HEIGHT = 220;
+const MIN_STACKED_VIEWER_HEIGHT = 160;
+const STACKED_MOTION_EDITOR_HEIGHT = 480;
 
 export function clampSuperAgentViewerWidth(
   desiredWidth: number,
@@ -105,7 +130,7 @@ export function clampSuperAgentViewerWidth(
   if (totalWidth <= 0) {
     return Math.max(MIN_VIEWER_WIDTH, Math.min(960, desired));
   }
-  const available = Math.max(0, Math.floor(totalWidth - sidebarWidth - RESIZER_WIDTH));
+  const available = Math.max(0, Math.floor(totalWidth - sidebarWidth - RESIZER_SIZE));
   if (available <= MIN_CENTER_WIDTH + MIN_VIEWER_WIDTH) {
     return Math.max(240, Math.floor(available * 0.55));
   }
@@ -114,6 +139,16 @@ export function clampSuperAgentViewerWidth(
     Math.min(Math.floor(available * 0.72), available - MIN_CENTER_WIDTH),
   );
   return Math.max(MIN_VIEWER_WIDTH, Math.min(maxViewer, desired));
+}
+
+export function stackedArtifactViewerHeight(totalHeight: number, preferredHeight: number | null, motionEditor = false) {
+  const available = Math.max(0, totalHeight - RESIZER_SIZE);
+  // On short screens, let both panes share the available height.
+  const min = Math.min(MIN_STACKED_VIEWER_HEIGHT, Math.floor(available * 0.35));
+  const max = available - Math.min(MIN_STACKED_CHAT_HEIGHT, Math.floor(available * 0.58));
+  const defaultHeight = Math.max(available * 0.52, motionEditor ? STACKED_MOTION_EDITOR_HEIGHT : 0);
+  const value = Math.max(min, Math.min(max, Math.round(preferredHeight ?? defaultHeight)));
+  return { min, max, value };
 }
 
 function upsertSummary(list: SuperAgentChatSummary[], chat: SuperAgentChat): SuperAgentChatSummary[] {
@@ -384,22 +419,27 @@ export function SuperAgentWorkspace({
       ? window.matchMedia('(max-width: 900px)').matches
       : false,
   );
-  const [containerWidth, setContainerWidth] = useState(0);
+  const [{ width: containerWidth, height: containerHeight }, setContainerSize] = useState({ width: 0, height: 0 });
   const [sidebarOpen, setSidebarOpen] = useState(!narrow);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerExpanded, setViewerExpanded] = useState(false);
+  const viewerPaneId = useId();
   const [viewerWidth, setViewerWidth] = useState<number | null>(null);
+  const [viewerHeight, setViewerHeight] = useState<number | null>(null);
   const [openTabIds, setOpenTabIds] = useState<string[]>([]);
   const [activeTabId, setActiveTabId] = useState<string>(NEW_VIEWER_TAB_ID);
   const [previewArtifacts, setPreviewArtifacts] = useState<SuperAgentArtifact[]>([]);
   const previewArtifactIdsRef = useRef<Set<string>>(new Set());
+  const chatArtifacts = useMemo(() => presentChatArtifacts(activeChat?.artifacts ?? []), [activeChat?.artifacts]);
+  const presentedChat = useMemo(() => activeChat && chatArtifacts.replaced.size
+    ? { ...activeChat, artifacts: chatArtifacts.artifacts }
+    : activeChat, [activeChat, chatArtifacts]);
   const viewerArtifacts = useMemo(() => {
-    if (!activeChat) return previewArtifacts;
-    if (!previewArtifacts.length) return activeChat.artifacts;
-    const existingIds = new Set(activeChat.artifacts.map(item => item.id));
+    if (!previewArtifacts.length) return chatArtifacts.artifacts;
+    const existingIds = new Set(chatArtifacts.artifacts.map(item => item.id));
     const extras = previewArtifacts.filter(item => !existingIds.has(item.id));
-    return extras.length ? [...activeChat.artifacts, ...extras] : activeChat.artifacts;
-  }, [activeChat, previewArtifacts]);
+    return extras.length ? [...chatArtifacts.artifacts, ...extras] : chatArtifacts.artifacts;
+  }, [chatArtifacts.artifacts, previewArtifacts]);
   const [pendingDeployArtifactId, setPendingDeployArtifactId] = useState<string | null>(null);
   const [pendingCodeFile, setPendingCodeFile] = useState<{ artifactId: string; filePath: string; seq: number } | null>(null);
   const handledRequestedGameRef = useRef<string | null>(null);
@@ -407,6 +447,7 @@ export function SuperAgentWorkspace({
   const rootRef = useRef<HTMLDivElement>(null);
   const sidebarDockedRef = useRef(true);
   const dragStartRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const heightDragRef = useRef<{ pointerId: number; startY: number; startHeight: number } | null>(null);
   const lastArtifactStateRef = useRef<{
     chatId: string | null;
     activeId?: string;
@@ -421,11 +462,27 @@ export function SuperAgentWorkspace({
   });
   const prevBusyRef = useRef(false);
 
+  const currentViewerArtifact = useMemo(
+    () => (activeTabId !== NEW_VIEWER_TAB_ID ? viewerArtifacts.find(item => item.id === activeTabId) ?? null : null),
+    [activeTabId, viewerArtifacts],
+  );
+  const isStageViewerActive = Boolean(
+    viewerOpen
+    && currentViewerArtifact
+    && (
+      currentViewerArtifact.kind === 'game-project'
+      || currentViewerArtifact.kind === 'design-project'
+      || currentViewerArtifact.kind === 'motion-project'
+      || currentViewerArtifact.kind === 'motion-export'
+      || currentViewerArtifact.kind === 'asset-video'
+    ),
+  );
+
   const sidebarAsDrawer = narrow || (
     viewerOpen
     && !viewerExpanded
     && containerWidth > 0
-    && containerWidth < COMPACT_THREE_PANE_WIDTH
+    && containerWidth < (isStageViewerActive ? COMPACT_STAGE_THREE_PANE_WIDTH : COMPACT_THREE_PANE_WIDTH)
   );
   const sidebarDocked = !sidebarAsDrawer && sidebarOpen;
   sidebarDockedRef.current = sidebarDocked;
@@ -455,8 +512,11 @@ export function SuperAgentWorkspace({
     if (!el) return;
     let frame: number | null = null;
     const measure = () => {
-      const next = el.clientWidth;
-      if (next > 0) setContainerWidth(prev => (prev === next ? prev : next));
+      const width = el.clientWidth;
+      const height = el.clientHeight;
+      if (width > 0) {
+        setContainerSize(prev => (prev.width === width && prev.height === height ? prev : { width, height }));
+      }
     };
     const scheduleMeasure = () => {
       if (frame !== null) return;
@@ -640,14 +700,18 @@ export function SuperAgentWorkspace({
       });
     }
 
-    const allIds = next.artifacts.map(item => item.id);
+    const { artifacts, replaced } = presentChatArtifacts(next.artifacts);
+    const activeId = next.activeArtifactId
+      ? replaced.get(next.activeArtifactId) ?? next.activeArtifactId
+      : undefined;
+    const allIds = artifacts.map(item => item.id);
     const presentedById: Record<string, number> = {};
-    for (const item of next.artifacts) {
+    for (const item of artifacts) {
       if (typeof item.presentedAt === 'number') {
         presentedById[item.id] = item.presentedAt;
       }
     }
-    const sig = next.artifacts
+    const sig = artifacts
       .map(item => `${item.id}:${item.revision ?? ''}:${item.presentedAt ?? item.updatedAt}`)
       .join('|');
     const prev = lastArtifactStateRef.current;
@@ -662,7 +726,7 @@ export function SuperAgentWorkspace({
     if (chatSwitched) {
       lastArtifactStateRef.current = {
         chatId: next.id,
-        activeId: next.activeArtifactId,
+        activeId,
         sig,
         artifactIds: allIds,
         presentedById,
@@ -672,41 +736,44 @@ export function SuperAgentWorkspace({
         : [...previewArtifactIdsRef.current].filter(id => !allIds.includes(id));
       const mergedOpenIds = [...allIds, ...localIds];
       setOpenTabIds(mergedOpenIds);
-      const initialActive = next.activeArtifactId && allIds.includes(next.activeArtifactId)
-        ? next.activeArtifactId
+      const initialActive = activeId && allIds.includes(activeId)
+        ? activeId
         : allIds.at(-1) ?? localIds.at(-1) ?? NEW_VIEWER_TAB_ID;
       setActiveTabId(current => (!switchedBetweenChats && previewArtifactIdsRef.current.has(current) ? current : initialActive));
-    } else if (sig !== prev.sig || next.activeArtifactId !== prev.activeId) {
+    } else if (sig !== prev.sig || activeId !== prev.activeId) {
       const newIds = allIds.filter(id => !prev.artifactIds.includes(id));
-      const activePresentedAt = next.activeArtifactId ? presentedById[next.activeArtifactId] : undefined;
-      const prevActivePresentedAt = next.activeArtifactId ? (prev.presentedById[next.activeArtifactId] ?? 0) : 0;
+      const activePresentedAt = activeId ? presentedById[activeId] : undefined;
+      const prevActivePresentedAt = activeId ? (prev.presentedById[activeId] ?? 0) : 0;
       const activeRePresented = activePresentedAt !== undefined && activePresentedAt > prevActivePresentedAt;
-      const activeChanged = Boolean(next.activeArtifactId && next.activeArtifactId !== prev.activeId);
-      const shouldPresent = Boolean(next.activeArtifactId) && (
+      const activeChanged = Boolean(activeId && activeId !== prev.activeId);
+      const shouldPresent = Boolean(activeId) && (
         activeRePresented
         || activeChanged
-        || (next.activeArtifactId ? newIds.includes(next.activeArtifactId) : false)
+        || (activeId ? newIds.includes(activeId) : false)
       );
       lastArtifactStateRef.current = {
         chatId: next.id,
-        activeId: next.activeArtifactId,
+        activeId,
         sig,
         artifactIds: allIds,
         presentedById,
       };
       setOpenTabIds(current => {
-        const merged = current.filter(id => allIds.includes(id) || previewArtifactIdsRef.current.has(id));
+        const merged = [...new Set(current.map(id => replaced.get(id) ?? id))]
+          .filter(id => allIds.includes(id) || previewArtifactIdsRef.current.has(id));
         for (const id of newIds) {
           if (!merged.includes(id)) merged.push(id);
         }
-        if (shouldPresent && next.activeArtifactId && allIds.includes(next.activeArtifactId) && !merged.includes(next.activeArtifactId)) {
-          merged.push(next.activeArtifactId);
+        if (shouldPresent && activeId && allIds.includes(activeId) && !merged.includes(activeId)) {
+          merged.push(activeId);
         }
         return merged;
       });
-      if (shouldPresent && next.activeArtifactId) {
-        setActiveTabId(next.activeArtifactId);
+      if (shouldPresent && activeId) {
+        setActiveTabId(activeId);
         setViewerOpen(true);
+      } else if (replaced.size) {
+        setActiveTabId(current => replaced.get(current) ?? current);
       }
     }
 
@@ -1154,7 +1221,8 @@ export function SuperAgentWorkspace({
     }
   };
 
-  const handleOpenArtifactId = async (artifactId: string) => {
+  const handleOpenArtifactId = async (requestedId: string) => {
+    const artifactId = chatArtifacts.replaced.get(requestedId) ?? requestedId;
     setOpenTabIds(prev => (prev.includes(artifactId) ? prev : [...prev, artifactId]));
     setActiveTabId(artifactId);
     setViewerOpen(true);
@@ -1179,11 +1247,46 @@ export function SuperAgentWorkspace({
     setViewerOpen(true);
   }, []);
 
+  const resolveInternalArtifactRouteId = useCallback((rawTarget: string): string | null => {
+    const trimmed = rawTarget.trim();
+    const gameMatch = trimmed.match(/^\/(?:motion-api|api)\/games\/([^/?#]+)\//i);
+    if (gameMatch) {
+      let decoded = gameMatch[1];
+      try { decoded = decodeURIComponent(decoded); } catch { /* keep raw */ }
+      const existing = viewerArtifacts.find(
+        item => item.kind === 'game-project' && (item.projectId === decoded || item.id === `game:${decoded}`),
+      );
+      if (existing) return existing.id;
+    }
+    const designMatch = trimmed.match(/^\/(?:motion-api|api)\/design\/raw\/([^/?#]+)\//i);
+    if (designMatch) {
+      let decoded = designMatch[1];
+      try { decoded = decodeURIComponent(decoded); } catch { /* keep raw */ }
+      const existing = viewerArtifacts.find(
+        item => item.kind === 'design-project' && (item.projectId === decoded || item.id === `design:${decoded}`),
+      );
+      if (existing) return existing.id;
+    }
+    const directMatch = viewerArtifacts.find(item => {
+      if (!item.url) return false;
+      const cleanItemUrl = item.url.split(/[?#]/)[0];
+      const cleanTarget = trimmed.split(/[?#]/)[0];
+      return Boolean(cleanItemUrl && cleanItemUrl === cleanTarget);
+    });
+    return directMatch?.id ?? null;
+  }, [viewerArtifacts]);
+
   const handleOpenFilePath = useCallback((rawPath: string, label?: string) => {
     const trimmed = rawPath.trim().replace(/^file:\/\//i, '');
     const hashIdx = trimmed.indexOf('#');
     const cleanPath = (hashIdx >= 0 ? trimmed.slice(0, hashIdx) : trimmed).trim();
     if (!cleanPath) return;
+
+    const routedArtifactId = resolveInternalArtifactRouteId(cleanPath);
+    if (routedArtifactId) {
+      void handleOpenArtifactId(routedArtifactId);
+      return;
+    }
 
     const existing = viewerArtifacts.find(item =>
       item.kind === 'workspace-file' && (item.filePath === cleanPath || item.id === `file:ref:${cleanPath}`),
@@ -1208,7 +1311,7 @@ export function SuperAgentWorkspace({
       updatedAt: now,
       presentedAt: now,
     });
-  }, [viewerArtifacts, openLocalPreviewArtifact]);
+  }, [viewerArtifacts, openLocalPreviewArtifact, resolveInternalArtifactRouteId]);
 
   const handleOpenChangedFile = (file: SuperAgentFileOperation) => {
     const inspectable = activeChat?.artifacts.filter(
@@ -1227,10 +1330,18 @@ export function SuperAgentWorkspace({
   };
 
   const handleOpenWebUrl = async (url: string) => {
+    const routedArtifactId = resolveInternalArtifactRouteId(url);
+    if (routedArtifactId) {
+      await handleOpenArtifactId(routedArtifactId);
+      return;
+    }
     try {
+      const resolvedUrl = url.startsWith('/') && typeof window !== 'undefined'
+        ? `${window.location.origin}${url}`
+        : url;
       const target = await ensureChatCreated();
       const res = await updateSuperAgentChat(target.id, {
-        addArtifact: { kind: 'web', url },
+        addArtifact: { kind: 'web', url: resolvedUrl },
       });
       applyChatSnapshot(res.conversation, false);
       setViewerOpen(true);
@@ -1660,6 +1771,9 @@ export function SuperAgentWorkspace({
       if (activeTabId === tabId) {
         setActiveTabId(next.at(-1) ?? NEW_VIEWER_TAB_ID);
       }
+      if (next.length === 0 && (target?.kind === 'game-project' || !activeChat)) {
+        setViewerOpen(false);
+      }
       return next;
     });
   };
@@ -1961,6 +2075,14 @@ export function SuperAgentWorkspace({
       : clampSuperAgentViewerWidth(viewerWidth, containerWidth, getDockedSidebarWidth());
 
   const maxViewerWidth = clampSuperAgentViewerWidth(10_000, containerWidth, getDockedSidebarWidth());
+  const activeViewerArtifact = viewerArtifacts.find(item => item.id === activeTabId);
+  const motionEditor = activeViewerArtifact?.kind === 'motion-project' && Boolean(activeViewerArtifact.projectId);
+  const stackedViewer = stackedArtifactViewerHeight(containerHeight, viewerHeight, motionEditor);
+  const viewerSizeStyle = narrow && !viewerExpanded && containerHeight > 0
+    ? { flexBasis: stackedViewer.value }
+    : effectiveViewerWidth === null
+      ? undefined
+      : { width: effectiveViewerWidth, flexBasis: effectiveViewerWidth, flexGrow: 0, flexShrink: 1, maxWidth: '100%' };
 
   const startResize = (clientX: number) => {
     const currentWidth = effectiveViewerWidth
@@ -2037,6 +2159,7 @@ export function SuperAgentWorkspace({
       className="om-super-agent"
       data-viewer-open={viewerOpen || undefined}
       data-viewer-expanded={viewerExpanded || undefined}
+      data-stage-viewer={isStageViewerActive || undefined}
     >
       <StudioToastViewport toasts={toasts} dismissToast={dismissToast} />
 
@@ -2062,7 +2185,7 @@ export function SuperAgentWorkspace({
         <div className="om-sa-center-slot">
           <ConversationStream
             active={active}
-            chat={activeChat}
+            chat={presentedChat}
             conversations={conversations}
             activeArtifacts={viewerArtifacts}
             requestedMode={requestedMode}
@@ -2165,10 +2288,55 @@ export function SuperAgentWorkspace({
         />
       )}
 
+      {viewerOpen && !viewerExpanded && narrow && (
+        <div
+          role="separator"
+          tabIndex={0}
+          aria-orientation="horizontal"
+          aria-label={t('Resize Artifact Viewer height')}
+          aria-controls={viewerPaneId}
+          aria-valuemin={stackedViewer.min}
+          aria-valuemax={stackedViewer.max}
+          aria-valuenow={stackedViewer.value}
+          className="om-sa-resizer om-sa-resizer--horizontal"
+          onPointerDown={event => {
+            if (event.button !== 0 || !event.isPrimary) return;
+            event.preventDefault();
+            event.currentTarget.setPointerCapture(event.pointerId);
+            heightDragRef.current = {
+              pointerId: event.pointerId,
+              startY: event.clientY,
+              startHeight: stackedViewer.value,
+            };
+          }}
+          onPointerMove={event => {
+            const drag = heightDragRef.current;
+            if (drag?.pointerId !== event.pointerId) return;
+            const height = drag.startHeight + drag.startY - event.clientY;
+            setViewerHeight(stackedArtifactViewerHeight(containerHeight, height).value);
+          }}
+          onLostPointerCapture={event => {
+            if (heightDragRef.current?.pointerId === event.pointerId) heightDragRef.current = null;
+          }}
+          onKeyDown={event => {
+            const { key } = event;
+            const { min, max, value } = stackedViewer;
+            if (key === 'ArrowUp' || key === 'ArrowDown') {
+              event.preventDefault();
+              setViewerHeight(stackedArtifactViewerHeight(containerHeight, value + (key === 'ArrowUp' ? 24 : -24)).value);
+            } else if (key === 'Home' || key === 'End') {
+              event.preventDefault();
+              setViewerHeight(key === 'Home' ? min : max);
+            }
+          }}
+        />
+      )}
+
       {viewerOpen && (
         <div
+          id={viewerPaneId}
           className="om-sa-viewer-slot"
-          style={effectiveViewerWidth === null ? undefined : { width: effectiveViewerWidth, flexBasis: effectiveViewerWidth, flexGrow: 0, flexShrink: 1, maxWidth: '100%' }}
+          style={viewerSizeStyle}
         >
           <Suspense fallback={<RouteSurfaceFallback compact />}>
             <ArtifactBrowserPane

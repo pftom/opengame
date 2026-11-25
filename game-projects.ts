@@ -22,7 +22,7 @@ import { injectPreviewBridgeHtml, isValidPreviewBridgeToken } from './shared/pre
 import { attachmentDisposition } from './shared/http-header.ts';
 import { zip } from './scripts/zip.mjs';
 import { escapeHtml } from './shared/scenario-content.ts';
-import { gameAssetInstructions, gameGenres, gameStyles, gameSettings, type GameBrief, type GameCard, type GameCatalog, type GameCatalogIssue, type GameCreated, type GameHandoff, type RoomServerMessage, type GameTrailer, type GameTrailerStatus } from './shared/game-contract.ts';
+import { formatGameBriefPrompt, gameAssetInstructions, gameGenres, gameStyles, gameSettings, type GameBrief, type GameCard, type GameCatalog, type GameCatalogIssue, type GameCreated, type GameHandoff, type GameRemixOptions, type RoomServerMessage, type GameTrailer, type GameTrailerStatus } from './shared/game-contract.ts';
 
 const templatesRoot = fileURLToPath(new URL('./templates/games/', import.meta.url));
 const kitsRoot = fileURLToPath(new URL('./templates/game-kits/', import.meta.url));
@@ -270,6 +270,20 @@ function briefInput(raw: any): GameBrief {
   // A playable ad is a single-player portrait build; the flag is ignored for landscape or multiplayer briefs.
   const playableAd = raw.playableAd === true && raw.orientation === 'portrait' && !raw.multiplayer;
   return { playableAd, prompt: raw.prompt.trim(), multiplayer: raw.multiplayer, genre: raw.genre ?? null, style: raw.style ?? null, setting: raw.setting ?? null, orientation: raw.orientation ?? 'landscape' };
+}
+function remixOverridesInput(raw: any): GameRemixOptions {
+  if (raw == null) return {};
+  if (typeof raw !== 'object' || Array.isArray(raw)) throw new GameError('Invalid remix options');
+  for (const [key, choices] of [['genre', gameGenres], ['style', gameStyles], ['setting', gameSettings]] as const) {
+    if (raw[key] != null && !(choices as readonly string[]).includes(raw[key])) throw new GameError(`Invalid ${key}`);
+  }
+  if (raw.orientation != null && raw.orientation !== 'landscape' && raw.orientation !== 'portrait') throw new GameError('Invalid orientation');
+  return {
+    ...(raw.genre != null ? { genre: raw.genre } : {}),
+    ...(raw.style != null ? { style: raw.style } : {}),
+    ...(raw.setting != null ? { setting: raw.setting } : {}),
+    ...(raw.orientation != null ? { orientation: raw.orientation } : {}),
+  };
 }
 function assertSinglePlayerAuthoring(multiplayer: boolean) {
   if (multiplayer) throw new GameError('Game Studio authoring is available for single-player games only');
@@ -719,10 +733,8 @@ export class GameProjects {
   }
   async create(raw: GameBrief): Promise<GameCreated> { return this.mutate(async () => {
     const brief = briefInput(raw), id = randomUUID(), dir = path.join(this.root, id), now = new Date().toISOString();
-    // A portrait brief tells the Agent to build for a phone held upright; the card keeps the shape for the 9:16 stage.
-    const layout = brief.orientation === 'portrait' ? `${brief.prompt}\n\nLayout: portrait 9:16 phone game. Design every screen, HUD and control for a phone held upright (390×844); in a landscape window, centre the 9:16 play area and letterbox the sides.` : brief.prompt;
-    // A playable-ad brief adds the ad recipe on top of the portrait layout; the card keeps the flag for the market tag.
-    const rawPrompt = brief.playableAd ? `${layout}\n\nFormat: playable ad. Follow the playable-ad recipe in the openmotion-game skill (references/game-playable-ad.md): interactive on the first frame with a hand tutorial, no title screen, 3–8 short levels, a fail or win end card with Play again and a call-to-action button, one self-contained HTML that loads nothing from the network.` : layout;
+    // Append canonical portrait-layout and playable-ad paragraphs; the card keeps orientation/playableAd metadata for stage & tags.
+    const rawPrompt = formatGameBriefPrompt(brief.prompt, brief);
     const game: StoredGame = { rawPrompt, orientation: brief.orientation, ...(brief.playableAd ? { playableAd: true } : {}), id, title: brief.prompt.slice(0,80), description: brief.prompt, genre: brief.genre ?? 'casual', style: brief.style, setting: brief.setting, multiplayer: brief.multiplayer, maxPlayers: brief.multiplayer ? 4 : 1, status: 'draft', cover: null, playUrl: `/api/games/${id}/play/index.html`, plays: 0, likes: 0, dislikes: 0, reaction: 0, favorite: false, source: 'mine', remixOf: null, controls: '', createdAt: now, updatedAt: now };
     return this.populate(dir, async () => {
     // Multiplayer briefs with no genre ("play with friends") or a shooter/3D brief get the co-op room kit; other multiplayer
@@ -754,17 +766,27 @@ export class GameProjects {
     const { reaction: _reaction, favorite: _favorite, trailer:_trailer, ...stored } = game;
     await saveJson(await safeFile(path.join(this.root, id), 'game.json', true), { ...stored, id });
   }
-  async remix(id: string): Promise<GameCreated> { return this.mutate(async () => {
+  async remix(id: string, rawOverrides?: GameRemixOptions): Promise<GameCreated> { return this.mutate(async () => {
+    const overrides = remixOverridesInput(rawOverrides);
     const original = await this.get(id);
     assertSinglePlayerAuthoring(original.multiplayer);
     const { dir } = await this.locate(id), newId = randomUUID(), target = path.join(this.root, newId);
     return this.populate(target, async () => {
     for (const file of await inventory(dir)) { if (isPublishRecord(file.path)) continue; const dest = path.join(target, file.path); await mkdir(path.dirname(dest), { recursive: true }); await writeFile(dest, await readFile(await safeFile(dir, file.path))); }
     const originalMeta = await jsonFile<StoredGame>(path.join(dir, 'game.json'));
-    // A remix keeps the original brief (and its playable-ad format line) so the Agent follows the same recipe.
-    const game = { ...original, titleCustomized: undefined, tags: undefined, kit: originalMeta.kit, cover: originalMeta.cover ?? null, ...(originalMeta.rawPrompt ? { rawPrompt: originalMeta.rawPrompt } : {}), id: newId, title: `${original.title.slice(0,72)} remix`, source: 'mine' as const, status: 'draft' as const, plays: 0, likes: 0, dislikes: 0, reaction: 0 as const, favorite: false, remixOf: id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    const genre = overrides.genre ?? original.genre;
+    const style = overrides.style ?? original.style;
+    const setting = overrides.setting ?? original.setting;
+    const orientation = overrides.orientation ?? original.orientation;
+    const playableAd = orientation === 'landscape' ? false : original.playableAd;
+    const hasLayoutChange = orientation !== original.orientation || playableAd !== original.playableAd;
+    const rawPrompt = hasLayoutChange
+      ? formatGameBriefPrompt(originalMeta.rawPrompt ?? original.description, { orientation, playableAd })
+      : originalMeta.rawPrompt;
+    // A remix preserves the original brief unless explicit overrides update genre, style, setting, or screen layout.
+    const game = { ...original, genre, style, setting, orientation, playableAd, titleCustomized: undefined, tags: undefined, kit: originalMeta.kit, cover: originalMeta.cover ?? null, ...(rawPrompt ? { rawPrompt } : {}), id: newId, title: `${original.title.slice(0,72)} remix`, source: 'mine' as const, status: 'draft' as const, plays: 0, likes: 0, dislikes: 0, reaction: 0 as const, favorite: false, remixOf: id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     await this.save(newId, game);
-    return { game: await this.get(newId), agentInstruction: instruction(game, { prompt: originalMeta.rawPrompt ?? original.description, genre: original.genre, style: original.style, setting: original.setting, multiplayer: original.multiplayer, orientation: original.orientation, playableAd: original.playableAd }, true) };
+    return { game: await this.get(newId), agentInstruction: instruction(game, { prompt: rawPrompt ?? original.description, genre, style, setting, multiplayer: original.multiplayer, orientation, playableAd }, true) };
     });
   }); }
   /** The complete Agent handoff for a workspace draft: game id, brief and execution steps, available at any time (not only right after creation). */
@@ -1590,6 +1612,22 @@ export async function dispatchGameTool(name: string, args: any, workspace: strin
     default: throw new GameError('Unknown game tool');
   }
 }
+async function optionalJsonInput(req: IncomingMessage, maxBytes: number): Promise<unknown> {
+  if (!req.headers['content-type']?.startsWith('application/json') || req.headers['content-length'] === '0') {
+    return undefined;
+  }
+  let size = 0;
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += buf.length;
+    if (size > maxBytes) throw new GameError('Payload too large', 413);
+    chunks.push(buf);
+  }
+  const text = Buffer.concat(chunks).toString('utf8').trim();
+  return text ? JSON.parse(text) : undefined;
+}
+
 export async function gameHttp(req: IncomingMessage, res: ServerResponse, url: URL, workspace: string, input: (req: IncomingMessage, maxBytes?: number) => Promise<any>, runtimeRoot?: string) {
   const prefix = /^\/(?:api|motion-api)\/games(?=\/|$)/.exec(url.pathname)?.[0];
   if (!prefix) return false;
@@ -1640,7 +1678,9 @@ export async function gameHttp(req: IncomingMessage, res: ServerResponse, url: U
       if (action === 'simulate') return json(200,await service.simulate(id,await input(req, LIMIT)));
       if (action === 'playtest') return json(200,await service.playtest(id,await input(req, LIMIT)));
       if (action === 'update-meta') return json(200,await service.updateMeta(id,await input(req, LIMIT)));
-      if (action === 'remix') return json(201,await service.remix(id));
+      if (action === 'remix') {
+        return json(201, await service.remix(id, await optionalJsonInput(req, LIMIT) as GameRemixOptions | undefined));
+      }
       if (action === 'play') return json(200,await service.interact(id,'play'));
       if (action === 'reaction') return json(200,await service.interact(id,'reaction',(await input(req,1024))?.value));
       if (action === 'favorite') return json(200,await service.interact(id,'favorite',(await input(req,1024))?.favorite));

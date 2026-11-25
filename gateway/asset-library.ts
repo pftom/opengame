@@ -12,6 +12,23 @@ import { rankSearchResults } from '../shared/fuzzy-search.ts';
 import { assetVersion, type AssetListInput, type AssetReference, type AssetVersion, type LibraryAsset, type LibraryGeneration } from '../shared/asset-library.ts';
 import { probeLibraryMedia } from './asset-probe.ts';
 
+export function assetSearchDocument(asset: LibraryAsset) {
+  const current = assetVersion(asset);
+  return {
+    id: asset.id,
+    title: asset.name,
+    subtitle: current?.model ?? current?.source ?? asset.modality,
+    description: asset.versions.map(version => version.prompt ?? '').filter(Boolean).join(' '),
+    tags: [asset.modality, current?.audioKind ?? ''],
+    aliases: asset.versions.flatMap(version => [
+      version.model ?? '',
+      version.capabilityId ?? '',
+      typeof version.parameters?.voice === 'string' ? version.parameters.voice : '',
+      knownSpeechVoiceName(version.parameters?.voice) ?? '',
+    ]),
+  };
+}
+
 export const libraryId = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(value);
 export const assetHash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 export async function atomicAssetJson(file: string, value: unknown) {
@@ -34,7 +51,9 @@ export class AssetLibrary {
     try { return JSON.parse(await readFile(await this.file(`records/${id}.json`), 'utf8')); }
     catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error('ASSET_NOT_FOUND'); throw error; }
   }
-  async list(input: AssetListInput = {}, { maxPageSize = 100 } = {}) {
+  async list(input: AssetListInput = {}, {
+    maxPageSize = 100, includeUnfilteredTotal = false, toSearchDocument = assetSearchDocument,
+  } = {}) {
     const { offset = 0, limit = 60 } = input;
     if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > maxPageSize) throw new Error('Invalid asset pagination');
     if (input.modality && !['image', 'video', 'audio', '3d'].includes(input.modality)
@@ -43,11 +62,12 @@ export class AssetLibrary {
       || input.sort && !['newest', 'oldest', 'name'].includes(input.sort) || input.query && (typeof input.query !== 'string' || input.query.length > 200)) throw new Error('Invalid asset filter');
     const names = await readdir(await this.file('records')).catch((error: NodeJS.ErrnoException) => { if (error.code === 'ENOENT') return []; throw error; });
     const query = input.query?.trim() ?? '';
-    const filtered = (await Promise.all(names.filter(name => name.endsWith('.json') && libraryId(name.slice(0, -5))).map(name => this.get(name.slice(0, -5)))))
+    const visible = (await Promise.all(names.filter(name => name.endsWith('.json') && libraryId(name.slice(0, -5))).map(name => this.get(name.slice(0, -5)))))
+      .filter(asset => Boolean(asset.trashedAt) === Boolean(input.trash));
+    const filtered = visible
       .filter(asset => {
-        const current = assetVersion(asset);
-        if (Boolean(asset.trashedAt) !== Boolean(input.trash)) return false;
         if (input.modality && asset.modality !== input.modality) return false;
+        const current = assetVersion(asset);
         if (input.audioKind) {
           const resolvedKind = isAudioKind(current?.audioKind)
             ? current.audioKind
@@ -58,28 +78,16 @@ export class AssetLibrary {
         return true;
       })
       .sort((a, b) => input.sort === 'name' ? a.name.localeCompare(b.name) : input.sort === 'oldest' ? a.updatedAt - b.updatedAt : b.updatedAt - a.updatedAt);
-    const all = query
-      ? rankSearchResults(filtered, query, asset => {
-          const current = assetVersion(asset);
-          return {
-            id: asset.id,
-            title: asset.name,
-            subtitle: current?.model ?? current?.source ?? asset.modality,
-            description: asset.versions.map(v => v.prompt ?? '').filter(Boolean).join(' '),
-            tags: [asset.modality, current?.audioKind ?? ''],
-            aliases: asset.versions.flatMap(v => [
-              v.model ?? '',
-              v.capabilityId ?? '',
-              typeof v.parameters?.voice === 'string' ? v.parameters.voice : '',
-              knownSpeechVoiceName(v.parameters?.voice) ?? '',
-            ]),
-          };
-        }).map(r => r.item)
-      : filtered;
+    const all = query ? rankSearchResults(filtered, query, toSearchDocument).map(result => result.item) : filtered;
     if (query && input.sort) {
       all.sort((a, b) => input.sort === 'name' ? a.name.localeCompare(b.name) : input.sort === 'oldest' ? a.updatedAt - b.updatedAt : b.updatedAt - a.updatedAt);
     }
-    return { assets: all.slice(offset, offset + limit), total: all.length, nextOffset: offset + limit < all.length ? offset + limit : null };
+    return {
+      assets: all.slice(offset, offset + limit),
+      total: all.length,
+      nextOffset: offset + limit < all.length ? offset + limit : null,
+      ...(includeUnfilteredTotal ? { unfilteredTotal: visible.length } : {}),
+    };
   }
   async resolve(reference: AssetReference, allowTrash = false) {
     const asset = await this.get(reference.assetId);
