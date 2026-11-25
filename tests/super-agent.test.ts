@@ -334,6 +334,170 @@ test('SuperAgentConversations runs Codex RPC dynamic tools, extracts artifacts, 
   await service.close();
 }));
 
+test('SuperAgentConversations resolves local Codex Default and compatibility from the same catalog before a single turn', async t => {
+  const requestedModel = 'gpt-6.2-astra';
+  const compatibleModel = {
+    id: 'gpt-6.1-terra',
+    model: 'gpt-6.1-terra',
+    isDefault: true,
+    defaultReasoningEffort: 'medium',
+    supportedReasoningEfforts: [{ reasoningEffort: 'low' }, { reasoningEffort: 'medium' }],
+  };
+  const hiddenModel = { id: 'gpt-5.4-hidden', model: 'gpt-5.4-hidden', hidden: true, isDefault: true };
+  const newerModel = { id: 'gpt-6.2-sol', model: 'gpt-6.2-sol', isDefault: true };
+  const firstVisibleModel = { id: 'gpt-5.4', model: 'gpt-5.4' };
+  type CatalogEntry = typeof compatibleModel | typeof hiddenModel | typeof newerModel | typeof firstVisibleModel;
+  const cases: Array<{
+    name: string;
+    version: string;
+    provider?: string;
+    userModel?: string;
+    userEffort?: string;
+    catalog?: CatalogEntry[][] | 'unavailable';
+    resume?: boolean;
+    expectedThreadModel?: string;
+    expectedTurnModel?: string;
+    expectedEffort?: string | null;
+  }> = [
+    {
+      name: 'old CLI Default prefers a visible catalog default on a later page',
+      version: '0.163.0', catalog: [[hiddenModel, firstVisibleModel], [compatibleModel]],
+      expectedThreadModel: compatibleModel.model, expectedTurnModel: compatibleModel.model,
+    },
+    {
+      name: 'newer CLI Default uses its advertised GPT-6.2 default',
+      version: '0.169.1', catalog: [[firstVisibleModel], [newerModel]],
+      expectedThreadModel: newerModel.model, expectedTurnModel: newerModel.model,
+    },
+    {
+      name: 'Default on a resumed newer thread uses the first visible model when no default is advertised',
+      version: '0.169.1', catalog: [[hiddenModel, firstVisibleModel], [{ id: 'gpt-6.1-terra', model: 'gpt-6.1-terra' }]],
+      resume: true, expectedThreadModel: firstVisibleModel.model, expectedTurnModel: firstVisibleModel.model,
+    },
+    {
+      name: 'Default with an empty catalog lets Codex choose its own model',
+      version: '0.169.1', catalog: [[]], expectedEffort: null,
+    },
+    {
+      name: 'Default with an unavailable catalog lets Codex choose its own model',
+      version: '0.169.1', catalog: 'unavailable', expectedEffort: null,
+    },
+    {
+      name: 'old CLI with an explicit model falls back from an unsupported reasoning effort',
+      version: '0.163.0', userModel: requestedModel, userEffort: 'xhigh',
+      catalog: [[hiddenModel, firstVisibleModel], [compatibleModel]], expectedThreadModel: requestedModel,
+      expectedTurnModel: compatibleModel.model, expectedEffort: 'medium',
+    },
+    {
+      name: 'compatible CLI keeps the explicitly selected model and effort',
+      version: '0.169.1', userModel: requestedModel, userEffort: 'high',
+      expectedThreadModel: requestedModel, expectedTurnModel: requestedModel, expectedEffort: 'high',
+    },
+    {
+      name: 'old CLI without a compatible visible model keeps the requested model',
+      version: '0.163.0', userModel: requestedModel, userEffort: 'high', catalog: [[hiddenModel, newerModel]],
+      expectedThreadModel: requestedModel, expectedTurnModel: requestedModel, expectedEffort: 'high',
+    },
+    {
+      name: 'old CLI for a custom provider keeps the requested model',
+      version: '0.163.0', provider: 'custom', userModel: requestedModel, userEffort: 'high',
+      expectedThreadModel: requestedModel, expectedTurnModel: requestedModel, expectedEffort: 'high',
+    },
+  ];
+
+  for (const scenario of cases) {
+    await t.test(scenario.name, () => fixture(async store => {
+      const cursors: Array<string | undefined> = [];
+      const requests: Array<{ method: string; params: { model?: string; effort?: string | null; cursor?: string; threadId?: string } }> = [];
+      let connections = 0;
+
+      class CompatibilityRpc {
+        private readonly notify: (message: unknown) => void;
+
+        constructor(_bin: string, _cwd: string, notify: (message: unknown) => void) {
+          this.notify = notify;
+          connections += 1;
+        }
+
+        async request(method: string, params: typeof requests[number]['params'] = {}) {
+          requests.push({ method, params });
+          if (method === 'initialize') return { userAgent: `Codex Desktop/${scenario.version}` };
+          if (method === 'thread/start' || method === 'thread/resume') {
+            if (method === 'thread/resume') assert.equal(params.threadId, 'codex-game-thread');
+            return {
+              thread: { id: 'codex-game-thread' },
+              model: params.model ?? requestedModel,
+              modelProvider: scenario.provider ?? 'openai',
+            };
+          }
+          if (method === 'model/list') {
+            cursors.push(params.cursor);
+            const { catalog } = scenario;
+            if (!catalog || catalog === 'unavailable') throw new Error('Codex model catalog is unavailable');
+            const page = params.cursor ? Number(params.cursor) : 0;
+            return { data: catalog[page], nextCursor: page + 1 < catalog.length ? String(page + 1) : null };
+          }
+          if (method === 'turn/start') {
+            const turn = { id: 'codex-game-turn', status: 'completed' };
+            queueMicrotask(() => this.notify({ method: 'turn/completed', params: { turn } }));
+            return { turn };
+          }
+          throw new Error(`Unexpected Codex RPC method ${method}`);
+        }
+
+        send() {}
+        close() {}
+      }
+
+      const service = new SuperAgentConversations(store, {
+        resolve: async () => '/fake/codex',
+        rpc: CompatibilityRpc as unknown as typeof AssetAgentRpc,
+      });
+      try {
+        const chat = await service.create({ engine: 'codex', model: scenario.userModel });
+        const runtime = { origin: 'http://127.0.0.1:4120', phase1: () => ({} as Phase1Service) };
+        if (scenario.resume) {
+          await service.start(chat.id, {
+            requestId: 'req-codex-previous-turn', text: 'Plan a local racing game', mode: 'game', model: requestedModel,
+          }, runtime);
+          const previous = await service.waitForChat(chat.id);
+          assert.equal(previous.state, 'idle', previous.error);
+          assert.equal(previous.model, requestedModel);
+          requests.length = 0;
+          cursors.length = 0;
+          connections = 0;
+        }
+        await service.start(chat.id, {
+          requestId: 'req-codex-model-compatibility',
+          text: 'Build a local racing game',
+          mode: 'game',
+          ...(scenario.resume ? { model: 'default' } : {}),
+          ...(scenario.userEffort ? { reasoning: scenario.userEffort } : {}),
+        }, runtime);
+        const done = await service.waitForChat(chat.id);
+        assert.equal(done.state, 'idle', done.error);
+        assert.equal(done.model, scenario.userModel);
+        assert.equal(done.reasoning, scenario.userEffort);
+        assert.equal(done.messages.filter(message => message.role === 'user').length, scenario.resume ? 2 : 1);
+        assert.equal(connections, 1);
+        const pageCount = scenario.catalog === 'unavailable' ? 1 : scenario.catalog?.length ?? 0;
+        assert.deepEqual(cursors, Array.from({ length: pageCount }, (_, index) => index ? String(index) : undefined));
+        const discovery = cursors.map(() => 'model/list');
+        const threadMethod = scenario.resume ? 'thread/resume' : 'thread/start';
+        const setup = scenario.userModel ? [threadMethod, ...discovery] : [...discovery, threadMethod];
+        assert.deepEqual(requests.map(request => request.method), ['initialize', ...setup, 'turn/start']);
+        const thread = requests.find(request => request.method === threadMethod)!.params;
+        const turn = requests.at(-1)!.params;
+        assert.equal(thread.model, scenario.expectedThreadModel);
+        assert.equal(turn.model, scenario.expectedTurnModel);
+        if (scenario.expectedEffort !== undefined) assert.equal(turn.effort, scenario.expectedEffort);
+      } finally {
+        await service.close();
+      }
+    }));
+  }
+});
+
 test('SuperAgentConversations runs Claude Code stream-json turns and extracts artifacts', () => fixture(async store => {
   const phase1 = new Phase1Service(store, pluginRoot, {
     origin: () => 'http://127.0.0.1:4173',

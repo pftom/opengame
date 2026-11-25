@@ -81,9 +81,35 @@ async function bundledCodex(hostBin: string | undefined): Promise<string | null>
   return null;
 }
 
-async function codexReleaseVersion(bin: string): Promise<string | undefined> {
+type CodexReleaseVersion = { core: string; prerelease?: string[] };
+
+async function codexReleaseVersion(bin: string): Promise<CodexReleaseVersion | undefined> {
   const { ok, text } = await probeAgent(bin, ['--version']);
-  return ok ? /^codex-cli (\d+\.\d+\.\d+)(?:\+[\w.-]+)?$/m.exec(text.trim())?.[1] : undefined;
+  const match = ok && /^codex-cli (\d+\.\d+\.\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[\w.-]+)?$/m.exec(text.trim());
+  if (!match) return undefined;
+  return { core: match[1], prerelease: match[2]?.split('.') };
+}
+
+function compareCodexVersions(left: CodexReleaseVersion, right: CodexReleaseVersion): number {
+  const coreOrder = left.core.localeCompare(right.core, 'en', { numeric: true });
+  if (coreOrder !== 0) return coreOrder;
+  if (!left.prerelease || !right.prerelease) return Number(!left.prerelease) - Number(!right.prerelease);
+
+  for (const [index, leftPart] of left.prerelease.entries()) {
+    const rightPart = right.prerelease[index];
+    if (rightPart === undefined) return 1;
+    if (leftPart === rightPart) continue;
+    const leftNumeric = /^\d+$/.test(leftPart);
+    const rightNumeric = /^\d+$/.test(rightPart);
+    if (leftNumeric !== rightNumeric) return leftNumeric ? -1 : 1;
+    if (leftNumeric) {
+      const order = leftPart.localeCompare(rightPart, 'en', { numeric: true });
+      if (order !== 0) return order;
+      continue;
+    }
+    return leftPart < rightPart ? -1 : 1;
+  }
+  return left.prerelease.length - right.prerelease.length;
 }
 
 async function preferNewerCodex(standalone: string | null, hostBin: string | undefined): Promise<string | null> {
@@ -94,7 +120,7 @@ async function preferNewerCodex(standalone: string | null, hostBin: string | und
     codexReleaseVersion(standalone),
     codexReleaseVersion(bundled),
   ]);
-  if (standaloneVersion && bundledVersion && bundledVersion.localeCompare(standaloneVersion, 'en', { numeric: true }) > 0) {
+  if (standaloneVersion && bundledVersion && compareCodexVersions(bundledVersion, standaloneVersion) > 0) {
     return bundled;
   }
   return standalone;

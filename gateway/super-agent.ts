@@ -78,6 +78,7 @@ import { resolveProviderSetupEntry } from '../shared/workspace-url.ts';
 import { getWorkflow, workflowNames, workflowSections } from '../shared/workflow.ts';
 import type { WorkspaceStore } from '../workspace.ts';
 import { accountMediaState } from './account-media.ts';
+import { normalizeAgentModels } from './agent-discovery.ts';
 import { agentRuntimesFor, isLocalDirectEnabled } from './agent-runtimes.ts';
 import { executeRemoteServiceRun } from './agent-service-adapter.ts';
 import { AssetAgentRpc } from './asset-chat.ts';
@@ -150,6 +151,7 @@ interface ActiveSuperAgentChat {
   codexToolMeta?: Map<string, { startedAt: number; event: SuperAgentToolEvent }>;
   codexToolOutputs?: Map<string, string>;
   turnId?: string;
+  effectiveModel?: string;
   runtime: SuperAgentRuntimeContext;
   runtimeId?: string;
   bin?: string;
@@ -162,6 +164,41 @@ interface ActiveSuperAgentChat {
   turnUserMessageId?: string;
   attachedDesignComments: ReadonlyArray<{ projectId?: string; commentId?: string }>;
   beforeSnapshot?: WorkspaceSnapshot;
+}
+
+const requiresNewerCodex = (model: unknown) => model === 'gpt-6.2-astra' || model === 'gpt-6.2-sol';
+
+function isCodexBeforeGpt62(userAgent: unknown): boolean {
+  if (typeof userAgent !== 'string') return false;
+  const version = /^[^/]+\/(\d+)\.(\d+)\.\d+\b/.exec(userAgent);
+  // GPT-6.2 requires Codex CLI 0.166.0 or later.
+  return Boolean(version && Number(version[1]) === 0 && Number(version[2]) < 166);
+}
+
+async function pickCodexCatalogModel(
+  rpc: AssetAgentRpc,
+  reasoning: string | undefined,
+  { excludeGpt62 = false, signal }: { excludeGpt62?: boolean; signal?: AbortSignal },
+) {
+  let first: { model: string; effort: string | null } | undefined;
+  let cursor: string | undefined;
+  for (let page = 0; page < 10 && !signal?.aborted; page++) {
+    const result = await rpc.request('model/list', cursor ? { cursor } : {}).catch(() => null);
+    const entries = Array.isArray(result?.data) ? result.data : Array.isArray(result?.models) ? result.models : [];
+    for (const entry of entries) {
+      const [model] = normalizeAgentModels([entry]);
+      if (!model || (excludeGpt62 && requiresNewerCodex(model.id))) continue;
+      const effort = reasoning && model.reasoning?.includes(reasoning)
+        ? reasoning
+        : model.reasoning?.find(level => level === entry?.defaultReasoningEffort) ?? model.reasoning?.[0] ?? null;
+      const choice = { model: model.id, effort };
+      if (entry?.isDefault === true) return choice;
+      first ??= choice;
+    }
+    if (typeof result?.nextCursor !== 'string' || !result.nextCursor || result.nextCursor === cursor) break;
+    cursor = result.nextCursor;
+  }
+  return first;
 }
 
 export const SUPER_AGENT_INSTRUCTIONS = `You are OpenMotion Super Agent — the unified Agent-first creative workspace for OpenMotion.
@@ -2644,7 +2681,7 @@ export class SuperAgentConversations {
       },
     );
     active.rpc = rpc;
-    await rpc.request('initialize', {
+    const initialized = await rpc.request('initialize', {
       clientInfo: { name: 'openmotion_super_agent', title: 'OpenMotion Super Agent', version: '1.0.0' },
       capabilities: { experimentalApi: true },
     });
@@ -2654,12 +2691,18 @@ export class SuperAgentConversations {
     }
     rpc.send({ method: 'initialized' });
     const dynamicTools = isCoding && !hasNonBrowserAttachments ? [] : this.buildDynamicTools();
+    const requestedModel = active.chat.model !== 'default' ? active.chat.model : undefined;
+    const requestedEffort = active.chat.reasoning !== 'default' ? active.chat.reasoning : undefined;
+    const signal = active.abortController?.signal;
+    const catalogDefault = requestedModel ? undefined : await pickCodexCatalogModel(rpc, requestedEffort, { signal });
+    if (active.stopped) return;
+    const threadModel = requestedModel ?? catalogDefault?.model;
     const options = {
       cwd,
       approvalPolicy: isCoding && active.chat.permissionMode === 'auto' ? 'never' : 'on-request',
       sandbox: isCoding ? 'workspace-write' : 'read-only',
       developerInstructions: isCoding ? CODING_AGENT_INSTRUCTIONS : SUPER_AGENT_INSTRUCTIONS,
-      ...(active.chat.model && active.chat.model !== 'default' ? { model: active.chat.model } : {}),
+      ...(threadModel ? { model: threadModel } : {}),
     };
     const resumeThreadWithRetry = async () => {
       const retryDelaysMs = [150, 300, 500, 750, 1000];
@@ -2700,11 +2743,19 @@ export class SuperAgentConversations {
     await this.persist(active, true);
     if (active.stopped) return;
 
+    const fallback = result.modelProvider === 'openai'
+      && isCodexBeforeGpt62(initialized?.userAgent)
+      && requiresNewerCodex(threadModel ?? result.model)
+      ? await pickCodexCatalogModel(rpc, requestedEffort, { excludeGpt62: true, signal })
+      : undefined;
+    if (active.stopped) return;
+    active.effectiveModel = (fallback ?? catalogDefault)?.model;
+    const turnModel = fallback?.model ?? threadModel;
     this.updateActivity(active, { phase: 'thinking' }, true);
     const turn = await rpc.request('turn/start', {
       threadId: result.thread.id,
-      ...(active.chat.model && active.chat.model !== 'default' ? { model: active.chat.model } : {}),
-      effort: active.chat.reasoning && active.chat.reasoning !== 'default' ? active.chat.reasoning : null,
+      ...(turnModel ? { model: turnModel } : {}),
+      effort: fallback ? fallback.effort : requestedEffort ?? null,
       input: [{ type: 'text', text: carriedHistory
         ? `<openmotion-compacted-history>\nThis conversation continues in a new Agent session (new tools are available). Earlier messages:\n${carriedHistory}\n</openmotion-compacted-history>\n\n${fullPrompt}`
         : fullPrompt }],
@@ -4739,8 +4790,8 @@ export class SuperAgentConversations {
     }
     const rawEngine = (active.chat.engine || 'unknown').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
     const safeEngine = slug.test(rawEngine) ? rawEngine : 'other';
-    const safeModelId = typeof active.chat.model === 'string' && modelId.test(active.chat.model)
-      ? active.chat.model : undefined;
+    const turnModel = active.effectiveModel ?? active.chat.model;
+    const safeModelId = typeof turnModel === 'string' && modelId.test(turnModel) ? turnModel : undefined;
     const turnOutcome: 'completed' | 'failed' | 'cancelled' = error
       ? 'failed'
       : state === 'cancelled'

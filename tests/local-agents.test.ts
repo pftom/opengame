@@ -54,14 +54,28 @@ test('local Codex prefers a newer bundled CLI and respects an explicit binary', 
   assert.equal(await resolveAgent('codex'), override);
   delete process.env.CODEX_BIN;
 
-  await writeCli(standalone, '0.100.0');
-  clearLocalAgentResolveCache();
-  assert.equal(await resolveAgent('codex'), standalone);
-
-  await writeCli(standalone, '0.101.0');
-  clearLocalAgentResolveCache();
-  assert.equal(await resolveLocalAgent('codex'), standalone);
-  assert.equal(await resolveAgent('codex'), standalone);
+  const versionCases = [
+    ['0.100.0', '0.100.0', standalone],
+    ['0.101.0', '0.100.0', standalone],
+    ['0.162.0', '0.171.0-alpha.13', bundled],
+    ['0.172.0', '0.171.0-alpha.13', standalone],
+    ['0.171.0', '0.171.0-alpha.13', standalone],
+    ['0.171.0-alpha.13', '0.171.0', bundled],
+    ['0.171.0-alpha.9', '0.171.0-alpha.13', bundled],
+    ['0.171.0-alpha.13', '0.171.0-alpha.9', standalone],
+    ['0.171.0+build.1', '0.171.0+build.2', standalone],
+    ['0.171.0-alpha.13+build.1', '0.171.0-alpha.13+build.2', standalone],
+    ['0.162.0', 'unknown', standalone],
+    ['unknown', '0.171.0', standalone],
+  ] as const;
+  for (const [standaloneVersion, bundledVersion, expected] of versionCases) {
+    await t.test(`standalone ${standaloneVersion}, bundled ${bundledVersion}`, async () => {
+      await Promise.all([writeCli(standalone, standaloneVersion), writeCli(bundled, bundledVersion)]);
+      clearLocalAgentResolveCache();
+      assert.equal(await resolveLocalAgent('codex'), expected);
+      assert.equal(await resolveAgent('codex'), expected);
+    });
+  }
 });
 
 test('Agent discovery excludes hidden models and parses CLI, help, Pi and spinner outputs cleanly', () => {
