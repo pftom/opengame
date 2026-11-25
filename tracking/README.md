@@ -723,3 +723,10 @@ isolated test-run UUID.
 - **Template & Host attribution (`work_generation_stage`, `project_create_result`):** `WorkRound` persists the initiating `host_context` and reads `project.templateId` from the workspace catalog to emit `template_id` and `attribution_source` (`project_catalog | none`) alongside `host_context` across `started`, `generated`, `edited` and `exported`.
 - **Super Agent & Scenario Workflows terminal events:** `super_agent_turn_result`, `super_agent_approval_result`, `scenario_run_result` and `scenario_step_result` emit once per committed terminal milestone under anonymous worker ingestion (`$process_person_profile=false`). Idempotent replays never emit duplicate events; prompts, replies, briefs, titles, paths and raw errors are excluded.
 - **Deterministic Codex LLM trace sampling:** `OPENMOTION_LLM_TRACE_SAMPLE_RATE` (`0..1`, default `1`) applies deterministic per-device SHA-256 sampling to `$ai_generation` events while always retaining failed/interrupted turns and turns with MCP tool failures (`trace_sample_reason=error_forced`). Sampled-out turns still advance `lastSyncedOrdinal` so local polling never stalls.
+
+
+## Optional template-copy attribution
+
+`openmotion_get_template` accepts optional `copyAttemptId` (UUID v4) and `templateEntry` (`website` or `editor`), alongside the required `templateId`. Existing MCP and WebMCP telemetry maps these explicit inputs to `copy_attempt_id`, `template_entry` and `template_id` on template-read start/result events. Never infer copy identity from an installation, a previous copy or a channel. A copy alone is not a read.
+
+Studio copy instructions keep the same identity in the copy result and manual fallback text; a new copy action gets a new identity. Copied instructions first install/connect when necessary, check the connected tool input schema before sending optional metadata, and retry once with only `templateId` if unsupported metadata is rejected. Attribution must never force an upgrade or block template use. Old servers may therefore read templates without copy attribution. Ship the receiving version before the paired website change when complete attribution is required.

@@ -102,7 +102,7 @@ export function reportInstructionExpanded(template: Template, expanded: boolean,
 }
 /** Only `clipboard_written` is a successful copy; showing the text for a manual copy is not. */
 export function reportCopyResult(template: Template, status: Fields<'template_instruction_copy_result'>['copy_status'], copyAttemptId: string, submit: boolean, view: ActionView | undefined, copyMethod?: CopyMethod) {
-  send('template_instruction_copy_result', { ...studio, host_product: 'codex', copy_status: status, ...(copyMethod ? { copy_method: copyMethod } : {}), copy_attempt_id: copyAttemptId, ...templateId(template), ...resource(template), ...instruction(template, submit), ...detail(view) });
+  send('template_instruction_copy_result', { ...studio, host_product: 'codex', template_entry: 'editor', copy_status: status, ...(copyMethod ? { copy_method: copyMethod } : {}), copy_attempt_id: copyAttemptId, ...templateId(template), ...resource(template), ...instruction(template, submit), ...detail(view) });
 }
 export function reportTemplateSuperAgentClicked(template: Template, view: DetailView | undefined) {
   send('ui_click', { ...studio, area: 'template_detail', element: 'run_super_agent', ...templateId(template), ...resource(template), ...detail(view) });

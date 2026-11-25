@@ -537,7 +537,7 @@ it('copies the shared brief, retains guides and gates editable-project opening',
   await act(async () => button('复刻模板').click());
   expect(host.querySelector('dialog[aria-label=复刻模板]')).toBeNull();
   expect(document.querySelector('[data-feedback-layer]')?.textContent).toContain('已复制，发给 Agent 即可。');
-  expect(navigator.clipboard.writeText).toHaveBeenCalledWith('使用说明：请使用 OpenMotion 插件。如未安装，请按 `https://github.com/nexu-io/openmotion` 安装并接入后继续。\n指定模板：First（one）\n创作要求：基于模板，结合我的要求和附件创作。保留原模板的场景、界面和动画结构（可编辑模板直接原地替换文字与素材），不另写简陋文字卡页面；需要舍弃内容时先说明取舍，并交付 HTML 和 MP4。\n我的要求：\n');
+  expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('使用说明：请使用 OpenMotion 插件。如未安装，请按 `https://github.com/nexu-io/openmotion` 安装并接入后继续。\n指定模板：First（one）\n创作要求：基于模板，结合我的要求和附件创作。保留原模板的场景、界面和动画结构（可编辑模板直接原地替换文字与素材），不另写简陋文字卡页面；需要舍弃内容时先说明取舍，并交付 HTML 和 MP4。\n我的要求：\n'));
   await act(async () => button('打开并编辑').click());
   expect(onOpen).toHaveBeenCalledWith('one');
   await act(async () => button('预览模板 Second', host.querySelector('main')!).click());
@@ -556,7 +556,7 @@ it.each(['repository', 'cms'] as const)('updates the displayed and copied title 
     ].join('\n');
     expect(host.querySelector('section[aria-label="模板复刻指令"] p')?.textContent).toBe(expected);
     await act(async () => button('复刻模板').click());
-    expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(expected);
+    expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(expect.stringContaining(expected));
     if (id === 'one') await act(async () => button('下一个').click());
   }
 });
@@ -988,6 +988,13 @@ it('joins repeated recreate and submit attempts to their own copy results', asyn
   expect(intents.map(item => item.copy_attempt_id)).toEqual(results.map(item => item.copy_attempt_id));
   expect(new Set(results.map(item => item.copy_attempt_id)).size).toBe(2);
   expect(results.map(item => item.copy_status)).toEqual(['clipboard_written', 'manual_fallback_shown']);
+  const copied = vi.mocked(navigator.clipboard.writeText).mock.calls.slice(-2).map(call => call[0]);
+  copied.forEach((text, index) => {
+    const args = JSON.parse(text.split('\n')[1]);
+    expect(args).toMatchObject({ templateId: 'one', copyAttemptId: results[index].copy_attempt_id, templateEntry: 'editor' });
+  });
+  expect(host.querySelector('textarea')?.value).toBe(copied[1]);
+
   await act(async () => button('Open and edit').click());
   expect(events('ui_click', { template_action: 'open_edit' })[0]).not.toHaveProperty('copy_attempt_id');
 });

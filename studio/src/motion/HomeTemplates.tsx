@@ -1,3 +1,5 @@
+import { withTemplateAttribution } from '../../../shared/template-attribution';
+import { slug } from '../../../tracking/core';
 import { Button } from 'open-design-ui/button';
 import { IconButton } from 'open-design-ui/icon-button';
 import { useEffect, useRef, useState } from 'react';
@@ -70,21 +72,23 @@ export function HomeTemplates({ onSelect }: { onSelect?: (template: GalleryTempl
   }
   async function copy(template: GalleryTemplate) {
     setFeedback(''); setManualCopy('');
-    void trackMotion('ui_click', { page_name: 'studio', area: 'templates', element: 'copy_template' });
+    const copyAttemptId = crypto.randomUUID();
+    const fields = { copy_attempt_id: copyAttemptId, ...(slug.test(template.id) ? { template_id: template.id } : {}) };
+    void trackMotion('ui_click', { page_name: 'studio', area: 'templates', element: 'copy_template', ...fields });
     try {
       const connection = info ?? await motionApi<IntegrationInfo>('/integration');
       setInfo(connection);
-      const prompt = templatePrompt(connection, host, template, locale);
+      const prompt = withTemplateAttribution(templatePrompt(connection, host, template, locale), template.id, copyAttemptId, 'editor');
       try {
         if (!(await copyTextToClipboard(prompt))) throw new Error('Clipboard copy failed');
-        void trackMotion('template_instruction_copy_result', { host_product: host, copy_status: 'clipboard_written' });
+        void trackMotion('template_instruction_copy_result', { host_product: host, page_name: 'home', template_entry: 'editor', ...fields, copy_status: 'clipboard_written' });
         setFeedback(t('Copied. Send it to {agent} to recreate this template.', { agent: hostNames[host] }));
       } catch {
-        void trackMotion('template_instruction_copy_result', { host_product: host, copy_status: 'manual_fallback_shown' });
+        void trackMotion('template_instruction_copy_result', { host_product: host, page_name: 'home', template_entry: 'editor', ...fields, copy_status: 'manual_fallback_shown' });
         setManualCopy(prompt); setFeedback(t('Copy the instruction below and send it to your Agent.'));
       }
     } catch (err) {
-      void trackMotion('template_instruction_copy_result', { host_product: host, copy_status: 'failed' });
+      void trackMotion('template_instruction_copy_result', { host_product: host, page_name: 'home', template_entry: 'editor', ...fields, copy_status: 'failed' });
       setFeedback((err as Error).message);
     }
   }

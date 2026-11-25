@@ -327,7 +327,7 @@ export const omEvents = {
     expanded: 'boolean', delivery_status: ['browser_save_requested', 'fetch_failed'],
     field: ['title', 'accent'], outcome: ['success', 'failure', 'manual_fallback'] }, required: ['page_name', 'template_id', 'view_id', 'action'] },
   template_instruction_copy_result: { producers: ['studio'], fields: { host_product: hosts, copy_status: ['clipboard_written', 'manual_fallback_shown', 'failed'], copy_method: copyMethod,
-    page_name: ['home', 'studio'], copy_attempt_id: 'uuid', ...templateList, ...templateDetail, ...project, ...template, ...templateSeries }, required: ['host_product', 'copy_status'] },
+    page_name: ['home', 'studio'], template_entry: ['website', 'editor'], copy_attempt_id: 'uuid', ...templateList, ...templateDetail, ...project, ...template, ...templateSeries }, required: ['host_product', 'copy_status'] },
   // One observed Studio handoff operation result, not an Agent receipt or a completed film.
   template_project_result: { producers: ['studio'], fields: { page_name: ['studio'], ...template, ...project, ...templateDetail,
     operation_id: 'uuid', handoff_attempt_id: 'uuid', stage: ['create', 'reconcile', 'open'], outcome: ['success', 'failure', 'unknown', 'not_found'] },

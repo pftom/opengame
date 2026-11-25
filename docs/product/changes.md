@@ -1,5 +1,10 @@
 # 公开变更记录
 
+## 2026-11-25: Preserve optional template-copy attribution
+
+- Carry template and copy-attempt identity from Studio copy actions through existing template-read telemetry, including manual clipboard fallback.
+- Accept optional copy metadata in the template tool while retaining templateId-only calls. Copied instructions use the connected schema and retry without unsupported metadata, so attribution does not require an upgrade or block template use.
+
 ## 2026-11-24: Present OpenGame with game-specific documentation and real product captures
 
 - Replace the inherited video-studio README with English, Simplified Chinese and Japanese OpenGame documentation, using the Super Game Agent positioning and a consistent navigation, showcase, feature and architecture structure.
