@@ -720,7 +720,7 @@ it('shows Chinese image controls and keeps the draft when switching creation mod
   const slot = group.querySelector<HTMLElement>('.om-sa-dock-slot')!;
   expect(slot.contains(composer)).toBe(true);
   expect(slot.nextElementSibling?.classList.contains('om-sa-mode-ideas')).toBe(true);
-  expect(group.nextElementSibling?.querySelector('h3')?.textContent).toBe('探索模版');
+  expect(group.nextElementSibling?.querySelector('h3')?.textContent).toBe('探索模板');
   const scroll = container.querySelector<HTMLElement>('.om-sa-messages')!;
   Object.defineProperty(scroll, 'clientHeight', { value: 600 });
   vi.spyOn(slot, 'getBoundingClientRect').mockImplementation(() => new DOMRect(0, 100 - scroll.scrollTop, 700, 150));
@@ -2557,37 +2557,54 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
 
     const filters = container.querySelector('.om-sa-showcase-tabs')!;
     const gameTab = [...filters.querySelectorAll('button')].find(tab => tab.textContent?.includes('All games'))!;
-    const brandTab = [...filters.querySelectorAll('button')].find(tab => tab.textContent?.includes('Brand Kits'))!;
-    const viewAll = container.querySelector<HTMLButtonElement>('.om-sa-showcase-bar .om-sa-showcase-more')!;
+    expect([...filters.querySelectorAll('button')].find(tab => tab.textContent?.includes('Brand Kits'))).toBeUndefined();
     const gameCount = Number(gameTab.querySelector('.om-sa-tab-count')?.textContent);
-    expect(viewAll.textContent).toBe('View all');
+    expect(container.querySelector('.om-sa-showcase-bar .om-sa-showcase-more')).toBeNull();
+    expect(container.querySelector('.om-sa-showcase-bar .om-sa-game-bar-controls .om-sa-game-search')).toBeTruthy();
+    expect(container.querySelector('.om-sa-showcase-bar .om-sa-game-bar-controls .om-sa-game-sort')).toBeTruthy();
     expect(container.querySelectorAll('.om-sa-game-showcase-card').length).toBeLessThan(gameCount);
-    await act(async () => viewAll.click());
+    while (container.querySelector<HTMLButtonElement>('.om-sa-load-more-btn')) {
+      const loadMore = container.querySelector<HTMLButtonElement>('.om-sa-load-more-btn')!;
+      await act(async () => loadMore.click());
+    }
     expect(container.querySelectorAll('.om-sa-game-showcase-card')).toHaveLength(gameCount);
-    const legacyCard = container.querySelector('[aria-label="Play Legacy Arena"]')?.closest('article');
+    const legacyCard = container.querySelector('[aria-label="Try game: Legacy Arena"]')?.closest('article');
     expect(legacyCard).toBeTruthy();
     expect(legacyCard?.querySelector('.om-sa-game-tile-remix')).toBeNull();
-    expect(container.querySelector('.om-sa-mode-ideas')?.textContent).not.toContain('Co-op 3D crystal defense');
-    await act(async () => brandTab.click());
-    expect(container.querySelector('.om-sa-showcase-more')).toBe(viewAll);
-    expect(container.querySelector('.om-sa-game-search')).toBeNull();
-    await act(async () => gameTab.click());
-    expect(container.querySelector('.om-sa-showcase-more')).toBe(viewAll);
-    expect(container.querySelector('.om-sa-game-search')).toBeTruthy();
+    expect(container.querySelector('.om-sa-mode-ideas')).toBeNull();
+    // Game mode keeps the composer pinned at the bottom so templates remain visible above the fold.
+    expect(container.querySelector('.om-sa-mode-composer-group')).toBeNull();
+    expect(container.querySelector('.om-sa-stream > .om-sa-messages + .om-sa-composer-placement .om-sa-composer-editor')).toBeTruthy();
+
+    // Clicking a Hero genre badge updates both composer options and the template filter tab, scrolls to templates, and toggles back cleanly.
+    const scroller = container.querySelector<HTMLElement>('.om-sa-messages')!;
+    const scrollToSpy = vi.fn();
+    scroller.scrollTo = scrollToSpy;
+    const shooterBadge = [...container.querySelectorAll<HTMLButtonElement>('.om-sa-game-genre-card')]
+      .find(card => card.textContent?.includes('Shooter'))!;
+    await act(async () => {
+      shooterBadge.click();
+      await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
+    });
+    expect(filters.querySelector('[aria-selected="true"]')?.textContent).toContain('Shooter');
+    expect(scrollToSpy).toHaveBeenCalled();
+    await act(async () => shooterBadge.click());
+    expect(filters.querySelector('[aria-selected="true"]')?.textContent).toContain('All games');
 
     const topBar = container.querySelector('.om-sa-composer-top-bar')!;
     expect(topBar).toBeTruthy();
     expect(topBar.textContent).toContain('Genre');
     expect(topBar.textContent).not.toContain('Shooter');
-    expect(topBar.textContent).toContain('Style');
+    expect(topBar.textContent).toContain('Art style');
     expect(topBar.textContent).toContain('Setting');
-    expect(topBar.textContent).toContain('Landscape');
+    expect(topBar.textContent).toContain('Screen layout');
+    expect(topBar.textContent).not.toContain('Landscape');
     const adSwitch = topBar.querySelector<HTMLElement>('[role="switch"][aria-label="Playable ad"]')!;
     const adSwitchLabel = adSwitch.closest('label')!;
     expect(adSwitch.getAttribute('aria-checked')).toBe('false');
 
-    // Open Style popover and pick Pixel art
-    const styleTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Style')) as HTMLButtonElement;
+    // Open Art style popover and pick Pixel art
+    const styleTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Art style')) as HTMLButtonElement;
     await act(async () => styleTrigger.click());
     await flush();
     const pixelOption = [...document.querySelectorAll('.om-sa-game-art-option')].find(b => b.textContent?.includes('Pixel art')) as HTMLButtonElement;
@@ -2595,9 +2612,10 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
     await act(async () => pixelOption.click());
     await flush();
 
-    // Open Orientation dropdown and select Portrait (9:16)
-    const orientationTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Landscape')) as HTMLButtonElement;
+    // Open Screen layout dropdown: both Landscape and Portrait are explicit active choices, and Any screen layout clears back to neutral.
+    const orientationTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Screen layout')) as HTMLButtonElement;
     expect(orientationTrigger.getAttribute('aria-haspopup')).toBe('listbox');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(false);
     await act(async () => orientationTrigger.click());
     await flush();
     const portraitOption = [...document.querySelectorAll('.om-sa-game-choice-row')].find(b => b.textContent?.includes('Portrait')) as HTMLButtonElement;
@@ -2606,18 +2624,39 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
     await act(async () => portraitOption.click());
     await flush();
     expect(topBar.textContent).toContain('Portrait');
-    expect(adSwitch.getAttribute('aria-checked')).toBe('true');
-    await act(async () => adSwitchLabel.click());
-    await flush();
-    expect(topBar.textContent).toContain('Portrait');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(true);
     expect(adSwitch.getAttribute('aria-checked')).toBe('false');
 
+    // Select Landscape -> also highlighted as active; clicking Any screen layout clears back to unselected neutral state.
     const portraitTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Portrait'))!;
     await act(async () => portraitTrigger.click());
     await flush();
     const landscapeOption = [...document.querySelectorAll<HTMLButtonElement>('.om-sa-game-choice-row')].find(b => b.querySelector('strong')?.textContent === 'Landscape')!;
     await act(async () => landscapeOption.click());
     await flush();
+    expect(topBar.textContent).toContain('Landscape');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(true);
+    expect(adSwitch.getAttribute('aria-checked')).toBe('false');
+
+    await act(async () => orientationTrigger.click());
+    await flush();
+    const clearLayoutBtn = [...document.querySelectorAll<HTMLButtonElement>('.om-sa-popover-pill')].find(b => b.textContent?.includes('Any screen layout'))!;
+    expect(clearLayoutBtn).toBeTruthy();
+    await act(async () => clearLayoutBtn.click());
+    await flush();
+    expect(topBar.textContent).toContain('Screen layout');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(false);
+
+    // Toggle Playable ad on from unselected layout -> sets Portrait, toggling off restores unselected Screen layout.
+    await act(async () => adSwitchLabel.click());
+    await flush();
+    expect(topBar.textContent).toContain('Portrait');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(true);
+    expect(adSwitch.getAttribute('aria-checked')).toBe('true');
+    await act(async () => adSwitchLabel.click());
+    await flush();
+    expect(topBar.textContent).toContain('Screen layout');
+    expect(orientationTrigger.hasAttribute('data-active')).toBe(false);
     expect(adSwitch.getAttribute('aria-checked')).toBe('false');
     await act(async () => adSwitchLabel.click());
     await flush();
@@ -3272,8 +3311,10 @@ it('renders persistent live progress dock, ticking step timers, and Continue rec
 });
 
 it('auto-enters Game mode when opened from Game Studio, plays games in Artifact Viewer without creating empty chats, and supports remix selection', async () => {
+  const jsonResponse = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
   let chatCreateCalls = 0;
-  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const method = (init?.method || 'GET').toUpperCase();
     if (url.includes('/motion-api/super-agent/chats') && method === 'POST') {
@@ -3281,11 +3322,25 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
     }
     if (url.includes('/motion-api/super-agent/chats')) return jsonResponse({ conversations: [] });
     if (url.includes('/motion-api/super-agent/resources')) return jsonResponse({ items: [], counts: { assets: 0, designProjects: 0, motionProjects: 0, brandKits: 0, templates: 0, skills: 0, total: 0 } });
-    if (url.includes('/motion-api/settings/agents')) return jsonResponse({ agents: [{ id: 'codex', label: 'Codex', installed: true, auth: 'signed-in', models: [] }] });
-    if (url.includes('/motion-api/settings/agent-runtimes')) return jsonResponse({ localDirectAvailable: true, runtimes: [] });
+    if (url.includes('/settings/agents')) {
+      return jsonResponse({ agents: [{ id: 'codex', label: 'Codex', icon: 'codex', installed: true, auth: 'signed-in', models: [{ id: 'gpt-5', label: 'GPT-5', reasoning: ['medium'] }] }] });
+    }
+    if (url.includes('/agent-runtimes')) {
+      return jsonResponse({
+        localDirectAvailable: true,
+        runtimes: [{
+          id: 'local-direct',
+          kind: 'local-direct',
+          name: 'This computer',
+          status: 'online',
+          agents: [{ id: 'codex', label: 'Codex', icon: 'codex', installed: true, auth: 'signed-in', models: [] }],
+          runnableAgentIds: ['codex'],
+        }],
+      });
+    }
     if (url.includes('/motion-api/games')) return jsonResponse({ games: [] });
     return jsonResponse({});
-  }));
+  });
 
   await act(async () => {
     root.render(
@@ -3312,7 +3367,7 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
   // Auto-switched into Game mode with fanned hero, search input, sort combobox, and masonry waterfall
   expect(container.querySelector('.om-sa-stream')?.getAttribute('data-mode')).toBe('game');
   expect(container.querySelectorAll('.om-sa-game-fan-card').length).toBeGreaterThan(0);
-  expect(container.querySelectorAll('.om-sa-game-fan-actions .om-sa-game-tile-play').length).toBe(1);
+  expect(container.querySelectorAll('.om-sa-game-fan-actions .om-sa-game-tile-remix').length).toBe(1);
   expect(container.querySelector('.om-sa-game-search input')).toBeTruthy();
   expect(container.querySelector('.om-sa-game-sort [role="combobox"]')).toBeTruthy();
   expect(container.querySelectorAll('.om-sa-game-tile').length).toBeGreaterThan(0);
@@ -3321,18 +3376,39 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
   const viewer = container.querySelector('.om-sa-viewer');
   expect(viewer).toBeTruthy();
   expect(viewer?.textContent).toContain('The Little Prince: Star Journey');
+  expect(viewer?.querySelector('.om-sa-publish-trigger')).toBeNull();
+  expect(viewer?.querySelector<HTMLInputElement>('input[aria-label="Artifact address bar"]')?.value).toBe('littleprince.dev');
   expect(chatCreateCalls).toBe(0);
 
-  // Clicking "Remix" inside the Artifact Viewer selects the playing game into the Agent composer
+  // Clicking "Remix" inside the Artifact Viewer attaches a remix cartridge chip without auto-filling template copy or overwriting top-bar params
   const viewerUseBtn = viewer?.querySelector('.om-sa-game-use-btn') as HTMLButtonElement;
   expect(viewerUseBtn).toBeTruthy();
   expect(viewerUseBtn.textContent).toContain('Remix');
   await act(async () => viewerUseBtn.click());
   await flush();
-  expect(container.querySelector('.om-sa-composer-chips')?.textContent).toContain('The Little Prince: Star Journey');
+  const remixChip = container.querySelector('.om-sa-composer-chips .om-sa-game-remix-chip');
+  expect(remixChip?.textContent).toContain('The Little Prince: Star Journey');
+  expect(remixChip?.querySelector('.om-sa-attachment-thumb')).toBeTruthy();
+  // Single chip relies on its own × remove button without a redundant Clear button
+  expect(container.querySelector('.om-sa-composer-chips .om-sa-chip-clear')).toBeNull();
 
   const gameInput = getComposerEditor(container);
-  expect(gameInput.textContent).toBe(communityGames.find(game => game.id === 'community-little-prince')!.description);
+  expect(gameInput.textContent).toBe('');
+  expect(gameInput.getAttribute('data-placeholder')).toBe('Describe how to remix The Little Prince: Star Journey, or send as is');
+  expect((container.querySelector('.om-sa-send-btn') as HTMLButtonElement).disabled).toBe(false);
+  const topBarAfterRemix = container.querySelector('.om-sa-composer-top-bar')!;
+  expect(topBarAfterRemix.textContent).toContain('Genre');
+  expect(topBarAfterRemix.textContent).toContain('Art style');
+  expect(topBarAfterRemix.textContent).toContain('Screen layout');
+  expect(topBarAfterRemix.querySelectorAll('[data-active]').length).toBe(0);
+
+  // Removing the Remix chip clears the chip tray and restores the default Game placeholder
+  const removeRemixChip = container.querySelector<HTMLButtonElement>('.om-sa-composer-chips .om-sa-chip-remove')!;
+  await act(async () => removeRemixChip.click());
+  await flush();
+  expect(container.querySelector('.om-sa-composer-chips')).toBeNull();
+  expect(gameInput.textContent).toBe('');
+  expect(gameInput.getAttribute('data-placeholder')).not.toContain('Describe how to remix');
 
   // Top fanned Hero carousel rotates smoothly via Next/Previous controls and side-card clicks
   const initialCenterLabel = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-fan-card')?.getAttribute('aria-label');
@@ -3343,55 +3419,223 @@ it('auto-enters Game mode when opened from Game Studio, plays games in Artifact 
   const nextCenterLabel = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-fan-card')?.getAttribute('aria-label');
   expect(nextCenterLabel).not.toBe(initialCenterLabel);
 
-  // Clicking the center Hero card selects it into the Agent composer (not jarring auto-play)
-  const fanCenterCard = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-fan-card') as HTMLButtonElement;
-  expect(fanCenterCard).toBeTruthy();
-  await act(async () => fanCenterCard.click());
+  // Clicking the center Hero card's Remix button selects it into the Agent composer, then clicking again deselects it
+  const fanRemixBtn = container.querySelector('.om-sa-game-fan-item[data-slot="0"] .om-sa-game-tile-remix') as HTMLButtonElement;
+  expect(fanRemixBtn).toBeTruthy();
+  await act(async () => fanRemixBtn.click());
   await flush();
   expect(container.querySelector('.om-sa-composer-chips')?.textContent).toContain('Remix ·');
-
-  // Clicking a bottom masonry card cover selects it into the composer. The Try game button opens the viewer.
-  const listCoverBtn = container.querySelector('.om-sa-game-tile .om-sa-game-tile-cover') as HTMLButtonElement;
-  expect(listCoverBtn).toBeTruthy();
-  await act(async () => listCoverBtn.click());
+  await act(async () => fanRemixBtn.click());
   await flush();
-  expect(container.querySelector('.om-sa-composer-chips')?.textContent).toContain('Remix ·');
+  expect(container.querySelector('.om-sa-composer-chips')).toBeNull();
 
+  // Clicking a bottom masonry card's Remix button selects it without modifying composer text, preserving user edits across toggles
   const racingGame = communityGames.find(game => game.id === 'community-turbo-kart')!;
-  const racingCard = container.querySelector<HTMLButtonElement>(`.om-sa-game-tile-cover[aria-label="Remix: ${racingGame.title}"]`)!;
-  await act(async () => racingCard.click());
-  expect(gameInput.textContent).toBe(racingGame.description);
-  await act(async () => racingCard.click());
+  const racingRemixBtn = container.querySelector<HTMLButtonElement>(`.om-sa-game-tile-remix[aria-label="Remix: ${racingGame.title}"]`)!;
+  await act(async () => racingRemixBtn.click());
   expect(gameInput.textContent).toBe('');
-  await act(async () => racingCard.click());
-  await typeInComposer(gameInput, ' Make the race three laps.');
-  await act(async () => racingCard.click());
-  expect(gameInput.textContent).toBe(`${racingGame.description} Make the race three laps.`);
+  expect(gameInput.getAttribute('data-placeholder')).toBe(`Describe how to remix ${racingGame.title}, or send as is`);
+  await act(async () => racingRemixBtn.click());
+  expect(container.querySelector('.om-sa-composer-chips')).toBeNull();
+  await act(async () => racingRemixBtn.click());
+  await typeInComposer(gameInput, 'Make the race three laps.');
+  await act(async () => racingRemixBtn.click());
+  expect(gameInput.textContent).toBe('Make the race three laps.');
 
-  const listPlayBtn = container.querySelector('.om-sa-game-tile .om-sa-game-tile-play') as HTMLButtonElement;
-  expect(listPlayBtn).toBeTruthy();
-  expect(listPlayBtn.textContent).toContain('Try game');
-  await act(async () => listPlayBtn.click());
-  await flush();
-  expect(container.querySelector('.om-sa-viewer')).toBeTruthy();
+  // Selecting another template when user has already typed preserves their prompt text untouched
+  await act(async () => racingRemixBtn.click());
+  expect(gameInput.textContent).toBe('Make the race three laps.');
 
+  // Clicking a masonry card cover opens it directly in the viewer (with preconnect on focus)
   const evensong = communityGames.find(game => game.id === 'community-evensong')!;
-  const evensongPlay = container.querySelector<HTMLButtonElement>(`button[aria-label="Try game: ${evensong.title}"]`)!;
+  const evensongCover = container.querySelector<HTMLButtonElement>(`.om-sa-game-tile-cover[aria-label="Try game: ${evensong.title}"]`)!;
   const origin = new URL(evensong.external!.url).origin;
-  await act(async () => evensongPlay.focus());
+  await act(async () => evensongCover.focus());
   expect(document.head.querySelector(`link[rel="preconnect"][href="${origin}"]`)).toBeTruthy();
 
-  await act(async () => evensongPlay.click());
+  await act(async () => evensongCover.click());
   const gameFrame = () => container.querySelector<HTMLIFrameElement>(`iframe[title="${evensong.title}"]`);
   const originalFrame = gameFrame();
   expect(originalFrame?.getAttribute('src')).toBe(evensong.external!.url);
 
-  await act(async () => evensongPlay.click());
+  await act(async () => evensongCover.click());
   expect(gameFrame()).toBe(originalFrame);
 
   const reload = container.querySelector<HTMLButtonElement>('.om-sa-viewer button[aria-label="Reload"]')!;
   await act(async () => reload.click());
   expect(gameFrame()).not.toBe(originalFrame);
+
+  // Closing the last game preview tab collapses the split viewer back to the full homepage
+  while (container.querySelector<HTMLButtonElement>('.om-sa-viewer-tab-close')) {
+    const closeTab = container.querySelector<HTMLButtonElement>('.om-sa-viewer-tab-close')!;
+    await act(async () => closeTab.click());
+    await flush();
+  }
+  expect(container.querySelector('.om-sa-viewer')).toBeNull();
+});
+
+it('forwards explicit composer parameter overrides when remixing a local built-in game template', async () => {
+  const REMIX_CHAT_ID = '22222222-2222-2222-2222-222222222222';
+  const REMIXED_GAME_ID = '33333333-3333-3333-3333-333333333333';
+  const localTemplate = {
+    id: 'local-lantern-hop',
+    title: 'Lantern Hop',
+    description: 'Leap across lantern rooftops at dusk.',
+    genre: 'platformer',
+    style: 'illustrated',
+    setting: 'fantasy',
+    multiplayer: false,
+    maxPlayers: 1,
+    orientation: 'landscape',
+    playableAd: false,
+    status: 'published',
+    cover: '/games/local-lantern-hop/cover.png',
+    playUrl: '/motion-api/games/local-lantern-hop/play/index.html',
+    plays: 120,
+    likes: 12,
+    dislikes: 0,
+    reaction: 0,
+    favorite: false,
+    source: 'template',
+    remixOf: null,
+    controls: '',
+    createdAt: '2026-11-22T00:00:00.000Z',
+    updatedAt: '2026-11-22T00:00:00.000Z',
+  };
+  let remixEndpointCalls = 0;
+  let remixRequestBody: any = null;
+  let turnBody: any = null;
+  const createdChat: SuperAgentChat = {
+    id: REMIX_CHAT_ID,
+    title: 'Remix · Lantern Hop',
+    engine: 'codex',
+    model: 'gpt-5',
+    intent: 'game',
+    permissionMode: 'auto',
+    createdAt: 1000,
+    updatedAt: 1000,
+    state: 'idle',
+    messages: [],
+    artifacts: [],
+    approvals: [],
+  };
+
+  const jsonResponse = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = (init?.method || 'GET').toUpperCase();
+    if (url.includes('/motion-api/super-agent/chats') && method === 'POST' && !url.includes('/turn')) {
+      return jsonResponse({ conversation: createdChat });
+    }
+    if (url.includes(`/motion-api/super-agent/chats/${REMIX_CHAT_ID}/turn`) && method === 'POST') {
+      turnBody = JSON.parse(String(init?.body ?? '{}'));
+      return jsonResponse({ conversation: { ...createdChat, state: 'running' } });
+    }
+    if (url.includes(`/motion-api/super-agent/chats/${REMIX_CHAT_ID}`)) return jsonResponse({ conversation: createdChat });
+    if (url.includes('/motion-api/super-agent/chats')) return jsonResponse({ conversations: [] });
+    if (url.includes('/motion-api/super-agent/resources')) return jsonResponse({ items: [], counts: { assets: 0, designProjects: 0, motionProjects: 0, brandKits: 0, templates: 0, skills: 0, total: 0 } });
+    if (url.includes('/settings/agents')) {
+      return jsonResponse({ agents: [{ id: 'codex', label: 'Codex', icon: 'codex', installed: true, auth: 'signed-in', models: [{ id: 'gpt-5', label: 'GPT-5', reasoning: ['medium'] }] }] });
+    }
+    if (url.includes('/agent-runtimes')) {
+      return jsonResponse({
+        localDirectAvailable: true,
+        runtimes: [{
+          id: 'local-direct',
+          kind: 'local-direct',
+          name: 'This computer',
+          status: 'online',
+          agents: [{ id: 'codex', label: 'Codex', icon: 'codex', installed: true, auth: 'signed-in', models: [] }],
+          runnableAgentIds: ['codex'],
+        }],
+      });
+    }
+    if (url.endsWith('/motion-api/games/local-lantern-hop/remix') && method === 'POST') {
+      remixEndpointCalls += 1;
+      remixRequestBody = JSON.parse(String(init?.body ?? '{}'));
+      return jsonResponse({
+        game: {
+          ...localTemplate,
+          ...remixRequestBody,
+          id: REMIXED_GAME_ID,
+          source: 'mine',
+          remixOf: localTemplate.id,
+          playUrl: `/motion-api/games/${REMIXED_GAME_ID}/play/index.html`,
+        },
+        agentInstruction: 'Use openmotion_game_* tools to remix Lantern Hop.',
+      });
+    }
+    if (url.includes('/motion-api/games')) return jsonResponse({ games: [localTemplate] });
+    return jsonResponse({});
+  });
+
+  await act(async () => {
+    root.render(
+      <I18nProvider initialLocale="en">
+        <SuperAgentWorkspace
+          active
+          chatId={null}
+          requestedMode="game"
+          onChatIdChange={vi.fn()}
+          onOpenDesignProject={vi.fn()}
+          onOpenMotionProject={vi.fn()}
+          onOpenAsset={vi.fn()}
+          onOpenBrandKit={vi.fn()}
+          onOpenAgentSettings={vi.fn()}
+          onOpenMcp={vi.fn()}
+        />
+      </I18nProvider>,
+    );
+  });
+  await flush();
+  await flush();
+
+  // Filter to Platformer so the local template is immediately visible and click Remix
+  const platformerTab = [...container.querySelectorAll<HTMLButtonElement>('.om-sa-showcase-tabs button')]
+    .find(tab => tab.textContent?.includes('Platformer'))!;
+  await act(async () => platformerTab.click());
+  await flush();
+
+  const localRemixBtn = container.querySelector<HTMLButtonElement>('.om-sa-game-tile-remix[aria-label="Remix: Lantern Hop"]')!;
+  expect(localRemixBtn).toBeTruthy();
+  await act(async () => localRemixBtn.click());
+  await flush();
+
+  // Top bar stays neutral until the user explicitly chooses overrides
+  const topBar = container.querySelector('.om-sa-composer-top-bar')!;
+  expect(topBar.querySelectorAll('[data-active]').length).toBe(0);
+
+  // Pick Art style = Pixel art and Screen layout = Portrait as remix overrides
+  const styleTrigger = [...topBar.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.includes('Art style'))!;
+  await act(async () => styleTrigger.click());
+  await flush();
+  const pixelOption = [...document.querySelectorAll<HTMLButtonElement>('.om-sa-game-art-option')].find(b => b.textContent?.includes('Pixel art'))!;
+  await act(async () => pixelOption.click());
+  await flush();
+
+  const layoutTrigger = [...topBar.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent?.includes('Screen layout'))!;
+  await act(async () => layoutTrigger.click());
+  await flush();
+  const portraitOption = [...document.querySelectorAll<HTMLButtonElement>('.om-sa-game-choice-row')].find(b => b.textContent?.includes('Portrait'))!;
+  await act(async () => portraitOption.click());
+  await flush();
+
+  // Send with empty composer text -> uses "Remix · Lantern Hop" and forwards the explicit overrides to hiddenInstructions and contextTags
+  const sendBtn = container.querySelector<HTMLButtonElement>('.om-sa-send-btn')!;
+  expect(sendBtn.disabled).toBe(false);
+  await act(async () => sendBtn.click());
+  await flush();
+
+  expect(remixEndpointCalls).toBe(1);
+  expect(remixRequestBody).toEqual({ style: 'pixel', orientation: 'portrait' });
+  expect(turnBody?.text).toBe('Remix · Lantern Hop');
+  expect(turnBody?.hiddenInstructions).toContain('Requested remix overrides: Style: Pixel art, Layout: Portrait (9:16).');
+  expect(turnBody?.hiddenInstructions).toContain('style=pixel');
+  expect(turnBody?.hiddenInstructions).toContain('orientation=portrait 9:16');
+  expect(turnBody?.contextTags?.map((tag: any) => tag.label)).toContain('Pixel art');
+  expect(turnBody?.contextTags?.map((tag: any) => tag.label)).toContain('9:16');
+  expect(turnBody?.contextTags?.map((tag: any) => tag.label)).toContain('Remix · Lantern Hop');
 });
 
 it('consumes Cloud deploy requests across viewer remounts and aborts deploy when opening a game fails', async () => {
@@ -3459,10 +3703,10 @@ it('consumes Cloud deploy requests across viewer remounts and aborts deploy when
   expect(container.querySelector('.om-sa-viewer')).toBeNull();
   expect(document.querySelector('.om-web-publish-popover')).toBeNull();
 
-  // Click Play on a masonry game card -> viewer remounts, but Cloud share popover must stay closed
-  const playBtn = container.querySelector('.om-sa-game-tile .om-sa-game-tile-play') as HTMLButtonElement;
-  expect(playBtn).toBeTruthy();
-  await act(async () => playBtn.click());
+  // Click a masonry game card cover to play -> viewer remounts, but Cloud share popover must stay closed
+  const playCover = container.querySelector('.om-sa-game-tile .om-sa-game-tile-cover') as HTMLButtonElement;
+  expect(playCover).toBeTruthy();
+  await act(async () => playCover.click());
   await flush();
   expect(container.querySelector('.om-sa-viewer')).toBeTruthy();
   expect(document.querySelector('.om-web-publish-popover')).toBeNull();
@@ -7617,7 +7861,7 @@ it('folds intermediate progress notes into WorkLogSection, renders 16:9 game cov
               {
                 id: 'a-final',
                 role: 'assistant',
-                text: '《潮汐邮差》已可试玩，支持点击 [开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html) 直接进入关卡，详见 [验收记录](</tmp/Library/Application Support/OpenDesign-dev/games/b0789372-b520-472b-acc9-ceca1dabeadf/design/verification.md>)。[开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html)',
+                text: '《潮汐邮差》已可试玩，支持点击 [开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html) 直接进入关卡，详见 [验收记录](</tmp/Library/Application Support/OpenDesign-dev/games/b0789372-b520-472b-acc9-ceca1dabeadf/design/verification.md>) 与 `openmotion-game/SKILL.md`。[开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html)',
                 createdAt: 3000,
                 status: 'completed',
               },
@@ -7640,6 +7884,7 @@ it('folds intermediate progress notes into WorkLogSection, renders 16:9 game cov
     expect(outerAssistantText).not.toContain('先搭建跳跃物理');
     expect(outerAssistantText).toContain('《潮汐邮差》已可试玩');
     expect(outerAssistantText).toContain('验收记录');
+    expect(outerAssistantText).toContain('openmotion-game/SKILL.md');
     expect(outerAssistantText).not.toContain('Application Support');
 
     const inlinePlayChip = container.querySelector<HTMLButtonElement>('.om-sa-artifact-inline-chip')!;

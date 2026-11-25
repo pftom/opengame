@@ -15,6 +15,15 @@ export type GameGenre = typeof gameGenres[number];
 export type GameStyle = typeof gameStyles[number];
 export type GameSetting = typeof gameSettings[number];
 
+export const gameGenreLabels: Record<GameGenre, string> = {
+  shooter: 'Shooter',
+  platformer: 'Platformer',
+  story: 'Story',
+  casual: 'Casual',
+  racing: 'Racing',
+  horror: 'Horror',
+};
+
 /** Lifecycle of a game project. Only `published` games appear in Explore. */
 export type GameStatus = 'draft' | 'building' | 'ready' | 'published' | 'failed';
 
@@ -96,6 +105,39 @@ export type GameTrailer = {
 /** A game folder the catalog could not read (an interrupted create or a malformed game.json); the other games still load. */
 export type GameCatalogIssue = { id: string; message: string };
 export type GameCatalog = { games: GameCard[]; issues?: GameCatalogIssue[] };
+
+/** Optional metadata overrides applied when remixing an existing local game or template. */
+export type GameRemixOptions = {
+  genre?: GameGenre | null;
+  style?: GameStyle | null;
+  setting?: GameSetting | null;
+  orientation?: 'landscape' | 'portrait' | null;
+};
+
+const PORTRAIT_BRIEF_MARKER = 'Layout: portrait 9:16 phone game.';
+const PORTRAIT_BRIEF_SUFFIX = `${PORTRAIT_BRIEF_MARKER} Design every screen, HUD and control for a phone held upright (390×844); in a landscape window, centre the 9:16 play area and letterbox the sides.`;
+const PLAYABLE_AD_BRIEF_MARKER = 'Format: playable ad. Follow the playable-ad recipe';
+const PLAYABLE_AD_BRIEF_SUFFIX = `${PLAYABLE_AD_BRIEF_MARKER} in the openmotion-game skill (references/game-playable-ad.md): interactive on the first frame with a hand tutorial, no title screen, 3–8 short levels, a fail or win end card with Play again and a call-to-action button, one self-contained HTML that loads nothing from the network.`;
+
+/** Strip auto-appended portrait layout / playable-ad paragraphs from a Game Studio brief prompt. */
+export function stripGameBriefPromptSuffixes(prompt: string): string {
+  let result = prompt;
+  for (const marker of [PORTRAIT_BRIEF_MARKER, PLAYABLE_AD_BRIEF_MARKER]) {
+    const idx = result.indexOf(`\n\n${marker}`);
+    if (idx >= 0) result = result.slice(0, idx);
+  }
+  return result.trim();
+}
+
+/** Append canonical portrait layout and playable-ad paragraphs onto a base Game Studio prompt. */
+export function formatGameBriefPrompt(
+  prompt: string,
+  options: { orientation?: 'landscape' | 'portrait'; playableAd?: boolean },
+): string {
+  const base = stripGameBriefPromptSuffixes(prompt);
+  const withLayout = options.orientation === 'portrait' ? `${base}\n\n${PORTRAIT_BRIEF_SUFFIX}` : base;
+  return options.playableAd ? `${withLayout}\n\n${PLAYABLE_AD_BRIEF_SUFFIX}` : withLayout;
+}
 
 /** POST /api/games and POST /api/games/:id/remix return the new project and the Agent brief. */
 export type GameCreated = { game: GameCard; agentInstruction: string };

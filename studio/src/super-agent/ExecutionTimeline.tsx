@@ -347,9 +347,17 @@ function sanitizeUserHomePath(raw?: string): string | undefined {
 
 function normalizeInternalJargon(text: string, t: Translate): string {
   const replacement = t('Game creation workflow');
+  const protectedPattern = /(```[\s\S]*?```|`[^`\n]+`|!\[[^\]]*\]\((?:<[^>\n]+>|[^)\n]+)\)|\[[^\]]+\]\((?:<[^>\n]+>|[^)\n]+)\))/g;
   return text
-    .replace(/\bOpenMotion Game Skill\b/gi, replacement)
-    .replace(/\bopenmotion-game\b/gi, replacement);
+    .split(protectedPattern)
+    .map((segment, idx) => (
+      idx % 2 === 1
+        ? segment
+        : segment
+            .replace(/\bOpenMotion Game Skill\b/gi, replacement)
+            .replace(/\bopenmotion-game\b/gi, replacement)
+    ))
+    .join('');
 }
 
 function stripRedundantDeliverableInlineLinks(text: string, deliverables: SuperAgentArtifact[]): string {

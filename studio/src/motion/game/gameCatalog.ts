@@ -1,7 +1,7 @@
-import { gameGenres, gameSettings, gameStyles, type GameBrief, type GameCard, type GameCatalog, type GameCreated, type GameGenre, type GameSetting, type GameStyle, type GameTrailer, type GameHandoff } from '../../../../shared/game-contract';
+import { gameGenreLabels, gameGenres, gameSettings, gameStyles, type GameBrief, type GameCard, type GameCatalog, type GameCreated, type GameGenre, type GameRemixOptions, type GameSetting, type GameStyle, type GameTrailer, type GameHandoff } from '../../../../shared/game-contract';
 import { motionApi } from '../useWorkspace';
 
-export const genreLabels: Record<GameGenre, string> = { shooter: 'Shooter', platformer: 'Platformer', story: 'Story', casual: 'Casual', racing: 'Racing', horror: 'Horror' };
+export const genreLabels: Record<GameGenre, string> = gameGenreLabels;
 export const styleLabels: Record<GameStyle, string> = { pixel: 'Pixel art', minimal: 'Minimalist', ascii: 'ASCII art', voxel: 'Voxel', anime: 'Anime', '3d': '3D' };
 export const settingLabels: Record<GameSetting, string> = { medieval: 'Medieval', cyberpunk: 'Cyberpunk', retro: 'Retro', modern: 'Modern', space: 'Outer space', fantasy: 'Fantasy' };
 /** Example briefs shown as the input placeholder for each genre. */
@@ -144,7 +144,7 @@ const json = (body: unknown): RequestInit => ({ method: 'POST', headers: { 'Cont
 export const gameApi = {
   catalog: () => motionApi<GameCatalog>('/games'),
   create: (brief: GameBrief) => motionApi<GameCreated>('/games', json(brief)),
-  remix: (id: string) => motionApi<GameCreated>(`/games/${encodeURIComponent(id)}/remix`, json({})),
+  remix: (id: string, overrides?: GameRemixOptions) => motionApi<GameCreated>(`/games/${encodeURIComponent(id)}/remix`, json(overrides ?? {})),
   play: (id: string) => motionApi<GameCard>(`/games/${encodeURIComponent(id)}/play`, json({})),
   react: (id: string, value: -1 | 0 | 1) => motionApi<GameCard>(`/games/${encodeURIComponent(id)}/reaction`, json({ value })),
   favorite: (id: string, favorite: boolean) => motionApi<GameCard>(`/games/${encodeURIComponent(id)}/favorite`, json({ favorite })),

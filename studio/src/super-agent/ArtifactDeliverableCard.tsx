@@ -1,6 +1,7 @@
 import { Button } from 'open-design-ui/button';
 import { useState } from 'react';
 import type { DesignExportFormat } from '../../../shared/design-project';
+import { gameGenreLabels, type GameGenre } from '../../../shared/game-contract';
 import { isPlayableAdArtifact, type SuperAgentArtifact } from '../../../shared/super-agent';
 import type { WebPublishTargetKind } from '../../../shared/web-publish';
 import { Popover } from '../components/ui/Popover';
@@ -160,22 +161,6 @@ const RAW_ARTIFACT_SUBTITLES = new Set([
   'motion studio',
 ]);
 
-const GAME_GENRE_LABELS: Readonly<Record<string, string>> = {
-  platformer: 'Platformer',
-  shooter: 'Shooter',
-  story: 'Story',
-  casual: 'Hyper-casual',
-  racing: 'Racing',
-  horror: 'Horror',
-  arcade: 'Arcade',
-  puzzle: 'Puzzle',
-  rpg: 'RPG',
-  strategy: 'Strategy',
-  action: 'Action',
-  simulation: 'Simulation',
-  adventure: 'Adventure',
-};
-
 function formatArtifactSubDetail(rawSub: string, t: (key: string) => string): string {
   if (!rawSub) return '';
   const parts = rawSub
@@ -183,7 +168,8 @@ function formatArtifactSubDetail(rawSub: string, t: (key: string) => string): st
     .map(part => part.trim())
     .filter(part => part && !RAW_ARTIFACT_SUBTITLES.has(part.toLowerCase()))
     .map(part => {
-      const mappedGenre = GAME_GENRE_LABELS[part.toLowerCase()];
+      const genreKey = part.toLowerCase() as GameGenre;
+      const mappedGenre = Object.hasOwn(gameGenreLabels, genreKey) ? gameGenreLabels[genreKey] : undefined;
       return mappedGenre ? t(mappedGenre) : t(part);
     });
   return parts.join(' · ');

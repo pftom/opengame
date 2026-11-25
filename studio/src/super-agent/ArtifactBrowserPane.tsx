@@ -366,6 +366,7 @@ function ProjectPreviewCodeView({
   frameRef,
   iframeRef,
   onIframeLoad,
+  loadingBrand = false,
   overlay,
 }: {
   frameKey: string;
@@ -386,6 +387,7 @@ function ProjectPreviewCodeView({
   frameRef?: RefObject<HTMLDivElement | null>;
   iframeRef?: RefObject<HTMLIFrameElement | null>;
   onIframeLoad?: () => void;
+  loadingBrand?: boolean;
   overlay?: ReactNode;
 }) {
   const { t } = useI18n();
@@ -580,8 +582,18 @@ function ProjectPreviewCodeView({
     <div className="om-sa-iframe-stage" data-viewport={viewport}>
       <div className="om-sa-iframe-frame" ref={frameRef} style={frameStyle}>
         {!frameLoaded && (previewUrl || srcDoc) && (
-          <div className="om-sa-frame-skeleton" aria-hidden="true">
-            <Skeleton style={{ width: '100%', height: '100%' }} />
+          <div
+            className="om-sa-frame-skeleton"
+            data-game-loading={loadingBrand || undefined}
+            role={loadingBrand ? 'status' : undefined}
+            aria-label={loadingBrand ? t('Loading game…') : undefined}
+            aria-hidden={loadingBrand ? undefined : true}
+          >
+            {loadingBrand ? (
+              <OpenDesignLoadingMark height={26} />
+            ) : (
+              <Skeleton style={{ width: '100%', height: '100%' }} />
+            )}
           </div>
         )}
         <iframe
@@ -1081,6 +1093,43 @@ function GameProjectArtifactView({
     },
   });
 
+  const pendingFrameFocusRef = useRef(true);
+  const focusGameFrame = useCallback(() => {
+    if (effectiveMode !== 'preview' || annotateActive) return;
+    requestAnimationFrame(() => {
+      if (typeof document !== 'undefined') {
+        const activeEl = document.activeElement;
+        if (
+          activeEl instanceof HTMLElement
+          && (
+            activeEl.tagName === 'INPUT'
+            || activeEl.tagName === 'TEXTAREA'
+            || activeEl.tagName === 'SELECT'
+            || activeEl.isContentEditable
+            || Boolean(activeEl.closest('[contenteditable="true"]'))
+          )
+        ) {
+          return;
+        }
+      }
+      const frame = bridge.iframeRef.current;
+      if (!frame) return;
+      frame.focus({ preventScroll: true });
+      try {
+        frame.contentWindow?.focus();
+      } catch {
+        // Cross-origin frame focus may throw in strict sandboxes; element focus still succeeds.
+      }
+    });
+  }, [effectiveMode, annotateActive, bridge.iframeRef]);
+
+  useEffect(() => {
+    if (effectiveMode === 'preview' && !annotateActive) {
+      pendingFrameFocusRef.current = true;
+      focusGameFrame();
+    }
+  }, [artifact.id, reloadKey, effectiveMode, annotateActive, focusGameFrame]);
+
   if (mode === 'trailer' && trailerUrl) {
     return (
       <div className="om-sa-media-stage" data-kind="video">
@@ -1160,26 +1209,6 @@ function GameProjectArtifactView({
     );
   }
 
-  const focusGameFrame = useCallback(() => {
-    if (effectiveMode !== 'preview' || annotateActive) return;
-    requestAnimationFrame(() => {
-      const frame = bridge.iframeRef.current;
-      if (!frame) return;
-      frame.focus({ preventScroll: true });
-      try {
-        frame.contentWindow?.focus();
-      } catch {
-        // Cross-origin frame focus may throw in strict sandboxes; element focus still succeeds.
-      }
-    });
-  }, [effectiveMode, annotateActive, bridge.iframeRef]);
-
-  useEffect(() => {
-    if (effectiveMode === 'preview' && !annotateActive && !isDraftOrFailed && !isBuilding) {
-      focusGameFrame();
-    }
-  }, [artifact.id, artifact.presentedAt, reloadKey, effectiveMode, annotateActive, isDraftOrFailed, isBuilding, focusGameFrame]);
-
   return (
     <ProjectPreviewCodeView
       frameKey={`${projectId || artifact.id}:${artifact.revision ?? ''}:${presentedKey}:${reloadKey}`}
@@ -1204,8 +1233,12 @@ function GameProjectArtifactView({
       iframeRef={bridge.iframeRef}
       onIframeLoad={() => {
         if (!isExternalGame && !bundledBlobUrl) bridge.syncPickMode();
-        focusGameFrame();
+        if (pendingFrameFocusRef.current) {
+          pendingFrameFocusRef.current = false;
+          focusGameFrame();
+        }
       }}
+      loadingBrand
       overlay={annotateActive && Boolean(projectId) && effectiveMode === 'preview' ? (
         <BrowserAnnotationOverlay
           mode="game-iframe"
@@ -1801,9 +1834,9 @@ export function ArtifactBrowserPane({
   const activeArtifact = showNewTab
     ? null
     : openTabs.find(item => item.id === activeTabId) ?? openTabs.at(-1) ?? null;
-  // Game publish wizard: one shared state per game, also read by the conversation cards.
-  const publishGameId = activeArtifact?.kind === 'game-project'
-    ? (activeArtifact.projectId || (activeArtifact.id.startsWith('game:') ? activeArtifact.id.slice('game:'.length) : ''))
+  // Game publish wizard: only local workspace game projects can be packaged/published to platforms.
+  const publishGameId = activeArtifact?.kind === 'game-project' && activeArtifact.projectId
+    ? activeArtifact.projectId
     : '';
   const publishSession = useGamePublishSession(publishGameId ? activeArtifact?.id : null);
   const publishPanelOpen = Boolean(publishGameId && publishSession?.open);
@@ -1936,8 +1969,8 @@ export function ArtifactBrowserPane({
   const supportsAnnotate = Boolean(
     activeArtifact && (
       activeArtifact.kind === 'web'
-      || ((activeArtifact.kind === 'design-project' || activeArtifact.kind === 'game-project')
-        && (viewMode === 'preview' || !activeArtifact.projectId))
+      || (activeArtifact.kind === 'design-project' && (viewMode === 'preview' || !activeArtifact.projectId))
+      || (activeArtifact.kind === 'game-project' && Boolean(activeArtifact.projectId) && viewMode === 'preview')
     ),
   );
   const canCaptureScreenshot = supportsAnnotate && Boolean(onAttachBrowserAnnotation);
@@ -2397,13 +2430,8 @@ export function ArtifactBrowserPane({
             onSubmit={event => {
               event.preventDefault();
               const trimmed = addressDraft.trim();
-              if (
-                !trimmed
-                || (activeArtifact && activeArtifact.kind !== 'web' && trimmed === artifactAddressDisplay(activeArtifact))
-                || /^(?:design|motion|game|export|asset|brand):\/\//i.test(trimmed)
-              ) {
-                return;
-              }
+              const activeDisplay = activeArtifact ? artifactAddressDisplay(activeArtifact) : '';
+              if (!trimmed || (activeArtifact?.kind !== 'web' && trimmed === activeDisplay) || /^(?:design|motion|game|export|asset|brand):\/\//i.test(trimmed)) return;
               const normalized = normalizeBrowserAddress(trimmed);
               setAddressEditing(false);
               addressInputRef.current?.blur();
