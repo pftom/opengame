@@ -1,6 +1,6 @@
 import { Button } from 'open-design-ui/button';
 import { IconButton } from 'open-design-ui/icon-button';
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { preconnect } from 'react-dom';
 import { blackFridayTemplates } from '../../../shared/black-friday-collection';
 import type { GalleryTemplate } from '../../../shared/catalog';
@@ -27,6 +27,7 @@ import {
   gameApi,
   genreCovers,
   genreLabels,
+  isTopEarningGame,
 } from '../motion/game/gameCatalog';
 import {
   localizedGameTitle,
@@ -41,7 +42,9 @@ import { templateCollectionFacets, templatesInCollection, type TemplateCollectio
 import { aiTechnologyIndustry, purposeOrder } from '../motion/templateDiscoveryTaxonomy';
 import { useCoveredTemplates } from '../motion/useCoveredTemplates';
 import {
+  canChoosePlayableAd,
   designScenarioOptionsPatch,
+  isPlayableAd,
   RESEARCH_FORMAT_CHOICES,
   visualizationOptionsPatch,
   VIZ_TYPE_CHOICES,
@@ -412,6 +415,22 @@ function vizTypeToFilter(type: VisualizationType): string {
   if (type === 'chart' || type === 'diagram') return 'charts';
   if (type === 'webgl') return 'webgl';
   return 'all';
+}
+
+/**
+ * Game Studio hero themes. The money-making mini game switch (playable ad) decides which theme the
+ * hero shows: its own template batch, headline and animated backdrop. "epic" is the switch turned off.
+ */
+export type GameHeroTheme = 'money' | 'epic';
+export const GAME_HERO_TITLES: Record<GameHeroTheme, string> = {
+  money: 'Build games. Turn play into pay.',
+  epic: 'Make your next AAA hit.',
+};
+
+/** Hero batch for a theme: money-making templates for "money", everything else for "epic". */
+export function gameHeroBatch(games: GameCard[], theme: GameHeroTheme): GameCard[] {
+  const batch = games.filter(game => isTopEarningGame(game) === (theme === 'money'));
+  return batch.length > 0 ? batch : games;
 }
 
 export function findSuperAgentMode(id: string | null): SuperAgentModeSpec | null {
@@ -965,10 +984,32 @@ export function ModeResourceShowcase({
     () => gameCatalog.filter(g => g.source !== 'mine' && g.status === 'published'),
     [gameCatalog],
   );
+  // The hero follows the money-making mini game switch. While a built-in template is attached the
+  // switch is hidden, so the hero keeps the theme it showed when that template was picked.
+  const lastGameThemeRef = useRef<GameHeroTheme>('money');
+  const gameTheme: GameHeroTheme = !modeOptions
+    ? 'money'
+    : canChoosePlayableAd(modeOptions)
+      ? (isPlayableAd(modeOptions) ? 'money' : 'epic')
+      : lastGameThemeRef.current;
+  lastGameThemeRef.current = gameTheme;
   const fannedGames = useMemo(
-    () => publishedGameTemplates.filter(g => Boolean(coverUrl(g))),
-    [publishedGameTemplates],
+    () => gameHeroBatch(publishedGameTemplates.filter(g => Boolean(coverUrl(g))), gameTheme),
+    [publishedGameTemplates, gameTheme],
   );
+  // A new batch opens on its first card.
+  const [shownGameTheme, setShownGameTheme] = useState(gameTheme);
+  if (shownGameTheme !== gameTheme) {
+    setShownGameTheme(gameTheme);
+    setFanIndex(0);
+  }
+  const switchGameTheme = (next: GameHeroTheme) => {
+    if (next === gameTheme || !onChangeModeOptions) return;
+    // Same patch as the composer switch; picking a batch also drops a template from the other batch.
+    onChangeModeOptions(next === 'money'
+      ? { gameOrientation: 'portrait', gamePlayableAd: true, gameTemplate: null }
+      : { gameOrientation: null, gamePlayableAd: false, gameTemplate: null });
+  };
   const myGames = useMemo(
     () => gameCatalog.filter(g => g.source === 'mine').sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
     [gameCatalog],
@@ -1560,7 +1601,7 @@ export function ModeResourceShowcase({
 
   return (
     <div className="om-sa-mode-showcase">
-      <div className="om-sa-mode-hero">
+      <div className="om-sa-mode-hero" data-game-theme={mode.id === 'game' ? gameTheme : undefined}>
         {mode.id !== 'game' && (
           <div className="om-sa-mode-hero-close">
             <IconButton
@@ -1573,8 +1614,23 @@ export function ModeResourceShowcase({
           </div>
         )}
         {mode.id === 'game' && fanSlots.length > 0 ? (
+          <div className="om-sa-game-console" data-theme={gameTheme}>
+            <div className="om-sa-game-console-screen">
+              <div className="om-sa-game-hero-backdrop" aria-hidden="true">
+                <div className="om-sa-game-hero-scene" data-scene="money" data-active={gameTheme === 'money' || undefined}>
+                  {Array.from({ length: 14 }, (_, i) => <span key={i} className="om-sa-game-hero-coin" style={{ '--i': i } as CSSProperties} />)}
+                </div>
+                <div className="om-sa-game-hero-scene" data-scene="epic" data-active={gameTheme === 'epic' || undefined}>
+                  <span className="om-sa-game-hero-grid" />
+                  {Array.from({ length: 8 }, (_, i) => <span key={i} className="om-sa-game-hero-tracer" style={{ '--i': i } as CSSProperties} />)}
+                  <span className="om-sa-game-hero-crosshair" />
+                </div>
+                <span key={`sweep-${gameTheme}`} className="om-sa-game-hero-sweep" />
+              </div>
           <div
+            key={`fan-${gameTheme}`}
             className="om-sa-game-fan"
+            data-theme={gameTheme}
             role="region"
             aria-roledescription="carousel"
             aria-label={t('Game Studio')}
@@ -1710,13 +1766,68 @@ export function ModeResourceShowcase({
               />
             )}
           </div>
+              <span key={`static-${gameTheme}`} className="om-sa-game-console-static" aria-hidden="true" />
+            </div>
+            <div className="om-sa-game-console-deck">
+              <div className="om-sa-game-console-dpad" role="group" aria-label={t('Browse templates')}>
+                <IconButton
+                  variant="plain"
+                  type="button"
+                  className="om-sa-game-console-dpad-key"
+                  data-side="prev"
+                  aria-label={t('Previous')}
+                  disabled={fannedGames.length <= 1}
+                  onClick={() => setFanIndex(prev => (prev - 1 + fannedGames.length) % fannedGames.length)}
+                  icon={<RemixIcon name="arrow-left-s-line" size={18} />}
+                />
+                <span className="om-sa-game-console-dpad-hub" aria-hidden="true" />
+                <IconButton
+                  variant="plain"
+                  type="button"
+                  className="om-sa-game-console-dpad-key"
+                  data-side="next"
+                  aria-label={t('Next')}
+                  disabled={fannedGames.length <= 1}
+                  onClick={() => setFanIndex(prev => (prev + 1) % fannedGames.length)}
+                  icon={<RemixIcon name="arrow-right-s-line" size={18} />}
+                />
+              </div>
+              <span className="om-sa-game-console-led" aria-live="polite">
+                <span className="om-sa-game-console-led-dot" aria-hidden="true" />
+                {t(gameTheme === 'money' ? 'Ad-revenue game' : 'AAA game')}
+              </span>
+              {onChangeModeOptions && (
+                <div className="om-sa-game-console-keys" role="radiogroup" aria-label={t('Game type')}>
+                  {(['money', 'epic'] as const).map(id => (
+                    <span key={id} className="om-sa-game-console-key-wrap" data-key={id}>
+                      <Button
+                        variant="plain"
+                        type="button"
+                        role="radio"
+                        aria-checked={gameTheme === id}
+                        aria-label={t(id === 'money' ? 'Ad-revenue game' : 'AAA game')}
+                        data-active={gameTheme === id || undefined}
+                        className="om-sa-game-console-key"
+                        onClick={() => switchGameTheme(id)}
+                      >
+                        {id === 'money' ? 'A' : 'B'}
+                      </Button>
+                      <span className="om-sa-game-console-key-label" aria-hidden="true">
+                        {t(id === 'money' ? 'Ad-revenue game' : 'AAA game')}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
           <span className="om-creation-icon om-sa-mode-hero-icon" data-tone={effectiveHeroMode.tone} aria-hidden="true">
             <RemixIcon name={effectiveHeroMode.icon} size={22} />
           </span>
         )}
-        <div className="om-sa-mode-hero-copy">
-          <h2>{t(effectiveHeroMode.title)}</h2>
+        <div className="om-sa-mode-hero-copy" key={mode.id === 'game' ? `copy-${gameTheme}` : undefined}>
+          <h2>{t(mode.id === 'game' ? GAME_HERO_TITLES[gameTheme] : effectiveHeroMode.title)}</h2>
           {effectiveHeroMode.subtitle && <p className="om-muted">{t(effectiveHeroMode.subtitle)}</p>}
         </div>
 

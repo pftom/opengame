@@ -11280,3 +11280,426 @@
   .om-sa-screw-result { inset: auto 0 0; padding: var(--motion-space-8); }
   .om-sa-screw-result > svg { display: none; }
 }
+
+/* Game Studio hero: a game console. Its screen shows the template batch for the current mode and
+   the A / B keys switch between the money-making mini game batch and the AAA batch. */
+.om-sa-game-console {
+  width: min(100%, 1040px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--motion-space-10);
+  padding: var(--motion-space-10) var(--motion-space-10) var(--motion-space-8);
+  border-radius: 28px;
+  background: var(--motion-panel);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--motion-game-hero-ink) 8%, transparent),
+    0 24px 60px color-mix(in srgb, var(--motion-game-hero-night) 45%, transparent);
+  transition: box-shadow 600ms var(--motion-ease-out);
+}
+
+.om-sa-game-console[data-theme='money'] {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--motion-game-hero-ink) 8%, transparent),
+    0 24px 70px color-mix(in srgb, var(--motion-game-hero-gold) 18%, transparent);
+}
+
+.om-sa-game-console[data-theme='epic'] {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--motion-game-hero-ink) 8%, transparent),
+    -30px 24px 70px color-mix(in srgb, var(--motion-game-hero-red) 16%, transparent),
+    30px 24px 70px color-mix(in srgb, var(--motion-game-hero-blue) 18%, transparent);
+}
+
+.om-sa-game-console-screen {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: 300px;
+  border-radius: 18px;
+  background: var(--motion-game-hero-night);
+  box-shadow: inset 0 0 0 6px color-mix(in srgb, var(--motion-game-hero-night) 70%, var(--motion-panel)), inset 0 0 40px color-mix(in srgb, var(--motion-game-hero-night) 80%, transparent);
+}
+
+/* Faint scanlines over the screen, like a real display. */
+.om-sa-game-console-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, color-mix(in srgb, var(--motion-game-hero-ink) 4%, transparent) 0 1px, transparent 1px 3px);
+}
+
+.om-sa-game-hero-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.om-sa-game-console .om-sa-game-fan {
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.om-sa-game-console .om-sa-game-fan-item { width: 330px; }
+.om-sa-game-console .om-sa-game-fan-item[data-slot="-1"] { transform: translate(calc(-50% - 250px), -46%) rotate(-4deg) scale(0.82); }
+.om-sa-game-console .om-sa-game-fan-item[data-slot="1"] { transform: translate(calc(-50% + 250px), -46%) rotate(4deg) scale(0.82); }
+.om-sa-game-console .om-sa-game-fan-item[data-slot="-2"] { transform: translate(calc(-50% - 430px), -42%) rotate(-7deg) scale(0.66); }
+.om-sa-game-console .om-sa-game-fan-item[data-slot="2"] { transform: translate(calc(-50% + 430px), -42%) rotate(7deg) scale(0.66); }
+.om-sa-game-console .om-sa-game-fan-item[data-slot="-3"] { transform: translate(calc(-50% - 520px), -40%) rotate(-9deg) scale(0.54); }
+.om-sa-game-console .om-sa-game-fan-item[data-slot="3"] { transform: translate(calc(-50% + 520px), -40%) rotate(9deg) scale(0.54); }
+
+/* "Channel change": the screen collapses to a bright line and snaps open on the new batch. */
+.om-sa-game-console-static {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, transparent 49%, var(--motion-game-hero-ink) 49.5% 50.5%, transparent 51%),
+    var(--motion-game-hero-night);
+  animation: om-sa-channel-change 520ms var(--motion-ease-out) both;
+}
+
+@keyframes om-sa-channel-change {
+  0% { opacity: 1; clip-path: inset(0 0 0 0); }
+  35% { opacity: 1; clip-path: inset(49% 0 49% 0); }
+  70% { opacity: 0.6; clip-path: inset(0 0 0 0); }
+  100% { opacity: 0; clip-path: inset(0 0 0 0); }
+}
+
+.om-sa-game-console-deck {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding-inline: var(--motion-space-8);
+}
+
+.om-sa-game-console-dpad {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.om-sa-game-console-dpad-key,
+.om-sa-game-console-dpad-hub {
+  width: 34px;
+  height: 34px;
+  background: var(--motion-inset);
+  color: var(--motion-text);
+}
+
+.om-sa-game-console-dpad-key[data-side='prev'] { border-radius: 10px 4px 4px 10px; }
+.om-sa-game-console-dpad-key[data-side='next'] { border-radius: 4px 10px 10px 4px; }
+.om-sa-game-console-dpad-hub { border-radius: 4px; }
+
+.om-sa-game-console-dpad-key:active:not(:disabled) { transform: translateY(1px); background: var(--motion-chrome-hover); }
+
+.om-sa-game-console-led {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--motion-radius-full);
+  background: var(--motion-inset);
+  color: var(--motion-text);
+  font-size: var(--motion-text-sm);
+  font-weight: var(--motion-weight-semibold);
+  letter-spacing: 0.04em;
+}
+
+.om-sa-game-console-led-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--motion-game-hero-coin);
+  box-shadow: 0 0 10px var(--motion-game-hero-coin-glow);
+  animation: om-sa-led-blink 1.6s ease-in-out infinite;
+}
+
+.om-sa-game-console[data-theme='epic'] .om-sa-game-console-led-dot {
+  background: var(--motion-game-hero-red);
+  box-shadow: 0 0 10px var(--motion-game-hero-red);
+}
+
+@keyframes om-sa-led-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.om-sa-game-console-keys {
+  justify-self: end;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: var(--motion-space-16);
+}
+
+.om-sa-game-console-key-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* B sits a little higher than A, like a handheld. */
+.om-sa-game-console-key-wrap[data-key='epic'] { transform: translateY(-10px); }
+
+.om-sa-game-console-key {
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: var(--motion-text-heading);
+  font-weight: var(--motion-weight-semibold);
+  color: var(--motion-game-hero-ink);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--motion-game-hero-night) 55%, transparent), 0 6px 14px color-mix(in srgb, var(--motion-game-hero-night) 35%, transparent);
+  transition: transform 120ms var(--motion-ease-out), box-shadow 120ms var(--motion-ease-out), filter 200ms var(--motion-ease-out);
+  filter: saturate(0.55) brightness(0.8);
+}
+
+.om-sa-game-console-key-wrap[data-key='money'] .om-sa-game-console-key { background: radial-gradient(circle at 35% 30%, var(--motion-game-hero-coin), var(--motion-game-hero-orange)); }
+.om-sa-game-console-key-wrap[data-key='epic'] .om-sa-game-console-key { background: radial-gradient(circle at 35% 30%, var(--motion-game-hero-red), var(--motion-game-hero-blue)); }
+
+.om-sa-game-console-key:hover { filter: none; }
+
+.om-sa-game-console-key[data-active] {
+  filter: none;
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--motion-game-hero-night) 55%, transparent), 0 0 18px color-mix(in srgb, var(--motion-game-hero-coin-glow) 55%, transparent);
+}
+
+.om-sa-game-console-key-wrap[data-key='epic'] .om-sa-game-console-key[data-active] {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--motion-game-hero-night) 55%, transparent), 0 0 18px color-mix(in srgb, var(--motion-game-hero-blue) 60%, transparent);
+}
+
+.om-sa-game-console-key:active { transform: translateY(4px); }
+.om-sa-game-console-key:focus-visible { outline: 2px solid var(--motion-accent); outline-offset: 3px; }
+
+.om-sa-game-console-key-label {
+  font-size: var(--motion-text-xs);
+  color: var(--motion-muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 820px) {
+  .om-sa-game-console-screen { height: 220px; }
+  .om-sa-game-console .om-sa-game-fan-item { width: 230px; }
+  .om-sa-game-console .om-sa-game-fan-item[data-slot="-1"] { transform: translate(calc(-50% - 160px), -46%) rotate(-4deg) scale(0.8); }
+  .om-sa-game-console .om-sa-game-fan-item[data-slot="1"] { transform: translate(calc(-50% + 160px), -46%) rotate(4deg) scale(0.8); }
+  .om-sa-game-console .om-sa-game-fan-item[data-slot="-2"],
+  .om-sa-game-console .om-sa-game-fan-item[data-slot="2"] { opacity: 0; pointer-events: none; }
+  .om-sa-game-console-led { display: none; }
+  .om-sa-game-console-deck { grid-template-columns: 1fr 1fr; }
+}
+
+/* Console screen scenes per mode. */
+.om-sa-game-hero-scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(1.08);
+  filter: blur(6px);
+  transition:
+    opacity 640ms var(--motion-ease-out),
+    transform 900ms var(--motion-ease-out),
+    filter 640ms var(--motion-ease-out);
+}
+
+.om-sa-game-hero-scene[data-active] {
+  opacity: 1;
+  transform: scale(1);
+  filter: none;
+}
+
+/* Money: a bright arcade sky with coins drifting up. */
+.om-sa-game-hero-scene[data-scene='money'] {
+  background:
+    radial-gradient(60% 70% at 18% 20%, color-mix(in srgb, var(--motion-game-hero-gold) 60%, transparent), transparent 70%),
+    radial-gradient(55% 65% at 84% 26%, color-mix(in srgb, var(--motion-game-hero-pink) 50%, transparent), transparent 70%),
+    radial-gradient(70% 60% at 50% 100%, color-mix(in srgb, var(--motion-game-hero-violet) 55%, transparent), transparent 72%);
+}
+
+.om-sa-game-hero-coin {
+  --size: calc(18px + mod(var(--i) * 7, 4) * 8px);
+  position: absolute;
+  bottom: -40px;
+  left: calc(4% + var(--i) * 6.8%);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 30%, var(--motion-game-hero-coin-shine) 0 18%, transparent 22%),
+    radial-gradient(circle at 50% 50%, var(--motion-game-hero-coin) 0 52%, var(--motion-game-hero-coin-edge) 56% 70%, var(--motion-game-hero-coin-rim) 74%);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--motion-game-hero-coin-glow) 55%, transparent);
+  opacity: 0.85;
+  animation: om-sa-coin-rise calc(6s + mod(var(--i) * 5, 6) * 1s) linear infinite;
+  animation-delay: calc(var(--i) * -0.9s);
+}
+
+@keyframes om-sa-coin-rise {
+  0% { transform: translate3d(0, 0, 0) rotateY(0deg); opacity: 0; }
+  12% { opacity: 0.85; }
+  50% { transform: translate3d(18px, -170px, 0) rotateY(360deg); }
+  88% { opacity: 0.7; }
+  100% { transform: translate3d(-10px, -360px, 0) rotateY(720deg); opacity: 0; }
+}
+
+/* Epic: a dark arena with a rushing grid, tracer fire and a scanning crosshair. */
+.om-sa-game-hero-scene[data-scene='epic'] {
+  background:
+    radial-gradient(55% 80% at 15% 30%, color-mix(in srgb, var(--motion-game-hero-red) 55%, transparent), transparent 70%),
+    radial-gradient(55% 80% at 85% 30%, color-mix(in srgb, var(--motion-game-hero-blue) 60%, transparent), transparent 70%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--motion-game-hero-night) 70%, transparent), transparent);
+}
+
+.om-sa-game-hero-grid {
+  position: absolute;
+  left: -50%;
+  right: -50%;
+  bottom: -10%;
+  height: 70%;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--motion-game-hero-grid) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--motion-game-hero-grid) 45%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  transform: perspective(320px) rotateX(62deg);
+  transform-origin: 50% 100%;
+  opacity: 0.7;
+  animation: om-sa-grid-rush 1.6s linear infinite;
+}
+
+@keyframes om-sa-grid-rush {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 0 48px, 0 0; }
+}
+
+.om-sa-game-hero-tracer {
+  position: absolute;
+  top: calc(8% + var(--i) * 11%);
+  left: -30%;
+  width: 26%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--motion-game-hero-tracer-warm) 90%, transparent), var(--motion-game-hero-ink));
+  box-shadow: 0 0 10px var(--motion-game-hero-tracer-warm-glow);
+  transform: rotate(calc(-14deg + var(--i) * 4deg));
+  opacity: 0;
+  animation: om-sa-tracer calc(2.2s + mod(var(--i) * 3, 4) * 0.5s) var(--motion-ease-out) infinite;
+  animation-delay: calc(var(--i) * 0.37s);
+}
+
+.om-sa-game-hero-tracer:nth-child(odd) {
+  left: auto;
+  right: -30%;
+  background: linear-gradient(270deg, transparent, color-mix(in srgb, var(--motion-game-hero-tracer-cool) 90%, transparent), var(--motion-game-hero-ink));
+  box-shadow: 0 0 10px var(--motion-game-hero-tracer-cool-glow);
+  animation-name: om-sa-tracer-reverse;
+}
+
+@keyframes om-sa-tracer {
+  0% { transform: translateX(0) rotate(calc(-14deg + var(--i) * 4deg)); opacity: 0; }
+  10% { opacity: 1; }
+  40%, 100% { transform: translateX(560%) rotate(calc(-14deg + var(--i) * 4deg)); opacity: 0; }
+}
+
+@keyframes om-sa-tracer-reverse {
+  0% { transform: translateX(0) rotate(calc(14deg - var(--i) * 4deg)); opacity: 0; }
+  10% { opacity: 1; }
+  40%, 100% { transform: translateX(-560%) rotate(calc(14deg - var(--i) * 4deg)); opacity: 0; }
+}
+
+.om-sa-game-hero-crosshair {
+  position: absolute;
+  top: 18%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  margin-left: -60px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--motion-game-hero-red) 55%, transparent);
+  background:
+    linear-gradient(color-mix(in srgb, var(--motion-game-hero-red) 55%, transparent), color-mix(in srgb, var(--motion-game-hero-red) 55%, transparent)) center / 1px 100% no-repeat,
+    linear-gradient(90deg, color-mix(in srgb, var(--motion-game-hero-red) 55%, transparent), color-mix(in srgb, var(--motion-game-hero-red) 55%, transparent)) center / 100% 1px no-repeat;
+  opacity: 0.7;
+  animation: om-sa-crosshair-scan 6s ease-in-out infinite;
+}
+
+@keyframes om-sa-crosshair-scan {
+  0%, 100% { transform: translateX(-260px) scale(0.9); }
+  45% { transform: translateX(240px) scale(1.1); }
+  50% { transform: translateX(240px) scale(0.8); }
+}
+
+/* Light sweep that wipes across the hero each time the theme changes. */
+.om-sa-game-hero-sweep {
+  position: absolute;
+  inset: -20% auto -20% -40%;
+  width: 34%;
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--motion-game-hero-ink) 42%, transparent), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+  animation: om-sa-theme-sweep 760ms var(--motion-ease-out) both;
+}
+
+.om-sa-mode-hero[data-game-theme='epic'] .om-sa-game-hero-sweep {
+  background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--motion-game-hero-red) 38%, transparent), color-mix(in srgb, var(--motion-game-hero-tracer-cool) 46%, transparent), transparent);
+}
+
+@keyframes om-sa-theme-sweep {
+  0% { left: -40%; opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 120%; opacity: 0; }
+}
+
+/* Batch and headline entrance on every theme change. */
+.om-sa-game-fan[data-theme] .om-sa-game-fan-card {
+  animation: om-sa-fan-deal 620ms var(--motion-ease-out) both;
+}
+
+.om-sa-game-fan-item[data-slot='-1'] .om-sa-game-fan-card,
+.om-sa-game-fan-item[data-slot='1'] .om-sa-game-fan-card { animation-delay: 70ms; }
+.om-sa-game-fan-item[data-slot='-2'] .om-sa-game-fan-card,
+.om-sa-game-fan-item[data-slot='2'] .om-sa-game-fan-card { animation-delay: 140ms; }
+
+@keyframes om-sa-fan-deal {
+  0% { transform: perspective(700px) rotateY(-80deg) translateY(18px) scale(0.86); opacity: 0; filter: brightness(2); }
+  60% { opacity: 1; }
+  100% { transform: none; opacity: 1; filter: none; }
+}
+
+.om-sa-mode-hero[data-game-theme] .om-sa-mode-hero-copy h2 {
+  animation: om-sa-title-in 560ms var(--motion-ease-out) both;
+}
+
+.om-sa-mode-hero[data-game-theme='money'] .om-sa-mode-hero-copy h2 {
+  text-shadow: 0 0 22px color-mix(in srgb, var(--motion-game-hero-gold) 40%, transparent);
+}
+
+.om-sa-mode-hero[data-game-theme='epic'] .om-sa-mode-hero-copy h2 {
+  letter-spacing: 0.01em;
+  text-shadow: -2px 0 color-mix(in srgb, var(--motion-game-hero-red) 55%, transparent), 2px 0 color-mix(in srgb, var(--motion-game-hero-tracer-cool-glow) 55%, transparent);
+}
+
+@keyframes om-sa-title-in {
+  0% { opacity: 0; transform: translateY(10px) scale(0.98); filter: blur(10px); letter-spacing: 0.2em; }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .om-sa-game-console-static { display: none; }
+  .om-sa-game-hero-scene,
+  .om-sa-game-console-key { transition: opacity 200ms linear; }
+  .om-sa-game-hero-coin,
+  .om-sa-game-hero-grid,
+  .om-sa-game-hero-tracer,
+  .om-sa-game-hero-crosshair,
+  .om-sa-game-hero-sweep,
+  .om-sa-game-console-led-dot,
+  .om-sa-game-fan[data-theme] .om-sa-game-fan-card,
+  .om-sa-mode-hero[data-game-theme] .om-sa-mode-hero-copy h2 { animation: none; }
+}
