@@ -97,7 +97,9 @@ import {
   getModeComposerPlaceholder,
   ModeComposerControls,
   ModeComposerTopBar,
+  effectiveGameOrientation,
   isPlayableAd,
+  withoutImplicitPlayableAd,
   researchDesignScenario,
   visualizationDesignScenario,
   type MediaPromptExtra,
@@ -1134,7 +1136,7 @@ export function ConversationStream({
                       style: activeModeOptions.gameStyle,
                       setting: activeModeOptions.gameSetting,
                       multiplayer: false,
-                      ...(activeModeOptions.gameOrientation ? { orientation: activeModeOptions.gameOrientation } : {}),
+                      ...(effectiveGameOrientation(activeModeOptions) ? { orientation: effectiveGameOrientation(activeModeOptions)! } : {}),
                       playableAd: isPlayableAd(activeModeOptions),
                     },
               );
@@ -1245,11 +1247,14 @@ export function ConversationStream({
         hasInputImage,
         attachedImageReferences,
       };
+      // The default-on playable ad only shapes a brand-new game; edits keep the attached game's format.
+      const startsNewGame = activeMode?.id === 'game' && !chat?.messages.length && !cappedAttachments.some(att => att.kind === 'game-project');
+      const promptModeOptions = startsNewGame ? activeModeOptions : withoutImplicitPlayableAd(activeModeOptions);
       const prefix = activeMode
-        ? formatModePromptPrefix(activeMode, activeModeOptions, mediaModelsRef.current, mediaExtra)
+        ? formatModePromptPrefix(activeMode, promptModeOptions, mediaModelsRef.current, mediaExtra)
         : '';
       const modeDirective = activeMode
-        ? buildModeHiddenDirective(activeMode, activeModeOptions, mediaModelsRef.current, mediaExtra)
+        ? buildModeHiddenDirective(activeMode, promptModeOptions, mediaModelsRef.current, mediaExtra)
         : undefined;
       const annotationSummary = cappedAttachments
         .filter(att => att.kind === 'browser-annotation')
@@ -1386,7 +1391,7 @@ export function ConversationStream({
         pendingHiddenInstructionsRef.current,
       ].filter(Boolean).join('\n\n') || undefined;
       const contextTags = activeMode
-        ? buildModeContextTags(activeMode, activeModeOptions, mediaModelsRef.current, t, locale, mediaExtra)
+        ? buildModeContextTags(activeMode, promptModeOptions, mediaModelsRef.current, t, locale, mediaExtra)
         : pendingContextTagsRef.current;
       if (editingQueuedId && onUpdateQueued) {
         const targetQueuedId = editingQueuedId;

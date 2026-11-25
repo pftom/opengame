@@ -2550,7 +2550,7 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
     await flush();
 
     // Verifies Game Studio hero, 6 genre strip buttons, top controls, and game market template cards
-    expect(container.querySelector('.om-sa-mode-hero-copy h2')?.textContent).toBe('Create a playable game in minutes');
+    expect(container.querySelector('.om-sa-mode-hero-copy h2')?.textContent).toBe('Make games. Make money.');
     expect(container.querySelector('.om-sa-mode-hero-copy p')).toBeNull();
     const genreCards = [...container.querySelectorAll('.om-sa-game-genre-card')];
     expect(genreCards.length).toBe(6);
@@ -2602,9 +2602,10 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
     expect(topBar.textContent).toContain('Setting');
     expect(topBar.textContent).toContain('Screen layout');
     expect(topBar.textContent).not.toContain('Landscape');
-    const adSwitch = topBar.querySelector<HTMLElement>('[role="switch"][aria-label="Playable ad"]')!;
+    const adSwitch = topBar.querySelector<HTMLElement>('[role="switch"][aria-label="Ad-revenue game"]')!;
     const adSwitchLabel = adSwitch.closest('label')!;
-    expect(adSwitch.getAttribute('aria-checked')).toBe('false');
+    // New briefs start as a money-making mini game (playable ad) before any layout is picked.
+    expect(adSwitch.getAttribute('aria-checked')).toBe('true');
 
     // Open Art style popover and pick Pixel art
     const styleTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Art style')) as HTMLButtonElement;
@@ -2628,7 +2629,7 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
     await flush();
     expect(topBar.textContent).toContain('Portrait');
     expect(orientationTrigger.hasAttribute('data-active')).toBe(true);
-    expect(adSwitch.getAttribute('aria-checked')).toBe('false');
+    expect(adSwitch.getAttribute('aria-checked')).toBe('true');
 
     // Select Landscape -> also highlighted as active; clicking Any screen layout clears back to unselected neutral state.
     const portraitTrigger = [...topBar.querySelectorAll('button')].find(b => b.textContent?.includes('Portrait'))!;
@@ -2692,7 +2693,7 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
       'Shooter',
       'Pixel art',
       '9:16',
-      'Playable ad',
+      'Ad-revenue game',
     ]);
   } finally {
     await act(async () => root.unmount());

@@ -239,7 +239,7 @@ export const SUPER_AGENT_MODES: readonly SuperAgentModeSpec[] = [
     tone: 'agent',
     icon: 'gamepad-line',
     label: 'Game Studio',
-    title: 'Create a playable game in minutes',
+    title: 'Make games. Make money.',
     placeholder: 'Describe the game you want to make',
     defaultPrompt: 'Build a playable retro neon arcade space-shooter game in HTML5 Canvas with keyboard and mouse controls, score & wave HUD, particle explosions, and a restart button. Preview it in the Artifact Viewer.',
     pickerCategory: 'projects',

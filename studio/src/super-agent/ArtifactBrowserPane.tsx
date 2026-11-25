@@ -2212,7 +2212,7 @@ export function ArtifactBrowserPane({
 
   const normalizedNewTabQuery = newTabQuery.trim();
   const displaySubtitle = (item: SuperAgentArtifact | SuperAgentResourceAttachment) =>
-    isPlayableAdArtifact(item) ? t('Playable ad') : item.subtitle;
+    isPlayableAdArtifact(item) ? t('Ad-revenue game') : item.subtitle;
   const searchableSubtitle = (item: SuperAgentArtifact | SuperAgentResourceAttachment) =>
     `${item.subtitle ?? ''} ${displaySubtitle(item) ?? ''}`;
 

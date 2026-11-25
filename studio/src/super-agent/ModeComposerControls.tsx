@@ -158,9 +158,28 @@ export function canChoosePlayableAd(options: Partial<Pick<ModeComposerOptions, '
   return !options.gameTemplate || Boolean(options.gameTemplate.external);
 }
 
-/** A portrait, single-player game brief with the ad option on is built as a playable ad. */
+/**
+ * A portrait, single-player game brief with the ad option on is built as a playable ad
+ * (shown to users as a money-making mini game). New briefs start with the option on and no
+ * explicit layout; that unset layout counts as portrait only when no template is attached,
+ * so remixing a template keeps the template's own layout and format.
+ */
 export function isPlayableAd(options: Pick<ModeComposerOptions, 'gameOrientation' | 'gamePlayableAd'> & Partial<Pick<ModeComposerOptions, 'gameTemplate'>>): boolean {
-  return options.gameOrientation === 'portrait' && options.gamePlayableAd && canChoosePlayableAd(options);
+  const portrait = options.gameOrientation === 'portrait' || (options.gameOrientation === null && !options.gameTemplate);
+  return portrait && options.gamePlayableAd && canChoosePlayableAd(options);
+}
+
+/**
+ * Follow-up turns (an existing chat or an attached game) keep the game's own layout and format:
+ * only an explicit portrait choice turns the playable ad on there, never the new-brief default.
+ */
+export function withoutImplicitPlayableAd(options: ModeComposerOptions): ModeComposerOptions {
+  return options.gameOrientation === null && options.gamePlayableAd ? { ...options, gamePlayableAd: false } : options;
+}
+
+/** The layout a brief is built with: a playable ad is always portrait even before a layout is picked. */
+export function effectiveGameOrientation(options: Pick<ModeComposerOptions, 'gameOrientation' | 'gamePlayableAd'> & Partial<Pick<ModeComposerOptions, 'gameTemplate'>>): 'landscape' | 'portrait' | null {
+  return isPlayableAd(options) ? 'portrait' : options.gameOrientation;
 }
 
 export const DEFAULT_MODE_COMPOSER_OPTIONS: ModeComposerOptions = {
@@ -226,7 +245,8 @@ export const DEFAULT_MODE_COMPOSER_OPTIONS: ModeComposerOptions = {
   gameStyle: null,
   gameSetting: null,
   gameOrientation: null,
-  gamePlayableAd: false,
+  // New game briefs start as a money-making mini game (playable ad); users can switch it off.
+  gamePlayableAd: true,
   gameTemplate: null,
 
   codingWorkdir: '',
@@ -948,8 +968,9 @@ export function formatModePromptPrefix(
     if (options.gameGenre) parts.push(`Genre: ${genreLabels[options.gameGenre]}`);
     if (options.gameStyle) parts.push(`Style: ${styleLabels[options.gameStyle]}`);
     if (options.gameSetting) parts.push(`Setting: ${settingLabels[options.gameSetting]}`);
-    if (options.gameOrientation) {
-      parts.push(`Layout: ${options.gameOrientation === 'portrait' ? 'Portrait (9:16)' : 'Landscape (16:9)'}`);
+    const layout = effectiveGameOrientation(options);
+    if (layout) {
+      parts.push(`Layout: ${layout === 'portrait' ? 'Portrait (9:16)' : 'Landscape (16:9)'}`);
     }
     parts.push(`Players: ${isPlayableAd(options) ? 'Playable ad' : 'Single player'}`);
     if (options.gameTemplate) parts.push(`Template: ${options.gameTemplate.title}`);
@@ -1027,13 +1048,14 @@ export function buildModeContextTags(
     if (options.gameGenre) tags.push({ kind: 'param', label: t(genreLabels[options.gameGenre]) });
     if (options.gameStyle) tags.push({ kind: 'param', label: t(styleLabels[options.gameStyle]) });
     if (options.gameSetting) tags.push({ kind: 'param', label: t(settingLabels[options.gameSetting]) });
-    if (options.gameOrientation) {
-      tags.push({ kind: 'param', label: options.gameOrientation === 'portrait' ? '9:16' : '16:9' });
+    const layout = effectiveGameOrientation(options);
+    if (layout) {
+      tags.push({ kind: 'param', label: layout === 'portrait' ? '9:16' : '16:9' });
     }
     const playableAd = canChoosePlayableAd(options) ? isPlayableAd(options) : options.gameTemplate?.playableAd;
     tags.push({
       kind: 'param',
-      label: t(playableAd ? 'Playable ad' : 'Single player'),
+      label: t(playableAd ? 'Ad-revenue game' : 'Single player'),
     });
     if (options.gameTemplate) {
       const tplTitle = options.gameTemplate.i18n?.[locale]?.title || options.gameTemplate.title;
@@ -3462,6 +3484,37 @@ export function ModeComposerTopBar({
     const playableAd = isPlayableAd(options);
     return (
       <div className="om-sa-composer-top-bar" role="group" aria-label={t('Game studio options')}>
+        {/* The money-making mini game (playable ad) switch leads the game toolbar. */}
+        {canChoosePlayableAd(options) && (
+          <Tooltip
+            label={t('Create an instantly playable portrait game with “Play again” and “Go to store” buttons added automatically.')}
+            preview={<PlayableAdPreview />}
+          >
+            <label
+              className="om-sa-composer-top-pill cursor-pointer"
+              data-active={playableAd || undefined}
+            >
+              <span>{t('Ad-revenue game')}</span>
+              <Toggle
+                label={t('Ad-revenue game')}
+                checked={playableAd}
+                disabled={disabled}
+                onCommit={enabled => {
+                  if (enabled) {
+                    preAdOrientationRef.current = options.gameOrientation;
+                    onChange({ gameOrientation: 'portrait', gamePlayableAd: true });
+                  } else {
+                    const restore = preAdOrientationRef.current;
+                    preAdOrientationRef.current = undefined;
+                    onChange(restore !== undefined && restore !== 'portrait'
+                      ? { gameOrientation: restore, gamePlayableAd: false }
+                      : { gamePlayableAd: false });
+                  }
+                }}
+              />
+            </label>
+          </Tooltip>
+        )}
         {renderGameArtPicker({
           menuKey: 'game-genre',
           fallbackIcon: 'gamepad-line',
@@ -3607,36 +3660,6 @@ export function ModeComposerTopBar({
             </div>
           </div>
         </Popover>
-        {canChoosePlayableAd(options) && (
-          <Tooltip
-            label={t('Create an instantly playable portrait game with “Play again” and “Go to store” buttons added automatically.')}
-            preview={<PlayableAdPreview />}
-          >
-            <label
-              className="om-sa-composer-top-pill cursor-pointer"
-              data-active={playableAd || undefined}
-            >
-              <span>{t('Playable ad')}</span>
-              <Toggle
-                label={t('Playable ad')}
-                checked={playableAd}
-                disabled={disabled}
-                onCommit={enabled => {
-                  if (enabled) {
-                    preAdOrientationRef.current = options.gameOrientation;
-                    onChange({ gameOrientation: 'portrait', gamePlayableAd: true });
-                  } else {
-                    const restore = preAdOrientationRef.current;
-                    preAdOrientationRef.current = undefined;
-                    onChange(restore !== undefined && restore !== 'portrait'
-                      ? { gameOrientation: restore, gamePlayableAd: false }
-                      : { gamePlayableAd: false });
-                  }
-                }}
-              />
-            </label>
-          </Tooltip>
-        )}
       </div>
     );
   }

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { GameProjects } from '../../../../game-projects';
 import { isReadyBuiltInTemplate, type GameCard } from '../../../../shared/game-contract';
 import { isPlayableAdArtifact } from '../../../../shared/super-agent';
-import { canChoosePlayableAd, isPlayableAd } from '../../super-agent/ModeComposerControls';
+import { canChoosePlayableAd, DEFAULT_MODE_COMPOSER_OPTIONS, effectiveGameOrientation, isPlayableAd, withoutImplicitPlayableAd } from '../../super-agent/ModeComposerControls';
 import {
   buildDirectGamePrompt,
   buildGameHiddenInstructions,
@@ -26,6 +26,19 @@ describe('playable ads in Super Agent', () => {
     expect(isPlayableAd({ gameOrientation: 'portrait', gamePlayableAd: true })).toBe(true);
     expect(isPlayableAd({ gameOrientation: 'landscape', gamePlayableAd: true })).toBe(false);
     expect(isPlayableAd({ gameOrientation: 'portrait', gamePlayableAd: false })).toBe(false);
+  });
+
+  it('starts new briefs as a portrait money-making mini game, but not template remixes or follow-up edits', () => {
+    const fresh = { gameOrientation: null, gamePlayableAd: true };
+    expect(isPlayableAd(fresh)).toBe(true);
+    expect(effectiveGameOrientation(fresh)).toBe('portrait');
+    const community = game({ source: 'community', external: { url: 'https://x.test', author: 'a', postUrl: 'https://x.test/p', model: 'm', embeddable: true } });
+    expect(isPlayableAd({ ...fresh, gameTemplate: community })).toBe(false);
+    const followUp = withoutImplicitPlayableAd({ ...DEFAULT_MODE_COMPOSER_OPTIONS, gameOrientation: null, gamePlayableAd: true });
+    expect(isPlayableAd(followUp)).toBe(false);
+    expect(effectiveGameOrientation(followUp)).toBeNull();
+    const explicit = withoutImplicitPlayableAd({ ...DEFAULT_MODE_COMPOSER_OPTIONS, gameOrientation: 'portrait', gamePlayableAd: true });
+    expect(isPlayableAd(explicit)).toBe(true);
   });
 
   it('does not offer the ad option while a local template is selected, because remix copies it unchanged', () => {

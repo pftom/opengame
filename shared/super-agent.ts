@@ -208,7 +208,7 @@ export type SuperAgentArtifact = {
 
 export function isPlayableAdArtifact(item: Pick<SuperAgentArtifact | SuperAgentResourceAttachment, 'kind' | 'playableAd' | 'subtitle'>): boolean {
   return item.kind === 'game-project'
-    && (item.playableAd ?? /(?:^|·)\s*(?:Playable ad|广告游戏)\s*$/i.test(item.subtitle ?? ''));
+    && (item.playableAd ?? /(?:^|·)\s*(?:Playable ad|广告游戏|赚钱小游戏)\s*$/i.test(item.subtitle ?? ''));
 }
 
 export type SuperAgentToolCategory =

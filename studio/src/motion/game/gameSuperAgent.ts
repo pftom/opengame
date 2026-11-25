@@ -93,7 +93,7 @@ export function buildGameContextTags(
   tags.push({ kind: 'param', label: game.orientation === 'portrait' ? '9:16' : '16:9' });
   tags.push({
     kind: 'param',
-    label: game.playableAd ? t('Playable ad') : game.multiplayer ? t('Multiplayer') : t('Single player'),
+    label: game.playableAd ? t('Ad-revenue game') : game.multiplayer ? t('Multiplayer') : t('Single player'),
   });
   return tags;
 }

@@ -279,7 +279,7 @@ export function ArtifactDeliverableCard({
   const rawSub = (artifact.subtitle ?? '').trim();
   const subDetail = formatArtifactSubDetail(rawSub, t);
   const subtitleText = isPlayableAdArtifact(artifact)
-    ? t('Playable ad')
+    ? t('Ad-revenue game')
     : subDetail ? `${t(meta.typeLabel)} · ${subDetail}` : t(meta.typeLabel);
   const cloudTarget = resolveArtifactCloudTarget(artifact);
 
