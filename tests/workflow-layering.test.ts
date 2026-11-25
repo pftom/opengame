@@ -403,3 +403,37 @@ test('surgical editing, readable source formatting and template adaptation stay 
   assert.match(adaptation.content, /Hard cap[\s\S]*Approximate target|Approximate target[\s\S]*Hard cap/);
   assert.match(adaptation.content, /Narration\/TTS precedence/);
 });
+
+test('openmotion-game discovers live capabilities before fallback and requires looping BGM across modes', async () => {
+  const { gameAssetInstructions } = await import('../shared/game-contract.ts');
+  const gameStart = await getWorkflow('start', 'game');
+  const discoverIndex = gameStart.content.indexOf('Discover live capabilities first');
+  const recoveryIndex = gameStart.content.indexOf('Unavailable, plan-gated, or low-balance recovery');
+  assert.ok(discoverIndex > 0, 'openmotion-game SKILL.md must start multimodal routing with live capability discovery');
+  assert.ok(recoveryIndex > discoverIndex, 'unavailable/no-nag recovery must follow live capability discovery');
+  assert.doesNotMatch(gameStart.content, /Pure-code & Playable Ad boundary/);
+  assert.match(gameStart.content, /do \*\*not\*\* call `openmotion_open_preview`/);
+  assert.match(gameStart.content, /\*\*Audio & BGM\*\*[\s\S]*game-audio\.md/);
+  assert.match(gameStart.content, /BGM-only generation does not upgrade/);
+
+  // Shared gameAssetInstructions stays aligned with SKILL.md (discovery first + no-nag boundary, no pre-discovery bypass)
+  assert.doesNotMatch(gameAssetInstructions, /Pure code-driven gameplay-first games.*without calling/);
+  assert.match(gameAssetInstructions, /silently discover live capabilities first/);
+  assert.match(gameAssetInstructions, /do not call openmotion_open_preview/);
+  assert.match(gameAssetInstructions, /looping BGM/);
+
+  const playable = await getWorkflow('playable', 'game');
+  assert.match(playable.content, /looping background music bed/);
+  assert.match(playable.content, /\/motion-api\/assets\/<assetId>\/versions\/<versionId>\/media/);
+  assert.match(playable.content, /Audio & looping BGM/);
+  assert.doesNotMatch(playable.content, /A quiet 8–16 bar loop is optional/);
+  assert.doesNotMatch(playable.content, /One self-contained file/);
+
+  const audio = await getWorkflow('audio', 'game');
+  assert.match(audio.content, /"action":"inspect","modality":"audio"/);
+  assert.match(audio.content, /## Web Audio BGM fallback/);
+  assert.match(audio.content, /ctx\.currentTime/);
+
+  const rubric = await getWorkflow('review', 'game');
+  assert.match(rubric.content, /looping BGM/);
+});

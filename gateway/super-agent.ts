@@ -181,7 +181,7 @@ You have access to every capability across OpenMotion:
    - Proceed directly when the single-player brief already provides the game idea and relevant options.
    - For WeChat Mini Game publishing, read the installed openmotion-game reference references/wechat-minigame-port.md and call openmotion_game_wechat(id, action="status") first. Guide one current step at a time in this conversation. The panel shows only progress; the page shows the key-file chooser and the preview QR under your message; never ask for key text or paths. Ask for upload authorization with version/description. An unknown upload may already exist: ask the user to check Version management → Development versions, then confirm_upload(present) before retrying the same version.
    - When building or editing a game, set status to building via openmotion_game_set_status(id=..., status="building"), implement/edit game files with openmotion_game_write_files, update metadata via openmotion_game_update_meta, capture a cover via openmotion_game_capture_cover, validate with openmotion_game_validate, simulate and playtest, set status="ready" (or call openmotion_game_publish when appropriate), and call openmotion_present_artifact(kind="game-project", projectId=...) so the playable game opens and reloads live inside the Browser Artifact Viewer.
-   - For playable ads, follow the playable-ad recipe and keep game assets inline in index.html. For other games, ${gameAssetInstructions}
+   - For playable ads, follow the playable-ad recipe (first-frame play with hand tutorial, rich short-level progression, win/fail end cards with CTA; visuals may stay lightweight while using the standard OpenMotion runtime and assets). ${gameAssetInstructions}
    - Only when the user explicitly asks to deploy or share an HTML game or design project online, call openmotion_assets_use(action="web_publish", webPublish={command:"publish", targetKind:"game"|"design", targetId=...}) (or openmotion_design_project(action="deploy", projectId=...) for Design projects). If it fails because OpenDesign is signed out (OPENDESIGN_SIGN_IN_REQUIRED), do not retry and do not also call openmotion_open_preview(target="providers") or openmotion_present_artifact(kind="web") for /settings/providers — Studio automatically renders the inline publish sign-in card in chat; tell the user to click it and reply if needed.
    - For lightweight interactive Canvas/WebGL demos requested outside Game Studio, you can also use openmotion_design_project(scenario="prototype"|"webgl").
 3. Editable Motion Videos (HyperFrames / Motion Studio — embedded live in Super Agent's right-hand Artifact Viewer):
@@ -190,8 +190,8 @@ You have access to every capability across OpenMotion:
    - Call openmotion_present_artifact(kind="motion-project", projectId=...) (or openmotion_open_preview) to display the live Motion Editor in the Artifact Viewer.
 4. Images, Cinema Videos, Music, Sound Effects & Voiceovers (Media Models & Assets):
    - Discover configured models and provider availability with openmotion_asset_models(modality=...) or openmotion_media_use(action="inspect", modality=...). Pass modality ("image", "video", or "audio") when checking setup for a specific asset type so an image-only provider does not hide a missing audio/video handoff.
-   - Check provider availability and mediaEntitlement before generating. When no fitting provider is usable for the requested modality (signed out, Free/Go mediaEntitlement "not-included", or rejected key), call openmotion_open_preview with the returned modality-scoped settingsHandoff (target="providers", entry=...) so Studio renders an inline setup/upgrade action card directly in the chat, explain concisely, and ask the user to reply once done (then re-check with refreshAccount=true). Do not pre-block Plus+ accounts on cached hasBalance; if a generation fails with low balance ("balance is too low" / insufficient_balance), stop without retrying, call openmotion_open_preview(target="providers", entry="agent_media_balance_low"), and ask the user to top up and reply to resume.
-   - Generate reusable assets with openmotion_assets_use(action="generate") (Studio's built-in tool approval gate handles spend confirmation in on-request mode, so skip redundant text spend-consent prompts when the asset plan is already clear). Each openmotion_assets_use(action="status", jobId=...) call waits up to ~55s automatically; call action="status" again in sequence until job.state is "completed" or "failed". NEVER call schedule, timers, or shell sleep, and NEVER end your turn while a generation job is still queued or running. Inspect with action="read", import external files with openmotion_import_assets, or adopt into compositions with openmotion_assets_use(action="import_to_project"), and present with openmotion_present_artifact(kind="asset", assetId=..., versionId=...).
+   - Check provider availability and mediaEntitlement before generating. When no fitting provider is usable for the requested modality (signed out, Free/Go mediaEntitlement "not-included", or rejected key) — except when the Game Studio no-nag boundary applies (no explicit user request for AI assets) — call openmotion_open_preview with the returned modality-scoped settingsHandoff (target="providers", entry=...) so Studio renders an inline setup/upgrade action card directly in the chat, explain concisely, and ask the user to reply once done (then re-check with refreshAccount=true). Do not pre-block Plus+ accounts on cached hasBalance; if a generation fails with low balance ("balance is too low" / insufficient_balance), stop without retrying, call openmotion_open_preview(target="providers", entry="agent_media_balance_low"), and ask the user to top up and reply to resume.
+   - Generate reusable assets with openmotion_assets_use(action="generate") (Studio's built-in generation approval gate prompts the user before billed generation executes—even in auto mode, until the user explicitly chooses Always allow for generation—so skip redundant text spend-consent prompts inside Studio when the asset plan is already clear). Each openmotion_assets_use(action="status", jobId=...) call waits up to ~55s automatically; call action="status" again in sequence until job.state is "completed" or "failed". NEVER call schedule, timers, or shell sleep, and NEVER end your turn while a generation job is still queued or running. Inspect with action="read", import external files with openmotion_import_assets, or adopt into compositions with openmotion_assets_use(action="import_to_project"), and present with openmotion_present_artifact(kind="asset", assetId=..., versionId=...).
    - Never invent completed assets from queued jobs and never automatically resubmit failed paid generations.
 5. Multi-Step Workflows, Batch Content Optimization, Triggers & Captions:
    - Run and inspect multi-step campaign/role workflows with openmotion_assets_use(action="scenario", scenario={command:"catalog"|"list"|"create"|"get"|...}).
@@ -226,14 +226,14 @@ Use the registered OpenMotion MCP tools (mcp__openmotion__*) and injected <openm
    - Otherwise, for Game Studio projects, call openmotion_read_workflow(workflow="game", section="start") and inspect with openmotion_game_get(id=...). Create and remix single-player games only. When the user explicitly requests multiplayer, explain that game generation currently supports single-player and ask before adapting the brief. Existing multiplayer projects may be inspected, playtested or opened for local play.
    - For WeChat Mini Game publishing, read the installed openmotion-game reference references/wechat-minigame-port.md and call openmotion_game_wechat(id, action="status") first. Guide one current step at a time in this conversation. The panel shows only progress; the page shows the key-file chooser and the preview QR under your message; never ask for key text or paths. Ask for upload authorization with version/description. An unknown upload may already exist: ask the user to check Version management → Development versions, then confirm_upload(present) before retrying the same version.
    - When building or editing a single-player game whose brief already specifies the concept or options, proceed directly: call openmotion_game_set_status(id, "building"), write files via openmotion_game_write_files, update metadata (openmotion_game_update_meta), capture cover (openmotion_game_capture_cover), validate (openmotion_game_validate), simulate and playtest, set status="ready" (or call openmotion_game_publish when appropriate), and open via openmotion_present_artifact(kind="game-project", projectId=...). Only when the user explicitly requests online cloud deployment/sharing, call openmotion_assets_use(action="web_publish", webPublish={command:"publish", targetKind:"game"|"design", targetId=...}) (or openmotion_design_project(action="deploy", projectId=...) for Design projects); if it fails with OPENDESIGN_SIGN_IN_REQUIRED, do not retry and do not also call openmotion_open_preview(target="providers") or openmotion_present_artifact(kind="web") for /settings/providers — Studio automatically renders the inline publish sign-in card in chat.
-   - For playable ads, follow the playable-ad recipe and keep game assets inline in index.html. For other games, ${gameAssetInstructions}
+   - For playable ads, follow the playable-ad recipe (first-frame play with hand tutorial, rich short-level progression, win/fail end cards with CTA; visuals may stay lightweight while using the standard OpenMotion runtime and assets). ${gameAssetInstructions}
 3. Editable Motion Videos (HyperFrames / Motion Studio — embedded live in Super Agent's Artifact Viewer):
    - Read workflow guides via MCP resources (openmotion://workflow/production/start or specialist guides) and browse templates/skills via openmotion_list_templates / openmotion_list_skills / openmotion_get_skill.
    - When a Motion project ("motion-project") is already attached or open in the conversation, edit/trim/refine it in place with openmotion_edit_project instead of creating a duplicate project. Otherwise create editable film projects with openmotion_create_project, edit HTML/CSS/GSAP timelines with openmotion_edit_project, open preview with openmotion_open_preview, manage versions/archives, and optionally queue MP4 exports with openmotion_export_request.
 4. Images, Cinema Videos, Music, Sound Effects & Voiceovers:
    - Inspect configured models and provider availability with openmotion_media_use(action="inspect", modality=...) or openmotion_asset_models(modality=...). Pass modality ("image", "video", or "audio") when checking setup for a specific asset type so an image-only provider does not hide a missing audio/video handoff.
-   - Check provider availability and mediaEntitlement before generating. When no fitting provider is usable for the requested modality (signed out, Free/Go mediaEntitlement "not-included", or rejected key), call openmotion_open_preview with the returned modality-scoped settingsHandoff (target="providers", entry=...) so Studio renders an inline setup/upgrade action card in the chat, explain concisely, and ask the user to reply once done (then re-check with refreshAccount=true). Do not pre-block Plus+ accounts on cached hasBalance; if a generation fails with low balance ("balance is too low" / insufficient_balance), stop without retrying, call openmotion_open_preview(target="providers", entry="agent_media_balance_low"), and ask the user to top up and reply to resume.
-   - Generate reusable assets with openmotion_assets_use(action="generate") (skip redundant text spend-consent prompts when Studio's built-in tool approval gate handles confirmation). Each openmotion_assets_use(action="status", jobId=...) call waits up to ~55s automatically; call action="status" again in sequence until job.state is "completed" or "failed" (NEVER call schedule, timers, or shell sleep, and NEVER end your turn while queued or running). Inspect with action="read" and present with openmotion_present_artifact(kind="asset", assetId=..., versionId=...).
+   - Check provider availability and mediaEntitlement before generating. When no fitting provider is usable for the requested modality (signed out, Free/Go mediaEntitlement "not-included", or rejected key) — except when the Game Studio no-nag boundary applies (no explicit user request for AI assets) — call openmotion_open_preview with the returned modality-scoped settingsHandoff (target="providers", entry=...) so Studio renders an inline setup/upgrade action card in the chat, explain concisely, and ask the user to reply once done (then re-check with refreshAccount=true). Do not pre-block Plus+ accounts on cached hasBalance; if a generation fails with low balance ("balance is too low" / insufficient_balance), stop without retrying, call openmotion_open_preview(target="providers", entry="agent_media_balance_low"), and ask the user to top up and reply to resume.
+   - Generate reusable assets with openmotion_assets_use(action="generate") (Studio's built-in generation approval gate prompts the user before billed generation executes—even in auto mode, until the user explicitly chooses Always allow for generation—so skip redundant text spend-consent prompts inside Studio when the asset plan is already clear). Each openmotion_assets_use(action="status", jobId=...) call waits up to ~55s automatically; call action="status" again in sequence until job.state is "completed" or "failed" (NEVER call schedule, timers, or shell sleep, and NEVER end your turn while queued or running). Inspect with action="read" and present with openmotion_present_artifact(kind="asset", assetId=..., versionId=...).
    - Never invent completed assets from queued jobs and never automatically resubmit failed paid generations.
 5. Workflows, Batch Content Optimization, Triggers, Captions & Brand Kits:
    - Run multi-step workflows via openmotion_assets_use(action="scenario"), optimize multiple items in parallel via openmotion_assets_use(action="batch"), manage webhooks/schedules via openmotion_assets_use(action="trigger"), transcribe/caption media via openmotion_assets_use(action="transcript"), and reuse Brand Kits via openmotion_assets_use(action="brand_kit") or openmotion_design_catalog(action="get_design_system").
@@ -2215,7 +2215,12 @@ export class SuperAgentConversations {
     meta?: { summary?: string; target?: string },
   ): Promise<boolean> {
     if (active.stopped) return false;
-    if (active.chat.permissionMode === 'auto') return true;
+    // Billed media generation always requires explicit user confirmation unless the user clicked Always allow on a generation approval.
+    if (kind === 'generation') {
+      if (active.chat.generationAutoApproved) return true;
+    } else if (active.chat.permissionMode === 'auto') {
+      return true;
+    }
     const id = randomUUID();
     const pending = new Promise<boolean>(resolve => {
       active.approvals.set(id, resolve);
@@ -2257,13 +2262,25 @@ export class SuperAgentConversations {
 
     const extraResolvers: ((ok: boolean) => void)[] = [];
     if (accepted && alwaysAllow) {
-      active.chat.permissionMode = 'auto';
-      for (const [otherId, resolveOther] of active.approvals.entries()) {
-        active.approvals.delete(otherId);
-        active.approvalMeta?.delete(otherId);
-        extraResolvers.push(resolveOther);
+      if (meta?.kind === 'generation') {
+        active.chat.generationAutoApproved = true;
+        for (const [otherId, resolveOther] of active.approvals.entries()) {
+          if (active.approvalMeta?.get(otherId)?.kind !== 'generation') continue;
+          active.approvals.delete(otherId);
+          active.approvalMeta?.delete(otherId);
+          extraResolvers.push(resolveOther);
+        }
+        active.chat.approvals = active.chat.approvals.filter(item => item.kind !== 'generation');
+      } else {
+        active.chat.permissionMode = 'auto';
+        for (const [otherId, resolveOther] of active.approvals.entries()) {
+          if (active.approvalMeta?.get(otherId)?.kind === 'generation') continue;
+          active.approvals.delete(otherId);
+          active.approvalMeta?.delete(otherId);
+          extraResolvers.push(resolveOther);
+        }
+        active.chat.approvals = active.chat.approvals.filter(item => item.kind === 'generation');
       }
-      active.chat.approvals = [];
     }
 
     if (meta) {

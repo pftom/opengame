@@ -15,7 +15,7 @@ Run this before setting `status: "ready"` or publishing. Automated checks raise 
    - `openmotion_game_validate` passes with zero blocking diagnostics.
    - Rule/score/puzzle/card games using `logic.js`: 3-tier `openmotion_game_simulate` passes (`reference` wins, degraded struggles, `idle` loses cleanly).
    - All games (and primary for `realtime-3d` / `sandbox-explore`): `openmotion_game_playtest` passes all assertions including **`window.__omGame.runSelfTests()`** invariants, multi-point `{ type: "screenshot", label }` visual inspection, and zero horizontal overflow at `390×844` under peak HUD density.
-7. **Audio, fallbacks & accessibility:** User-gesture AudioContext unlock, mute toggle, playable muted, graceful asset-load fallbacks (never blanking gameplay), `prefers-reduced-motion` respect (no > 3 Hz full-screen flashes), and touch controls (≥ 48–56 px targets).
+7. **Audio, fallbacks & accessibility:** User-gesture AudioContext unlock, responsive SFX **and** a looping BGM bed (generated via OpenMotion media when usable, or synthesized WebAudio fallback — unless silence was explicitly requested), mute toggle controlling both SFX and BGM, playable muted, graceful asset-load fallbacks (never blanking gameplay), `prefers-reduced-motion` respect (no > 3 Hz full-screen flashes), and touch controls (≥ 48–56 px targets).
 8. **Metadata, cover & licenses:** Game-only 1280×720 cover captured via `openmotion_game_capture_cover` (never user's visible browser/desktop; never stuck on a loading frame), concise English + `zh-CN` metadata via `openmotion_game_update_meta`, and preserved `vendor/` / `characters/` licenses.
 
 ## 2. Playable-Ad Addendum
@@ -28,7 +28,7 @@ For **Format: playable ad**, score each criterion 0 (missing), 1 (partial), or 2
 | Tutorial | Animated hand on exact first target + short cue; hides on input, returns after idle hint delay |
 | Level arc | 3–8 levels (easy L1 win, high-tension level, twist); `reference` wins and `idle` loses in `simulate` |
 | End card & CTA | Both win/fail cards verified in playtest; CTA logs `cta_click` via `openStore()`, Play again does not |
-| Single file | Self-contained inlined `index.html`, zero external requests, no storage/dialogs/SDK stubs, size logged |
+| Audio & runtime | First-touch SFX + looping BGM (generated or WebAudio), mute toggles both, Replay never stacks BGM; zero third-party CDNs, storage, dialogs, or SDK stubs |
 | Polish | Clean `390×844` layout, free corners, immediate feedback on every tap, localized copy fits |
 
 ## 3. Optional Post-Publish Checks

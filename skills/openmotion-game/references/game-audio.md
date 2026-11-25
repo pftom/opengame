@@ -2,14 +2,14 @@
 
 # Game Audio
 
-Use this reference for music, voice, SFX and ambience. A game that is silent or only beeps when the brief asks for mood, story or characters is below the quality floor. Generate music and spoken lines through OpenMotion media when a fitting model is listed; synthesize short SFX with the Web Audio API in game code. Normalize and mix in code for predictable in-game loudness.
+Use this reference for music, voice, SFX and ambience. A playable game that is silent or ships only click-beeps with no background music (unless the brief explicitly asks for silence) is below the quality floor. Generate music and spoken lines through OpenMotion media whenever a fitting model is usable; synthesize short SFX (and a looping BGM fallback when no music model is usable or declined) with the Web Audio API in game code. Normalize and mix in code for predictable in-game loudness.
 
 ## Discover the live contracts
 
 Follow the `openmotion-media` provider order and consent rules (`openmotion://workflow/media/start`). Before the first audio job:
 
 ```json
-{"tool":"openmotion_media_use","arguments":{"action":"inspect"}}
+{"tool":"openmotion_media_use","arguments":{"action":"inspect","modality":"audio"}}
 ```
 
 ```json
@@ -78,6 +78,13 @@ function blip(freq = 660, dur = 0.08, type = 'square', gain = 0.25) {
 ```
 
 Recipes: pickup = rising square blip; jump = short sine sweep up; hit = 40–80 ms filtered noise burst plus low sine thump; explosion = 0.4 s low-passed noise with falling cutoff; UI click = 15 ms triangle tick; engine = sawtooth with frequency mapped to speed through a low-pass filter. Vary pitch ±5% per play so repeats do not fatigue.
+
+## Web Audio BGM fallback (offline / no music model)
+
+When live discovery returns no usable music model, the user declines paid generation, or an explicit single-file offline export forbids external audio files, do **not** drop BGM — schedule a lightweight 8–16 bar looping Web Audio groove on `musicBus` after the first user gesture:
+
+- Drive the loop with a look-ahead scheduler anchored to `ctx.currentTime` (avoid raw `setInterval` timers that drift or throttle in background tabs), layering 2–3 soft voices: a warm triangle/sine bassline, a gentle filtered chord pad or pluck, and optional subtle pulse percussion.
+- Keep `musicBus` around -18 to -20 dBFS so SFX stays crisp on top, tighten energy or open a low-pass filter on high danger/fever states, and pause/suspend cleanly on mute, `visibilitychange`, end-card, or container pause (`setPaused('container')`) without stacking duplicate loops on replay.
 
 ## Scope
 

@@ -2167,6 +2167,8 @@ test('Codex and Claude Super Agent prompts share unified gameAssetInstructions w
     assert.ok(prompt.includes(gameAssetInstructions), 'Super Agent prompt must embed gameAssetInstructions');
     assert.doesNotMatch(prompt, /optionally generate visual/i);
     assert.doesNotMatch(prompt, /openmotion_generate_asset/);
+    assert.doesNotMatch(prompt, /keep game assets inline in index\.html/i);
+    assert.match(prompt, /except when the Game Studio no-nag boundary applies/);
     assert.match(prompt, /Built-in template remix fast path/);
     assert.match(prompt, /deliver immediately with zero rebuild/);
     assert.match(prompt, /never say you copied a template/i);
@@ -3111,6 +3113,25 @@ test('extractActionCardFromTool maps provider handoffs, low-balance failures, an
     extractActionCardFromTool('openmotion_open_preview', { target: 'templates' }, {}, true),
     undefined,
   );
+  // Silent capability discovery (inspect with settingsHandoff) must never auto-pop a sign-in or upgrade card
+  assert.equal(
+    extractActionCardFromTool(
+      'openmotion_media_use',
+      { action: 'inspect', modality: 'audio' },
+      { settingsHandoff: { tool: 'openmotion_open_preview', arguments: { target: 'providers', entry: 'agent_media_signed_out' } } },
+      true,
+    ),
+    undefined,
+  );
+  assert.equal(
+    extractActionCardFromTool(
+      'openmotion_media_use',
+      { action: 'inspect', modality: 'audio' },
+      { settingsHandoff: { tool: 'openmotion_open_preview', arguments: { target: 'providers', entry: 'agent_media_upgrade_free' } } },
+      true,
+    ),
+    undefined,
+  );
 
   // Reactive Plus low-balance failure from failed OpenDesign account generation job (direct AND MCP structuredContent envelope)
   assert.deepEqual(
@@ -3245,3 +3266,102 @@ test('extractActionCardFromTool maps provider handoffs, low-balance failures, an
   assert.equal(isProviderSettingsWebArtifactUrl('https://example.com/settings/providers', ownOrigin), false);
   assert.equal(isProviderSettingsWebArtifactUrl('http://127.0.0.1:4120/games/demo', ownOrigin), false);
 });
+
+test('Super Agent always gates billed media generation approvals even in default auto permissionMode until Always allow is granted for generation', () => fixture(async store => {
+  const { readFile } = await import('node:fs/promises');
+  let generationCalls = 0;
+  const phase1 = {
+    call: async (name: string, args: any) => {
+      if (name === 'openmotion_assets_use' && args.action === 'generate') {
+        generationCalls += 1;
+        return { job: { id: `job-auto-gate-${generationCalls}`, state: 'queued', model: { id: args.model || 'account:elevenlabs-music-v2' } } };
+      }
+      return {};
+    },
+  } as unknown as Phase1Service;
+
+  let firstApprovalObserved = false;
+  let secondApprovalObserved = false;
+  const service = new SuperAgentConversations(store, {
+    resolveAgent: async () => '/usr/local/bin/claude',
+    runClaude: async ({ mcpConfigPath, onEvent }) => {
+      const cfg = JSON.parse(await readFile(mcpConfigPath, 'utf8'));
+      const server = cfg.mcpServers.openmotion;
+      const callGen = (id: number, model: string, modality: string, prompt: string) =>
+        fetch(server.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...server.headers },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id,
+            method: 'tools/call',
+            params: { name: 'openmotion_assets_use', arguments: { action: 'generate', model, modality, prompt } },
+          }),
+        });
+
+      // 1) First billed call in default auto mode MUST still wait for user approval
+      const firstPromise = callGen(11, 'account:elevenlabs-music-v2', 'audio', 'playful farmyard loop');
+      for (let i = 0; i < 60; i++) {
+        const current = await service.get(chat.id);
+        if (current.approvals.length > 0) {
+          firstApprovalObserved = true;
+          assert.equal(current.state, 'waiting');
+          assert.equal(current.approvals[0].kind, 'generation');
+          assert.equal(generationCalls, 0);
+          // Approve once (alwaysAllow=false)
+          await service.answer(chat.id, current.approvals[0].id, true, false);
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 15));
+      }
+      const firstBody = await (await firstPromise).json() as any;
+      assert.equal(firstBody.result.isError, false);
+      assert.equal(generationCalls, 1);
+
+      // 2) Second billed call MUST still gate until user grants alwaysAllow=true on generation
+      const secondPromise = callGen(12, 'account:gpt-image-2', 'image', 'farmyard backdrop');
+      for (let i = 0; i < 60; i++) {
+        const current = await service.get(chat.id);
+        if (current.approvals.length > 0) {
+          secondApprovalObserved = true;
+          assert.equal(current.approvals[0].kind, 'generation');
+          assert.equal(generationCalls, 1);
+          await service.answer(chat.id, current.approvals[0].id, true, true);
+          break;
+        }
+        await new Promise(resolve => setTimeout(resolve, 15));
+      }
+      const secondBody = await (await secondPromise).json() as any;
+      assert.equal(secondBody.result.isError, false);
+      assert.equal(generationCalls, 2);
+
+      // 3) Third billed call after generation alwaysAllow=true proceeds immediately without waiting
+      const thirdBody = await (await callGen(13, 'account:gpt-image-2', 'image', 'golden goose icon')).json() as any;
+      assert.equal(thirdBody.result.isError, false);
+      assert.equal(generationCalls, 3);
+
+      await onEvent({ type: 'assistant', message: { content: [{ type: 'text', text: 'All assets generated.' }] } });
+    },
+  });
+
+  // Default create() uses permissionMode: 'auto'
+  const chat = await service.create({ engine: 'claude' });
+  assert.equal(chat.permissionMode, 'auto');
+  await service.start(chat.id, { requestId: 'req-auto-gen-gate-1', text: 'Make a goose game' }, {
+    origin: 'http://127.0.0.1:4173',
+    phase1: () => phase1,
+  });
+
+  for (let i = 0; i < 100; i++) {
+    const snap = await service.get(chat.id);
+    if (snap.state === 'idle' || snap.state === 'failed') break;
+    await new Promise(resolve => setTimeout(resolve, 20));
+  }
+  const done = await service.get(chat.id);
+  assert.equal(firstApprovalObserved, true);
+  assert.equal(secondApprovalObserved, true);
+  assert.equal(generationCalls, 3);
+  assert.equal(done.generationAutoApproved, true);
+  assert.equal(done.state, 'idle');
+  await service.close();
+}));

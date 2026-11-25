@@ -411,11 +411,28 @@ test('portrait briefs are stored and told to the Agent; invalid orientation is r
 
 test('playable-ad briefs are portrait single-player only and carry the ad recipe to the Agent',()=>fixture(async(_,workspace)=>{
   const {service}=await fakeKits(workspace);
-  const {game}=await service.create({...brief,orientation:'portrait',playableAd:true});
+  const {game,agentInstruction}=await service.create({...brief,orientation:'portrait',playableAd:true});
   assert.equal(game.playableAd,true);
+  assert.doesNotMatch(agentInstruction,/inline in index\.html/i);
+  assert.doesNotMatch(agentInstruction,/loads nothing from the network/i);
+  assert.match(agentInstruction,/openmotion_media_use/);
   const stored=JSON.parse(await readFile(path.join(service.root,game.id,'game.json'),'utf8'));
   assert.match(stored.rawPrompt,/portrait 9:16 phone game/);
   assert.match(stored.rawPrompt,/Format: playable ad/);
+  // Handoff refreshes legacy stored playable-ad suffixes so resumed drafts inherit the current unified media guidance.
+  const metaPath=path.join(service.root,game.id,'game.json');
+  await writeFile(metaPath,JSON.stringify({...stored,rawPrompt:`${brief.prompt}\n\nFormat: playable ad. Follow the playable-ad recipe in the openmotion-game skill (references/game-playable-ad.md): one self-contained HTML that loads nothing from the network.`}));
+  const handoff=await service.handoff(game.id);
+  assert.doesNotMatch(handoff.agentInstruction,/loads nothing from the network/i);
+  assert.doesNotMatch(handoff.agentInstruction,/inline in index\.html/i);
+  assert.match(handoff.agentInstruction,/openmotion_media_use/);
+  // Direct same-orientation remix of a legacy playable ad also refreshes the stored suffix and instruction.
+  const legacyRemix=await service.remix(game.id);
+  assert.doesNotMatch(legacyRemix.agentInstruction,/loads nothing from the network/i);
+  assert.doesNotMatch(legacyRemix.agentInstruction,/inline in index\.html/i);
+  assert.match(legacyRemix.agentInstruction,/openmotion_media_use/);
+  const legacyRemixStored=JSON.parse(await readFile(path.join(service.root,legacyRemix.game.id,'game.json'),'utf8'));
+  assert.doesNotMatch(legacyRemixStored.rawPrompt,/loads nothing from the network/i);
   // Landscape or multiplayer briefs ignore the flag rather than building a broken ad.
   const wide=await service.create({...brief,orientation:'landscape',playableAd:true});assert.equal(wide.game.playableAd,undefined);
   const party=await service.create({...brief,multiplayer:true,orientation:'portrait',playableAd:true});assert.equal(party.game.playableAd,undefined);

@@ -852,3 +852,18 @@ test('concurrent script requestId reservation, capability dryRun parameter valid
       gateway.submit = origSubmit;
     }
   }, false));
+
+test('static-policy quotes require explicit approval for all billed media capabilities (image, music, speech) and raw models', () =>
+  fixture(async store => {
+    const api = service(store);
+    const musicQuote = await api.call('openmotion_capability_discover', { action: 'quote', capabilityId: 'music' });
+    assert.equal(musicQuote.quote.requiresExplicitApproval, true);
+    const imageQuote = await api.call('openmotion_capability_discover', { action: 'quote', capabilityId: 'text-to-image' });
+    assert.equal(imageQuote.quote.requiresExplicitApproval, true);
+    const speechQuote = await api.call('openmotion_capability_discover', { action: 'quote', capabilityId: 'speech' });
+    assert.equal(speechQuote.quote.requiresExplicitApproval, true);
+    const removeBgQuote = await api.call('openmotion_capability_discover', { action: 'quote', capabilityId: 'remove-background' });
+    assert.equal(removeBgQuote.quote.requiresExplicitApproval, true);
+    const asrQuote = await api.call('openmotion_capability_discover', { action: 'quote', capabilityId: 'asr-transcribe' });
+    assert.equal(asrQuote.quote.requiresExplicitApproval, false);
+  }, false));

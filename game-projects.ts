@@ -314,8 +314,9 @@ function templateOverrideSummary(
 }
 function instruction(game: GameCard, brief: GameBrief, remix = false, templateContext?: TemplateInstructionContext) {
   const summary = [brief.style && `${brief.style} style`, brief.genre && gameGenreLabels[brief.genre].toLowerCase(), brief.setting && `${brief.setting} setting`].filter(Boolean).join(', ');
+  const prompt = formatGameBriefPrompt(brief.prompt, { orientation: brief.orientation, playableAd: brief.playableAd });
   const assetInstructions = brief.playableAd
-    ? 'Follow the playable-ad recipe and keep all game assets inline in index.html.'
+    ? `Follow the playable-ad recipe in references/game-playable-ad.md. ${gameAssetInstructions}`
     : gameAssetInstructions;
   if (remix && templateContext?.readyBuiltInTemplate) {
     const overrides = templateContext.templateOverrides ?? [];
@@ -323,14 +324,14 @@ function instruction(game: GameCard, brief: GameBrief, remix = false, templateCo
       ? `\nExplicit parameter overrides vs template defaults: ${overrides.join(', ')} (treat these as requested custom modifications).`
       : '';
     return [
-      `This workspace game ${game.id} is a remix game copied from a complete, playable built-in template (code, assets, cover, controls, and metadata are already in place). Brief: ${summary ? summary + '. ' : ''}${brief.prompt}${overrideLine}`,
+      `This workspace game ${game.id} is a remix game copied from a complete, playable built-in template (code, assets, cover, controls, and metadata are already in place). Brief: ${summary ? summary + '. ' : ''}${prompt}${overrideLine}`,
       `First, infer from the user's message in this turn, any parameter overrides, and any attached resources whether the user asks for ANY custom modifications to this game (gameplay, mechanics, rules, theme, visuals/art, audio, language/UI copy, difficulty, layout/orientation, genre/style/setting, or new features).`,
       `- If NO custom modifications are requested (e.g. empty message, unchanged game description, or generic requests like "build/make/remix this game" as-is, with no parameter overrides and no custom assets to integrate): deliver immediately with zero rebuild. Do NOT read openmotion://workflow/game/start or skill docs, do NOT edit files (openmotion_game_write_files), and do NOT run openmotion_game_validate, openmotion_game_playtest, openmotion_game_simulate, or openmotion_game_capture_cover. Call openmotion_game_set_status(id="${game.id}", status="ready") and openmotion_present_artifact(kind="game-project", projectId="${game.id}") silently right away without a pre-tool "opening preview" filler message (only call openmotion_game_get(id="${game.id}") first if you still need the game's controls or details to describe it).`,
       `- If custom modifications ARE requested: read openmotion://workflow/game/start, inspect the copied project with openmotion_game_get(id="${game.id}") and openmotion_game_read_file, and modify the existing project files in place rather than rewriting from scratch. Build a single-player game. Ask for local-market publication consent only when missing. ${assetInstructions} Follow the skill workflow: openmotion_game_set_status("building"), update files via openmotion_game_write_files, verify via openmotion_game_validate, openmotion_game_playtest (and openmotion_game_simulate when using logic.js), refresh cover/metadata with openmotion_game_capture_cover and openmotion_game_update_meta when visuals or title/controls changed, then set ready (and openmotion_game_publish only when authorized), and present via openmotion_present_artifact(kind="game-project", projectId="${game.id}"). Never operate the user's visible browser or desktop.`,
       `- User-facing voice (applies to BOTH paths above): whether delivered as-is or customized in place, always open your final reply in the user's language as the builder who just coded and finished this game for them (e.g. "《<title>》已为你制作完成……" / "I've built <title> for you — ..."), summarize the gameplay highlights, any customized features, and real controls, invite them to play, and offer follow-up tweaks. Never open with passive "opened the preview" / "updated the existing game" wording, never mention templates, copying source files, reusing existing project files, internal skills/tools, or skipping build/test steps, and never fabricate checks you did not run.`,
     ].join('\n');
   }
-  return `Use the openmotion-game Skill to ${remix ? 'remix' : 'build'} game ${game.id} in this workspace. Read openmotion://workflow/game/start and openmotion_game_get(id=${game.id}). Brief: ${summary ? summary + '. ' : ''}${brief.prompt}\nBuild a single-player game. Ask for local-market publication consent only when missing. ${assetInstructions} Follow the skill workflow: openmotion_game_set_status("building"), author files via openmotion_game_write_files, verify via openmotion_game_validate, openmotion_game_playtest (and openmotion_game_simulate when using logic.js), capture a game-only cover with openmotion_game_capture_cover, update metadata via openmotion_game_update_meta, then set ready (and openmotion_game_publish only when authorized). Never operate the user's visible browser or desktop.`;
+  return `Use the openmotion-game Skill to ${remix ? 'remix' : 'build'} game ${game.id} in this workspace. Read openmotion://workflow/game/start and openmotion_game_get(id=${game.id}). Brief: ${summary ? summary + '. ' : ''}${prompt}\nBuild a single-player game. Ask for local-market publication consent only when missing. ${assetInstructions} Follow the skill workflow: openmotion_game_set_status("building"), author files via openmotion_game_write_files, verify via openmotion_game_validate, openmotion_game_playtest (and openmotion_game_simulate when using logic.js), capture a game-only cover with openmotion_game_capture_cover, update metadata via openmotion_game_update_meta, then set ready (and openmotion_game_publish only when authorized). Never operate the user's visible browser or desktop.`;
 }
 export const starterLogic = `export const meta = { minPlayers: 1, maxPlayers: 4, tickRate: 20, serverTick: true };
 export function setup(ctx, players) { return { scores: Object.fromEntries(players.map(id => [id, 0])) }; }
@@ -824,7 +825,7 @@ export class GameProjects {
     const orientation = overrides.orientation ?? original.orientation;
     const playableAd = orientation === 'landscape' ? false : original.playableAd;
     const hasLayoutChange = orientation !== original.orientation || playableAd !== original.playableAd;
-    const rawPrompt = hasLayoutChange
+    const rawPrompt = hasLayoutChange || originalMeta.rawPrompt
       ? formatGameBriefPrompt(originalMeta.rawPrompt ?? original.description, { orientation, playableAd })
       : originalMeta.rawPrompt;
     // A remix preserves the original brief unless explicit overrides update genre, style, setting, or screen layout.
@@ -845,7 +846,8 @@ export class GameProjects {
     if (stored.source !== 'mine') throw new GameError('Only workspace games can be handed to an Agent');
     assertSinglePlayerAuthoring(stored.multiplayer);
     const game = await this.get(id);
-    const brief: GameBrief = { prompt: stored.rawPrompt ?? stored.description, genre: stored.genre, style: stored.style, setting: stored.setting, multiplayer: stored.multiplayer, orientation: stored.orientation, playableAd: stored.playableAd };
+    const prompt = formatGameBriefPrompt(stored.rawPrompt ?? stored.description, { orientation: stored.orientation, playableAd: stored.playableAd });
+    const brief: GameBrief = { prompt, genre: stored.genre, style: stored.style, setting: stored.setting, multiplayer: stored.multiplayer, orientation: stored.orientation, playableAd: stored.playableAd };
     const templateOrigin = await this.builtInTemplateOrigin(stored.remixOf);
     const copyEligibleForFastPath = Boolean(templateOrigin)
       && ((stored.status === 'draft' && stored.pristineTemplateCopy === true)

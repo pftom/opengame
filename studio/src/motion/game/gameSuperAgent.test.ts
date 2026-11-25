@@ -49,12 +49,13 @@ describe('playable ads in Super Agent', () => {
     expect(isPlayableAd({ ...base, gameTemplate: community })).toBe(true);
   });
 
-  it('tells the Super Agent turn to follow the playable-ad recipe only for ad drafts', () => {
+  it('tells the Super Agent turn to follow the playable-ad recipe while sharing unified media discovery and consent rules', () => {
     const adPrompt = buildDirectGamePrompt(game({ playableAd: true }), 'Build it');
     const normalPrompt = buildDirectGamePrompt(game(), 'Build it');
     expect(adPrompt).toContain('format=playable ad');
-    expect(adPrompt).not.toContain('openmotion_media_use');
-    expect(adPrompt).not.toContain('spend-consent');
+    expect(adPrompt).not.toContain('one self-contained HTML');
+    expect(adPrompt).toContain('openmotion_media_use');
+    expect(adPrompt).toContain('spend-consent');
     expect(normalPrompt).not.toContain('playable ad');
     expect(normalPrompt).toContain('openmotion_media_use');
     expect(toGameArtifact(game({ playableAd: true }), 'Coin Cascade').subtitle).toContain('Playable ad');
@@ -73,6 +74,9 @@ describe('playable ads in Super Agent', () => {
         multiplayer: false, orientation: 'portrait', playableAd: true,
       });
       const savedText = buildDirectGamePrompt(created, instruction);
+      expect(savedText).not.toContain('inline in index.html');
+      expect(savedText).not.toContain('loads nothing from the network');
+      expect(savedText).toContain('openmotion_media_use');
       expect(readDirectGameBrief(savedText, created.id)).toBe(brief);
       expect(readDirectGameBrief(instruction, created.id)).toBe(brief);
       const remix = await service.remix(created.id);

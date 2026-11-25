@@ -7,7 +7,7 @@ A playable ad is a 30–60 second slice of a game that sells the full game by le
 ## 1. Mode rules (all mandatory)
 
 1. **Single player, portrait.** Studio creates a playable ad only as a portrait, single-player brief. Design for a 390×844 CSS-pixel phone held upright, scale that design space to whatever container the ad gets, and keep the full playfield visible in 9:16, 9:19.5, 3:4 and landscape containers (letterbox with scene colour, never black bars).
-2. **One self-contained file.** The shipped ad is one `index.html` with every script, style, image and sound inline. No CDN, web font, `fetch`, `XMLHttpRequest`, `WebSocket`, `sendBeacon`, `<img src="https://…">` or `@import`. Images are `data:` URIs or drawn in code; sounds are synthesized with WebAudio. The service-owned `game.json` holds metadata only (title, controls, cover) and is edited through `openmotion_game_update_meta`.
+2. **Clean local runtime (no third-party CDNs).** Focus authoring effort on rich multi-level progression and crisp readability — visuals can stay lightweight and clean. Keep the standard OpenMotion project layout (`index.html`, `logic.js`, `client.js`, `style.css`) and embed generated library assets (such as looping BGM or optional focal art) through standard literal `/motion-api/assets/<assetId>/versions/<versionId>/media` URLs, which `web_publish` and `exportZip` bundle automatically. Never load external CDNs, remote web fonts, third-party scripts, or unapproved remote URLs. (Only collapse into a single inlined HTML file with zero local asset requests if the user explicitly asks to package for an external ad network per section 9.) The service-owned `game.json` holds metadata only (title, controls, cover) and is edited through `openmotion_game_update_meta`.
 3. **No storage, no dialogs, no navigation.** No `localStorage`, `sessionStorage`, cookies, `alert`, `confirm`, `prompt`, `location.href = …` or `location.reload()`. The arcade-2d kit's best-score storage is removed in an ad build. Replay is an in-memory reset.
 4. **Sound after the first touch.** Create or resume the `AudioContext` inside the first pointer or key handler. Nothing plays before it.
 5. **The CTA is a function, not a link.** Every store tap goes through one `openStore()` (section 3.4). Nothing opens the store automatically, on the first touch, on Replay or on a timer.
@@ -32,9 +32,9 @@ A playable-ad brief receives `templates/game-kits/arcade-2d/` (it already suppor
 | `showEnd()` | The end card of section 3.3 with Play again and the CTA |
 | `?autostart` | Keep: headless capture uses it to see gameplay instead of the intro |
 
-**File plan while building:** `logic.js` (rules and tunables), `client.js` (presentation, input, ad hooks), `style.css`, `index.html` referencing them. This keeps `openmotion_game_validate`, `simulate` and `playtest` working on every edit.
+**File plan:** Keep the standard modular files — `logic.js` (rules and tunables), `client.js` (presentation, input, ad hooks), `style.css`, and `index.html` referencing them — so `openmotion_game_validate`, `simulate`, `playtest`, `web_publish`, `exportZip`, and `/motion-api/assets/...` media URLs work cleanly on every edit.
 
-**Single-file build before QA.** When gameplay is done, regenerate `index.html` as the inlined deliverable and keep the three source files as the editable originals:
+**Optional single-file packaging (only when explicitly requested for an external ad network):** If the user specifically asks for a single-file ad-network upload (e.g. AppLovin/Meta/MRAID), you may produce an inlined `index.html` bundle without external/local network fetches (using procedural visuals and WebAudio SFX + looping BGM so no base64 binaries need to be written by hand):
 
 ```html
 <!doctype html>
@@ -257,9 +257,9 @@ export const config = {
 - **Feedback on every input within one frame**, at the place of the input: squash on the touched piece, a particle burst in the reward or hazard hue, a sound. Big events add hit-stop (30–80 ms), screen shake (3–12 px, decaying), a flash and a camera kick.
 - **Counts feel big.** Score and reward counters count up over 0.4–0.7 s with a 1.15× bump; multipliers and combos show as large popups; level clear shows a short confetti or coin shower that flies toward the counter.
 - **Nothing jumps.** Positions, scale and HUD values move through damping or tweens (spawn: back-out pop 0.25 s; removal: 0.2 s shrink). Only the player's own controlled object follows input directly.
-- **Procedural WebAudio SFX** with the kit's `audio.blip` pattern or a small synth: `tap`, `action`, `hit`, `pickup` (pitch climbs a pentatonic step per streak item, resets after 0.5 s), `clear`, `win`, `fail`, `cta`. Rate-limit each id (≥ 50 ms), cap simultaneous voices around 12, route through one compressor. A quiet 8–16 bar loop is optional. Mute toggles everything and is remembered only for the session.
+- **Audio: SFX + looping BGM (first-touch unlocked).** Synthesize responsive SFX with the kit's `audio.blip` pattern or a small synth (`tap`, `action`, `hit`, `pickup` climbing a pentatonic step per streak item and resetting after 0.5 s, `clear`, `win`, `fail`, `cta`), rate-limiting each id (≥ 50 ms) and capping simultaneous voices around 12 through one master compressor. Always include a looping background music bed started on the first pointer/key interaction — prefer a generated music track via OpenMotion media (`/motion-api/assets/...`) per [game-audio.md](game-audio.md) when a usable music model is connected, or fall back to a quiet synthesized 8–16 bar WebAudio loop on a dedicated `musicBus` when unavailable/declined — never ship click-beeps alone unless the brief asks for silence. Mute toggles both SFX and BGM (and pauses audio with `setPaused('container')` / `visibilitychange`), remembered only for the session.
 - **Performance budget.** 60 fps target at 390×844 under software rendering, measured with `getStats().fps` in playtest:
-  - Canvas 2D by default; Three.js only when the brief needs 3D and the inline size stays under the network budget.
+  - Canvas 2D by default; Three.js only when the brief needs 3D and the bundle size stays lean (under the network cap if external ad-network export was requested).
   - Pool particles and bodies, cap them (for example 300 particles, 400 bodies); simulate a big crowd as a number and draw a capped subset.
   - Build gradients, patterns and sprite canvases once per resize, not per frame; no per-frame allocations in the hot loop.
   - Drop effects before frames: if the frame time averages over 24 ms for 2 s, halve particle caps and turn off shadows.
@@ -304,9 +304,9 @@ Pick the closest preset (a free-form brief: say which and why). Each entry: **Lo
 
 **Merge, blast, hidden object and other briefs.** Pick the closest loop above for structure, write the core loop in one sentence ("tap groups of three or more same-colour blocks to clear the orders within the move budget"), and keep the same level arc, end cards, tunables, balance bands and QA.
 
-## 9. Ad-network packaging (facts; later step)
+## 9. Ad-network packaging (optional external export)
 
-**Section summary.** OpenMotion today ships the universal `index.html` described above. Per-network zips and SDK tags are a later packaging step; do not add any SDK tag to the universal file. The table records common published limits as observed in late 2026; specs change, so confirm with the network's current spec or preview tool before upload.
+**Section summary.** By default OpenMotion delivers a clean standard game project (playable in Studio, WeChat Mini Game export, `web_publish`, and `exportZip`) without requiring single-file inlining. Apply the network limits below only when the user explicitly asks to package for a third-party ad network; do not add SDK tags unless asked. The table records common published limits as observed in late 2026; confirm with the network's current spec before upload.
 
 | Network | Upload form | Size cap | CTA call | Notes |
 |---|---|---|---|---|
@@ -330,7 +330,7 @@ Rules for the universal file that keep later packaging possible:
 
 ## 10. QA checklist (run before validate and publish)
 
-Run every item on the inlined `index.html` (section 2). Record the inputs, the measured value and the pass/fail in `design/verification.md`; a check that could not run is listed as not run, with the reason.
+Run every item on the built playable-ad project (section 2). Record the inputs, the measured value and the pass/fail in `design/verification.md`; a check that could not run is listed as not run, with the reason.
 
 | # | Check | How in OpenMotion | Pass |
 |---|---|---|---|
@@ -342,13 +342,14 @@ Run every item on the inlined `index.html` (section 2). Record the inputs, the m
 | 6 | Win end card reachable | Playtest with the pilot's inputs as a key/mouse script (≤ 100 actions, ≤ 60 s of waits). If the full path does not fit, set `config.startLevel` to the last level for one run, test, then restore it and record both runs | End card visible with title, CTA and Play again |
 | 7 | Fail end card reachable | Playtest with no input after the first tap until the loss | Fail card with encouraging title, tip, CTA and Play again |
 | 8 | CTA calls `openStore` | Playtest click on `#cta-end`; read `getState().ad.events` from the after-snapshot | One `cta_click` event; Play again produces `replay`, never `cta_click` |
-| 9 | No network requests | Playtest failed/external request list; text search of `index.html` for `http://`, `https://` in `src`/`href`, `fetch(`, `XMLHttpRequest`, `@import`, `localStorage` | Zero requests; store URLs only inside `config.store` |
+| 9 | No unapproved external requests | Playtest failed/external request list; text search of source files for `http://`, `https://` in `src`/`href`, `@import`, `localStorage` | Zero third-party requests (local `/motion-api/assets/...` library media is allowed in standard builds; if explicitly packaged for a single-file external ad network, zero `/motion-api/` or `fetch(` calls too); store URLs only inside `config.store` |
 | 10 | 390×844, no horizontal overflow | Playtest `mobileHorizontalOverflow` assertion | Pass; screenshot shows HUD inside the top band and corners empty |
 | 11 | No overlapping numbers | Inspect playtest screenshots at the busiest moment and the end card | No HUD, popup, banner or hand overlaps another or the hand target |
 | 12 | Replay resets | Playtest: reach an end card, click Play again, play 2 s | Fresh level state, no duplicated objects, no errors |
-| 13 | File size | Byte length of `index.html` | Reported; under the target of section 9 |
+| 13 | Lean footprint | Inspect project files (and report `index.html` byte size when single-file ad-network packaging was requested) | Lightweight, fast-loading bundle; under section 9 cap if single-file export was requested |
 | 14 | Languages | Headless tools cannot pass a query string: set `config.lang` to `zh-CN`, then `es`, capture the hand and an end card for each, then restore `auto` | No English left, no raw keys, no clipped text on the hand line and end card |
 | 15 | Frame pacing | Playtest `getStats().fps` | Report the measured RAF pacing; software rendering is not phone performance |
+| 16 | Audio & looping BGM | Verify in source + playtest state (`getState().audio` or mute/replay transitions) | Silent before first touch; looping BGM (generated or WebAudio) starts on first input; `#mute` silences both SFX and BGM; Replay does not stack duplicate BGM loops |
 
 - Puzzles without a moving player: pass `movementThreshold: 0` to playtest, because its default net-displacement assertion assumes a moving avatar, and expose `players[selfId].x/z` as the cursor or last-touched cell.
 - `openmotion_game_capture_cover` crops a 16:9 frame: a portrait ad appears letterboxed. Capture mid-level (an action script that makes the first move) so the cover shows play, not the hand.
@@ -356,4 +357,4 @@ Run every item on the inlined `index.html` (section 2). Record the inputs, the m
 
 ## 11. Final message additions
 
-On top of the standard final message in the skill, say in plain language: the ad's length on Normal, the number of levels, the CTA text and whether store links are still empty, the file size, which network limits it already meets, and that per-network packaging and real-device ad-network testing have not been done.
+On top of the standard final message in the skill, say in plain language: the ad's length on Normal, the number of levels, and the CTA text (plus whether store links are still empty). Only when the user explicitly requested external ad-network single-file packaging, also report the file size, which network limits it meets, and that per-network packaging and real-device ad-network testing have not been done.

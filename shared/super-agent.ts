@@ -418,6 +418,8 @@ export type SuperAgentChat = {
   model?: string;
   reasoning?: string;
   permissionMode: SuperAgentPermissionMode;
+  /** True only after the user explicitly chooses Always allow on a billed generation approval in this chat. */
+  generationAutoApproved?: boolean;
   threadId?: string;
   /** Names of the tools the Agent thread was started with; a thread cannot pick up tools added later. */
   threadTools?: string;

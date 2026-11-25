@@ -140,9 +140,8 @@ export function buildGameHiddenInstructions(
     `multiplayer=${game.multiplayer}`,
     `orientation=${layout}`,
     // The draft instruction already carries the ad recipe; repeating the format here keeps it visible in Super Agent turns.
-    game.playableAd ? 'format=playable ad (follow the openmotion-game playable-ad recipe: first-frame play with a hand tutorial, short levels, win/fail end cards with a store CTA, one self-contained HTML)' : '',
+    game.playableAd ? 'format=playable ad (follow the openmotion-game playable-ad recipe: first-frame play with a hand tutorial, short progressive levels, win/fail end cards with a store CTA; standard OpenMotion runtime and generated media such as BGM are supported)' : '',
   ].filter(Boolean);
-
   if (options?.builtInTemplateRemix) {
     const locale = options.locale || 'en';
     const displayTitle = localizedGameTitle(game, locale).trim() || game.title;
@@ -170,8 +169,8 @@ export function buildGameHiddenInstructions(
     ].filter(Boolean).join('\n\n');
   }
 
-  const assetNote = game.playableAd || instruction.includes('openmotion_media_use') ? '' : ` ${gameAssetInstructions}`;
-  const consentNote = game.playableAd ? '' : ' (except a single batched spend-consent check when priced media generation is planned)';
+  const assetNote = instruction.includes('openmotion_media_use') ? '' : ` ${gameAssetInstructions}`;
+  const consentNote = ' (except a single batched spend-consent check when priced media generation is planned)';
   return [
     instruction,
     extraNotes,

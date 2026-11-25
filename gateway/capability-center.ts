@@ -105,7 +105,7 @@ async function estimateCapabilityQuote(ctx: CapabilityQuoteContext): Promise<Cap
   if (customQuoteEstimator) return customQuoteEstimator(ctx);
   const modality = ctx.capability?.modality ?? ctx.modality ?? ctx.model?.modality;
   const costTier: CapabilityCostTier = ctx.capability?.costTier ?? (modality === 'video' ? 'medium' : 'low');
-  const requiresExplicitApproval = ctx.capability?.requiresExplicitApproval ?? modality === 'video';
+  const requiresExplicitApproval = ctx.capability?.requiresExplicitApproval ?? (ctx.capability?.executor.kind !== 'service');
   return {
     capabilityId: ctx.capability?.id ?? 'raw-model',
     costTier,
