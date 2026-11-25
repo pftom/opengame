@@ -9,8 +9,8 @@ Embedded documentation images must fit GitHub's 5 MB image-proxy limit. Three la
 ## Clone and run
 
 ```sh
-git clone --depth 1 https://github.com/nexu-io/openmotion.git
-cd openmotion
+git clone --depth 1 https://github.com/OpenDesignHQ/opengame.git
+cd opengame
 npm ci
 npm run build:studio
 npm start
@@ -56,7 +56,7 @@ After the content review, a maintainer opens **Actions → Prepare and merge PR 
 
 1. Lock the current PR commit and check maintainer identity, fork edit permission and Squash-only repository settings.
 2. Build and validate a cleanup commit without running PR code, hooks, dependencies or `.lfsconfig`.
-3. Upload only changed media to immutable `open-motion/media/sha256/` keys in the public R2 bucket. Read the public objects back and verify their SHA-256 and sizes.
+3. Upload only changed media to immutable `open-game/media/sha256/` keys in the public R2 bucket. Read the public objects back and verify their SHA-256 and sizes.
 4. Push one cleanup commit to the original PR. Catalog media becomes `template.json.remoteAssets`; relative guide references become public URLs. Other optional media is registered in `repository-media.json`, with its local path ignored by Git.
 5. A separate job, without R2 credentials, waits up to 30 minutes for the prepared commit's CI, resolved review threads and required reviews. It calls GitHub's Squash merge API with that exact head SHA. A contributor push, CI failure, change request, conflict or hold stops the merge. Missing checks or pending reviews time out with the PR open; fix the blocker and start a fresh run.
 
@@ -66,8 +66,8 @@ The PR author stays unchanged. On a personal-account fork, the contributor must 
 
 - Merge this workflow into `main` to register its manual Actions entry.
 - Configure **Squash merge only**: enable Squash merging and disable merge commits and rebase merging. CI verifies these settings before accepting sanitized PR trees. Existing history is unchanged.
-- Add Actions secret `OPENMOTION_MEDIA_MAINTAINER_TOKEN` for a maintainer user identity with upstream write access and access to allowed fork edits. A classic PAT with `public_repo` access is suitable for public repositories; organization SSO and token policies still apply. A base-repository installation token or default `GITHUB_TOKEN` cannot edit an arbitrary fork. Do not store a token in a checked-in file.
-- The workflow reuses the existing `CLOUDFLARE_R2_RELEASES_AK` / `CLOUDFLARE_R2_RELEASES_SK` secrets and bucket/endpoint variables. It writes only under the media prefix and never publishes an application or changes installation guides. No contributor receives these credentials.
+- Add Actions secret `OPENGAME_MEDIA_MAINTAINER_TOKEN` for a maintainer user identity with upstream write access and access to allowed fork edits. A classic PAT with `public_repo` access is suitable for public repositories; organization SSO and token policies still apply. A base-repository installation token or default `GITHUB_TOKEN` cannot edit an arbitrary fork. Do not store a token in a checked-in file.
+- Configure Actions secrets `OPENGAME_R2_ACCESS_KEY_ID` and `OPENGAME_R2_SECRET_ACCESS_KEY`, and variables `OPENGAME_R2_BUCKET` and `OPENGAME_R2_ENDPOINT`. Use the bucket served by `https://releases.open-design.ai`. The media preparation job writes to `open-game/media/sha256/`. Existing hash-verified OpenMotion media URLs remain readable.
 
 Ordinary code PRs with no changed media skip upload and cleanup and keep their original head; fork edit permission is needed only when a cleanup commit must be pushed. Template metadata/text changes still receive normal policy checks but do not upload media.
 

@@ -27,7 +27,7 @@ async function verifyHostedTemplates(application: string, commit: string) {
   try {
     const hook = path.join(directory, 'hosted.mjs');
     const files = built.uploads.map(file => ['https://releases.open-design.ai/' + file.key, file.body]);
-    files.push(['https://releases.open-design.ai/open-motion/templates/main/catalog.json', built.uploads.find(file => file.key.endsWith('/catalog.json'))!.body]);
+    files.push(['https://releases.open-design.ai/open-game/templates/main/catalog.json', built.uploads.find(file => file.key.endsWith('/catalog.json'))!.body]);
     await writeFile(hook, `import {readFile} from 'node:fs/promises';
 const files = new Map(${JSON.stringify(files)}), original = globalThis.fetch;
 globalThis.fetch = async (input, init) => {

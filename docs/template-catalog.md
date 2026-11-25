@@ -2,7 +2,7 @@
 
 ## Repository source and hosted delivery
 
-The current production motion guidance templates now have reviewable source and localized metadata in [the repository catalog](https://github.com/nexu-io/openmotion/tree/main/library/templates/catalog). Guides, examples and images at most 100 KB are directly available in Git; larger images load from existing CMS rendition links; reference videos and original ZIP downloads keep their CMS URLs. Open a template's source/preview.html without a build step (linked images require internet access). [Repository contribution and publication](template-repository.md) documents storage checks, remote asset identities and the CMS-compatible metadata export. Source checkouts now use this local catalog for Studio and MCP; instructions and paths are read from the loaded plugin, independently of the client working directory. NPM applications without the catalog read the latest published `main` catalog from OpenMotion's R2-backed CDN, while the website continues to read the CMS publication. Source imports and PR merges do not publish CMS content.
+The current production motion guidance templates now have reviewable source and localized metadata in [the repository catalog](https://github.com/OpenDesignHQ/opengame/tree/main/library/templates/catalog). Guides, examples and images at most 100 KB are directly available in Git; larger images load from existing CMS rendition links; reference videos and original ZIP downloads keep their CMS URLs. Open a template's source/preview.html without a build step (linked images require internet access). [Repository contribution and publication](template-repository.md) documents storage checks, remote asset identities and the CMS-compatible metadata export. Source checkouts now use this local catalog for Studio and MCP; instructions and paths are read from the loaded plugin, independently of the client working directory. NPM applications without the catalog read the latest published `main` catalog from OpenGame's R2 catalog, while the website continues to read the CMS publication. Source imports and PR merges do not publish CMS content.
 
 ## Repository, hosted and CMS sources
 
@@ -21,7 +21,7 @@ Studio and MCP share one TemplateCatalog reader: repository files in a source ch
 | `npm start`, `npm run dev`, `npm run mcp` in a checkout | Repository source under `library/templates/catalog/` by default |
 | `MOTION_TEMPLATE_SOURCE=cms MOTION_TEMPLATE_ENV=dev` | Explicit CMS DEV source |
 | `npm run package:phase1` | 线上：`r.open-design.ai` |
-| `npm run package:npm` | Latest published `main` catalog at `https://releases.open-design.ai/open-motion/templates/main/catalog.json` |
+| `npm run package:npm` | Latest published `main` catalog at `https://releases.open-design.ai/open-game/templates/main/catalog.json` |
 | `npm run package:phase1 -- --template-env=dev` | DEV，ZIP 文件名带 `-dev` |
 | `npm run package:npm -- dist/npm-dev --template-env=dev` | Unversioned local DEV artifact (private); explicit `X.Y.Z-test.N` npm builds default to DEV, stable builds to prod |
 | `npm run package:test -- build <target> <release-version> --template-env=dev` | DEV 完整运行包；省略环境参数则为线上 |
@@ -33,7 +33,7 @@ DEV 的默认工作区另加 `-dev`，与线上后台进程、工程和缓存分
 
 ### Catalog cache and refresh
 
-- Hosted mode checks OpenMotion's main pointer every five minutes and persists a valid catalog snapshot on disk. Failed refreshes retain the last valid snapshot with a warning, including after restart. A first request without network or cache still exposes the four bundled examples with a warning. Remote templates require their source files to be available online or already cached.
+- Hosted mode checks OpenGame's main pointer every five minutes and persists a valid catalog snapshot on disk. Failed refreshes retain the last valid snapshot with a warning, including after restart. A first request without network or cache still exposes the four bundled examples with a warning. Remote templates require their source files to be available online or already cached.
 - Repository mode reads the loaded checkout on every catalog request, without substituting a remote catalog. Project files use local bytes; an unfetched Git LFS pointer can download its exact registered `entry.files` URL when the pointer, manifest and published hash/length all agree. Verified downloads are cached without modifying the checkout. Missing URLs retain the scoped LFS-pull error, and corrupt local files never fall back to a download. Metadata and source-manifest changes update the catalog version; refresh source manifests after source edits.
 - CMS mode uses `MOTION_TEMPLATE_RESOURCE_ID` and `MOTION_TEMPLATE_LOCALE` to select the Resource and default language. It checks publication ETags at intervals of two seconds in DEV or sixty seconds in prod. All locale slots share one cached publication. Failed refreshes retain valid cached content with a warning; a cold CMS failure is explicit.
 - Template files download with at most four concurrent requests. Verified source bytes are cached locally and rechecked against the manifest before project copying; each project gets independent files. A corrupt cache entry is downloaded again. Failed copies wait for pending writes before removing the incomplete project. Generated caches live under the active Motion data directory and should not be edited.

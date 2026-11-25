@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { runFile } from '../../scripts/runtime-assets.mjs';
 
 export const publicOrigin = 'https://releases.open-design.ai';
-export const catalogRoot = 'open-motion/templates';
+export const catalogRoot = 'open-game/templates';
 const commitPattern = /^[a-f0-9]{40}$/;
 const versionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-test\.[1-9]\d*(?:\.[1-9]\d*)*)?$/;
 const contentTypes = { '.css': 'text/css; charset=utf-8', '.csv': 'text/csv; charset=utf-8', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.md': 'text/markdown; charset=utf-8', '.svg': 'image/svg+xml', '.txt': 'text/plain; charset=utf-8', '.webm': 'video/webm', '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.otf': 'font/otf' };
@@ -91,7 +91,7 @@ export async function buildTemplatePublication(root, commit, { origin = publicOr
       for (const file of files) objectFiles.set(file.sha256, file.absolute);
     }
     for (const [sha256, body] of objectFiles) uploads.push({ key: `${catalogRoot}/objects/${sha256}`, body, contentType: contentType(body), cache: 'public, max-age=31536000, immutable', immutable: true, object: true });
-    const catalog = { ...sourceCatalog, skills, commit, baseUrl, objectBaseUrl, hosted: { schemaVersion: 1, commit, source: 'openmotion-r2', baseUrl, objectBaseUrl } };
+    const catalog = { ...sourceCatalog, skills, commit, baseUrl, objectBaseUrl, hosted: { schemaVersion: 1, commit, source: 'opengame-r2', baseUrl, objectBaseUrl } };
     const catalogPath = path.join(staging, 'catalog.json');
     await writeFile(catalogPath, jsonBytes(catalog));
     uploads.push({ key: `${prefix}/catalog.json`, body: catalogPath, contentType: 'application/json; charset=utf-8', cache: 'public, max-age=31536000, immutable', immutable: true });

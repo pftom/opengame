@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { setTimeout } from 'node:timers/promises';
 import { isMain } from '../shared/entry.ts';
 
-const repository = 'nexu-io/openmotion';
-const query = `query($number:Int!){repository(owner:"nexu-io",name:"openmotion"){
+const repository = 'OpenDesignHQ/opengame';
+const query = `query($number:Int!){repository(owner:"OpenDesignHQ",name:"opengame"){
   pullRequest(number:$number){state isDraft headRefOid baseRefName mergeable reviewDecision
     labels(first:100){nodes{name} pageInfo{hasNextPage}}
     latestReviews(first:100){nodes{state} pageInfo{hasNextPage}}
@@ -48,7 +48,7 @@ export function preparedMergeStatus(pr: any, expectedSHA: string): 'ready' | 'wa
 }
 
 export async function mergePreparedPullRequest(number: number, expectedSHA: string, {
-  request = fetch, token = process.env.OPENMOTION_MEDIA_MAINTAINER_TOKEN,
+  request = fetch, token = process.env.OPENGAME_MEDIA_MAINTAINER_TOKEN,
   wait = (milliseconds: number) => setTimeout(milliseconds), now = Date.now, timeout = 30 * 60_000,
 } = {}): Promise<void> {
   assert(Number.isSafeInteger(number) && number > 0 && /^[a-f0-9]{40}$/.test(expectedSHA), 'Require a PR number and prepared commit');

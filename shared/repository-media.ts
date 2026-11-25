@@ -4,7 +4,7 @@ import { setTimeout } from 'node:timers/promises';
 
 export const mediaOrigin = 'https://releases.open-design.ai';
 export const skillPreviewMedia = /^studio\/src\/motion\/skill-covers\/[a-z0-9-]+\.(?:mp4|webm|gif|webp)$/;
-export const mediaPrefix = 'open-motion/media/sha256/';
+export const mediaPrefix = 'open-game/media/sha256/';
 export const maxMediaBytes = 50 * 1024 * 1024;
 export type MediaLock = { path: string; url: string; bytes: number; sha256: string };
 export type MediaManifest = { schemaVersion: 1; files: MediaLock[] };
@@ -26,7 +26,9 @@ export function mediaKey(sha256: string, name: string): string {
 export function validateMediaLock(file: MediaLock): void {
   mediaPath(file.path);
   assert(Number.isSafeInteger(file.bytes) && file.bytes > 0 && file.bytes <= maxMediaBytes, 'Media exceeds 50 MiB or has invalid size');
-  assert.equal(file.url, mediaOrigin + '/' + mediaKey(file.sha256, file.path), 'Require an immutable public media URL matching its SHA-256');
+  const key = mediaKey(file.sha256, file.path);
+  const legacyKey = 'open-motion/media/sha256/' + key.slice(mediaPrefix.length);
+  assert(file.url === `${mediaOrigin}/${key}` || file.url === `${mediaOrigin}/${legacyKey}`, 'Require an immutable public media URL matching its SHA-256');
 }
 
 export function validateMediaManifest(value: MediaManifest): MediaManifest {

@@ -160,6 +160,11 @@ test('public writes are conditional, confined to the media prefix and verified b
   } };
   await publishMedia(lock, f.bytes, options); assert.equal(puts, 1);
   await publishMedia(lock, f.bytes, options); assert.equal(puts, 1);
+  assert(lock.url.startsWith(`${mediaOrigin}/open-game/media/sha256/`));
+  const inherited = { ...lock, url: lock.url.replace('/open-game/', '/open-motion/') };
+  assert.deepEqual(await downloadMedia(inherited, options.fetcher), f.bytes);
+  await assert.rejects(publishMedia(inherited, f.bytes, options), /OpenGame namespace/);
+  assert.equal(puts, 1);
   await assert.rejects(publishMedia(lock, Buffer.alloc(f.bytes.length), options), /Assertion/);
   await assert.rejects(publishMedia(lock, f.bytes, { ...options, fetcher: (async () => new Response(new Uint8Array(Buffer.alloc(lock.bytes)), { status: 200 })) as typeof fetch }), /SHA-256 mismatch/);
 });
@@ -281,14 +286,14 @@ test('fork write access and workflow trust are checked before any media transfer
   const oldActions = process.env.GITHUB_ACTIONS;
   process.env.GITHUB_ACTIONS = 'false';
   t.after(() => { if (oldActions === undefined) delete process.env.GITHUB_ACTIONS; else process.env.GITHUB_ACTIONS = oldActions; });
-  const old = process.env.OPENMOTION_MEDIA_MAINTAINER_TOKEN;
-  process.env.OPENMOTION_MEDIA_MAINTAINER_TOKEN = 'test-token';
-  t.after(() => { if (old === undefined) delete process.env.OPENMOTION_MEDIA_MAINTAINER_TOKEN; else process.env.OPENMOTION_MEDIA_MAINTAINER_TOKEN = old; });
+  const old = process.env.OPENGAME_MEDIA_MAINTAINER_TOKEN;
+  process.env.OPENGAME_MEDIA_MAINTAINER_TOKEN = 'test-token';
+  t.after(() => { if (old === undefined) delete process.env.OPENGAME_MEDIA_MAINTAINER_TOKEN; else process.env.OPENGAME_MEDIA_MAINTAINER_TOKEN = old; });
   const f = fixture();
   t.mock.method(globalThis, 'fetch', async input => {
     const url = String(input);
     if (url.endsWith('/pulls/42')) return Response.json({ state: 'open', draft: false, base: { ref: 'main', sha: 'b'.repeat(40) }, head: { sha: sourceSHA, repo: { full_name: 'contributor/fork' } }, maintainer_can_modify: false });
-    if (url.endsWith('/openmotion')) return Response.json({ permissions: { push: true }, allow_squash_merge: true });
+    if (url === 'https://api.github.com/repos/OpenDesignHQ/opengame') return Response.json({ permissions: { push: true }, allow_squash_merge: true });
     if (url.includes('/git/trees/')) return Response.json({ tree: url.includes(sourceSHA) ? f.tree() : [] });
     const file = f.tree().find(file => url.endsWith('/git/blobs/' + file.sha));
     assert(file, 'No storage or other API call is allowed before fork authorization: ' + url);
@@ -300,19 +305,19 @@ test('fork write access and workflow trust are checked before any media transfer
 test('ordinary fork PRs skip uploads and cleanup without requiring contributor edit permission', async t => {
   const directory = await isolated(t), output = path.join(directory, 'output');
   await writeFile(output, '');
-  const before = { actions: process.env.GITHUB_ACTIONS, token: process.env.OPENMOTION_MEDIA_MAINTAINER_TOKEN, output: process.env.GITHUB_OUTPUT };
+  const before = { actions: process.env.GITHUB_ACTIONS, token: process.env.OPENGAME_MEDIA_MAINTAINER_TOKEN, output: process.env.GITHUB_OUTPUT };
   process.env.GITHUB_ACTIONS = 'false';
-  process.env.OPENMOTION_MEDIA_MAINTAINER_TOKEN = 'test-token';
+  process.env.OPENGAME_MEDIA_MAINTAINER_TOKEN = 'test-token';
   process.env.GITHUB_OUTPUT = output;
   t.after(() => {
-    for (const [key, value] of Object.entries({ GITHUB_ACTIONS: before.actions, OPENMOTION_MEDIA_MAINTAINER_TOKEN: before.token, GITHUB_OUTPUT: before.output })) {
+    for (const [key, value] of Object.entries({ GITHUB_ACTIONS: before.actions, OPENGAME_MEDIA_MAINTAINER_TOKEN: before.token, GITHUB_OUTPUT: before.output })) {
       if (value === undefined) delete process.env[key]; else process.env[key] = value;
     }
   });
   t.mock.method(globalThis, 'fetch', async input => {
     const url = String(input);
     if (url.endsWith('/pulls/42')) return Response.json({ state: 'open', draft: false, base: { ref: 'main', sha: 'b'.repeat(40) }, head: { sha: sourceSHA, repo: { full_name: 'contributor/fork' } }, maintainer_can_modify: false });
-    if (url.endsWith('/openmotion')) return Response.json({ permissions: { push: true }, allow_squash_merge: true });
+    if (url === 'https://api.github.com/repos/OpenDesignHQ/opengame') return Response.json({ permissions: { push: true }, allow_squash_merge: true });
     assert(url.includes('/git/trees/'), 'No media download, upload or cleanup write is allowed: ' + url);
     return Response.json({ tree: url.includes(sourceSHA) ? [{ path: 'server.ts', mode: '100644', sha: 'c'.repeat(40), size: 100, type: 'blob' }] : [] });
   });
@@ -342,7 +347,7 @@ test('the merge entry waits for new-head CI and then sends only a SHA-guarded Sq
         if (++polls === 1) pr.commits.nodes[0].commit.statusCheckRollup.contexts.nodes.pop();
         return Response.json({ data: { repository: { pullRequest: pr } } });
       }
-      assert.equal(url, 'https://api.github.com/repos/nexu-io/openmotion/pulls/42/merge');
+      assert.equal(url, 'https://api.github.com/repos/OpenDesignHQ/opengame/pulls/42/merge');
       assert.equal(init?.method, 'PUT');
       assert.deepEqual(JSON.parse(String(init.body)), { merge_method: 'squash', sha: sourceSHA });
       merges++;

@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { hostedCatalogUrl } from '../shared/hosted-template-catalog.ts';
+import { hostedCatalogUrl, loadHostedCatalog } from '../shared/hosted-template-catalog.ts';
 import { TemplateCatalog } from '../prism-templates.ts';
 
 const commit = 'a'.repeat(40);
@@ -16,8 +16,8 @@ const binarySha = createHash('sha256').update(binary).digest('hex');
 const manifest = {
   schemaVersion: 1,
   commit,
-  baseUrl: `https://releases.open-design.ai/open-motion/templates/snapshots/${commit}`,
-  objectBaseUrl: 'https://releases.open-design.ai/open-motion/templates/objects',
+  baseUrl: `https://releases.open-design.ai/open-game/templates/snapshots/${commit}`,
+  objectBaseUrl: 'https://releases.open-design.ai/open-game/templates/objects',
   publication: { resourceId: 'hosted', environment: 'prod', channel: 'default', publicationId: 'hosted-main', defaultLocale: 'en', locales: ['en'] },
   templateIds: [id],
   localeContent: { en: {} },
@@ -33,6 +33,13 @@ const hostedFiles = { files: [{ path: 'motion.md', bytes: motion.length, sha256:
 function response(value: unknown, status = 200) {
   return new Response(typeof value === 'string' ? value : JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
 }
+
+test('a catalog pointing into OpenMotion is rejected before fetching any files', async () => {
+  await assert.rejects(loadHostedCatalog(async url => {
+    assert.equal(url, hostedCatalogUrl);
+    return response({ ...manifest, baseUrl: manifest.baseUrl.replace('/open-game/', '/open-motion/') });
+  }), /Unexpected OpenGame catalog snapshot URL/);
+});
 
 test('hosted catalog reads the moving main pointer and serves content-addressed source files', async t => {
   const work = await mkdtemp(path.join(tmpdir(), 'openmotion-hosted-catalog-'));

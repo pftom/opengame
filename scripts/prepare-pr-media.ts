@@ -13,7 +13,7 @@ export type CleanupChange = { path: string; content: string | null };
 export type CleanupPlan = { schemaVersion: 1; sourceSHA: string; pullNumber: number; changes: CleanupChange[]; media: MediaLock[] };
 
 const execute = promisify(execFile);
-const repository = 'nexu-io/openmotion';
+const repository = 'OpenDesignHQ/opengame';
 export type TreeFile = { path: string; mode: string; sha: string; size: number; type: string };
 type Inputs = { head: TreeFile[]; base: TreeFile[]; sourceSHA: string; pullNumber: number };
 type Transfer = (file: MediaLock, bytes: Buffer) => Promise<void>;
@@ -142,6 +142,8 @@ export async function publishMedia(lock: MediaLock, bytes: Buffer, options: { en
   assert(endpoint.protocol === 'https:' && endpoint.hostname.endsWith('.r2.cloudflarestorage.com') && endpoint.pathname === '/' && !endpoint.username && !endpoint.password && !endpoint.search && !endpoint.hash && !endpoint.port, 'Require the configured R2 HTTPS endpoint');
   assert(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(options.bucket), 'Invalid media bucket');
   validateMediaLock(lock);
+  const key = mediaKey(lock.sha256, lock.path);
+  assert.equal(lock.url, `${mediaOrigin}/${key}`, 'New media must use the OpenGame namespace');
   const fetcher = options.fetcher ?? fetch;
   const response = await fetcher(lock.url, { method: 'HEAD', redirect: 'error', signal: AbortSignal.timeout(30_000) });
   if (response.status !== 404) {
@@ -152,7 +154,7 @@ export async function publishMedia(lock: MediaLock, bytes: Buffer, options: { en
   try {
     const file = path.join(directory, 'media'); await writeFile(file, bytes);
     const args = ['--endpoint-url', endpoint.origin, '--region', 'auto', 's3api', 'put-object', '--bucket', options.bucket,
-      '--key', mediaKey(lock.sha256, lock.path), '--body', file, '--if-none-match', '*', '--content-type', contentType(lock.path), '--cache-control', 'public, max-age=31536000, immutable'];
+      '--key', key, '--body', file, '--if-none-match', '*', '--content-type', contentType(lock.path), '--cache-control', 'public, max-age=31536000, immutable'];
     try {
       if (options.run) await options.run(args);
       else await execute('aws', args, { timeout: 180_000, env: { ...process.env, AWS_PAGER: '', AWS_EC2_METADATA_DISABLED: 'true' } });
@@ -173,10 +175,10 @@ export async function preparePullRequest(pullNumber: number, apply: boolean) {
     assert.equal(process.env.GITHUB_REF, 'refs/heads/main', 'Run the trusted media preparation workflow from main');
     assert.equal(process.env.GITHUB_REPOSITORY, repository);
     assert.equal(process.env.GITHUB_WORKFLOW_REF, repository + '/.github/workflows/prepare-pr-media.yml@refs/heads/main');
-    assert(process.env.OPENMOTION_MEDIA_MAINTAINER_TOKEN, 'Configure OPENMOTION_MEDIA_MAINTAINER_TOKEN before starting media preparation');
+    assert(process.env.OPENGAME_MEDIA_MAINTAINER_TOKEN, 'Configure OPENGAME_MEDIA_MAINTAINER_TOKEN before starting media preparation');
   }
   // The maintainer's own GitHub identity retains access to allow-maintainer-edits forks.
-  const token = process.env.OPENMOTION_MEDIA_MAINTAINER_TOKEN || (await execute('gh', ['auth', 'token'])).stdout.trim();
+  const token = process.env.OPENGAME_MEDIA_MAINTAINER_TOKEN || (await execute('gh', ['auth', 'token'])).stdout.trim();
   const api = async (route: string, target = repository) => {
     assert(/^[\w.-]+\/[\w.-]+$/.test(target), 'Invalid GitHub repository');
     const response = await fetch('https://api.github.com/repos/' + target + '/' + route, {
@@ -215,7 +217,7 @@ export async function preparePullRequest(pullNumber: number, apply: boolean) {
       const download = await fetch(url, { headers: action.header, redirect: 'error', signal: AbortSignal.timeout(120_000) });
       bytes = await boundedMediaBody(download, lock.bytes);
     }
-    await publishMedia(lock, bytes, { endpoint: process.env.MOTION_R2_ENDPOINT ?? 'https://64ad4569ffd912432d6b86d5656484c4.r2.cloudflarestorage.com', bucket: process.env.MOTION_R2_BUCKET ?? 'open-design-releases' });
+    await publishMedia(lock, bytes, { endpoint: process.env.OPENGAME_R2_ENDPOINT ?? '', bucket: process.env.OPENGAME_R2_BUCKET ?? '' });
   };
   const inputs = { head: head.tree, base: base.tree, sourceSHA: pr.head.sha, pullNumber };
   const plan = await prepareMediaCleanup(inputs, read);

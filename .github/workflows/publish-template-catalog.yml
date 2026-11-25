@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   publish:
-    if: github.repository == 'nexu-io/openmotion' && github.ref == 'refs/heads/main'
+    if: github.repository == 'OpenDesignHQ/opengame' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -39,11 +39,10 @@ jobs:
         run: git lfs pull --include="library/templates/catalog/**,library/skills/**" --exclude=""
       - name: Publish the content-addressed main catalog
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_RELEASES_AK }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_RELEASES_SK }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.OPENGAME_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.OPENGAME_R2_SECRET_ACCESS_KEY }}
           AWS_EC2_METADATA_DISABLED: 'true'
           AWS_PAGER: ''
-          MOTION_R2_ENDPOINT: ${{ vars.CLOUDFLARE_R2_RELEASES_URL }}
-          MOTION_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_RELEASES_BUCKET }}
-          MOTION_INSTALL_PUBLIC_ORIGIN: ${{ vars.CLOUDFLARE_R2_RELEASES_PUBLIC_ORIGIN }}
+          MOTION_R2_ENDPOINT: ${{ vars.OPENGAME_R2_ENDPOINT }}
+          MOTION_R2_BUCKET: ${{ vars.OPENGAME_R2_BUCKET }}
         run: node .github/scripts/publish-template-catalog.mjs main

@@ -25,7 +25,7 @@ test('prepared release snapshot becomes the pointer only after an exact candidat
     },
   };
   const staged = await publishTemplateCatalog(root, { ...storage, mode: 'release', version: candidate.version, commit, promote: false });
-  const pointer = 'open-motion/templates/releases/catalog.json', before = writes.length;
+  const pointer = 'open-game/templates/releases/catalog.json', before = writes.length;
   assert(!writes.includes(pointer));
   const receipt = { ...staged, tgzSHA256: candidate.tgzSHA256 };
   await assert.rejects(finalizeTemplateSnapshot(candidate, { ...receipt, tgzSHA256: '0'.repeat(64) }, { ...storage, promote: true }));
@@ -56,8 +56,9 @@ test('template publication mirrors arbitrary source files and reuses content-add
   const root = await fixture(t);
   const built = await buildTemplatePublication(root, commit, { origin: 'https://cdn.example.com' });
   const keys = built.uploads.map(file => file.key);
-  assert(keys.includes(`open-motion/templates/snapshots/${commit}/motion-fixture/source/manifest.json`));
-  assert(keys.includes(`open-motion/templates/snapshots/${commit}/motion-fixture/hosted-files.json`));
+  assert(keys.every(key => key.startsWith('open-game/templates/')));
+  assert(keys.includes(`open-game/templates/snapshots/${commit}/motion-fixture/source/manifest.json`));
+  assert(keys.includes(`open-game/templates/snapshots/${commit}/motion-fixture/hosted-files.json`));
   assert(!keys.some(key => key.includes('/source/scene.motion')));
   assert.equal(keys.filter(key => key.includes('/objects/')).length, 2);
   const sidecar = JSON.parse(await readFile(built.uploads.find(file => file.key.endsWith('/hosted-files.json')).body, 'utf8'));
@@ -67,17 +68,17 @@ test('template publication mirrors arbitrary source files and reuses content-add
   const calls = [], pointerBodies = new Map();
   const run = async (command, args) => {
     assert.equal(command, 'aws');
-    if (args.includes('list-objects-v2')) return JSON.stringify({ Contents: [{ Key: 'open-motion/templates/objects/' + sidecar.files[0].sha256 }] });
+    if (args.includes('list-objects-v2')) return JSON.stringify({ Contents: [{ Key: 'open-game/templates/objects/' + sidecar.files[0].sha256 }] });
     const key = args[args.indexOf('--key') + 1];
     const body = args[args.indexOf('--body') + 1];
     calls.push(key);
-    if (key === 'open-motion/templates/main/catalog.json') pointerBodies.set(key, body);
+    if (key === 'open-game/templates/main/catalog.json') pointerBodies.set(key, body);
     return '{}';
   };
   const result = await publishTemplateCatalog(root, { mode: 'main', commit, endpoint: 'https://abc123.r2.cloudflarestorage.com', bucket: 'open-design-releases', origin: 'https://cdn.example.com', run,
-    fetcher: async () => new Response(await readFile(pointerBodies.get('open-motion/templates/main/catalog.json'))) });
+    fetcher: async () => new Response(await readFile(pointerBodies.get('open-game/templates/main/catalog.json'))) });
   assert.equal(result.reused, 1);
-  assert.equal(result.pointerUrl, 'https://cdn.example.com/open-motion/templates/main/catalog.json');
+  assert.equal(result.pointerUrl, 'https://cdn.example.com/open-game/templates/main/catalog.json');
   assert(calls.includes(result.snapshotKey + '/catalog.json'));
 });
 
@@ -90,7 +91,7 @@ test('template publication rejects symlinks without restricting ordinary extensi
 test('release publication uses its source snapshot and never changes the moving main pointer', async t => {
   const root = await fixture(t), uploads = new Map();
   const version = '0.7.0-test.1';
-  const pointerKey = 'open-motion/templates/releases/catalog.json';
+  const pointerKey = 'open-game/templates/releases/catalog.json';
   let active = 0, maximumActive = 0;
   const result = await publishTemplateCatalog(root, { mode: 'release', version, commit,
     endpoint: 'https://abc123.r2.cloudflarestorage.com', bucket: 'open-design-releases',
@@ -101,7 +102,7 @@ test('release publication uses its source snapshot and never changes the moving 
       if (key === pointerKey) {
         assert.equal(args[args.indexOf('--cache-control') + 1], 'public, max-age=60, must-revalidate');
         assert.equal(active, 0, 'All snapshot uploads must finish before the pointer');
-        assert(uploads.has(`open-motion/templates/snapshots/${commit}/catalog.json`));
+        assert(uploads.has(`open-game/templates/snapshots/${commit}/catalog.json`));
       }
       active++; maximumActive = Math.max(maximumActive, active);
       try { uploads.set(key, await readFile(args[args.indexOf('--body') + 1])); }
@@ -115,13 +116,13 @@ test('release publication uses its source snapshot and never changes the moving 
   });
   assert.equal(result.commit, commit);
   assert.equal(JSON.parse(uploads.get(pointerKey)).commit, commit);
-  assert(!uploads.has('open-motion/templates/main/catalog.json'));
+  assert(!uploads.has('open-game/templates/main/catalog.json'));
   assert(maximumActive > 1 && maximumActive <= 12);
 });
 
 test('successive software releases update the same catalog URL while recovery and superseded releases preserve it', async t => {
   const root = await fixture(t), objects = new Map(), writes = [];
-  const pointerKey = 'open-motion/templates/releases/catalog.json';
+  const pointerKey = 'open-game/templates/releases/catalog.json';
   const publish = (version, sourceCommit, phase = 'verified') => publishTemplateCatalog(root, {
     mode: 'release', version, commit: sourceCommit,
     promote: releaseCatalogPromotion(version, { version, phase }),
@@ -145,11 +146,11 @@ test('successive software releases update the same catalog URL while recovery an
   for (const phase of ['version-verified', 'superseded']) {
     const result = await publish('0.7.0-test.1', commit, phase);
     assert.equal(result.promoted, false);
-    assert.equal(result.pointerKey, `open-motion/templates/snapshots/${commit}/catalog.json`);
+    assert.equal(result.pointerKey, `open-game/templates/snapshots/${commit}/catalog.json`);
     assert(objects.get(pointerKey).equals(expected));
   }
   assert.equal(writes.filter(key => key === pointerKey).length, 2);
-  assert(!writes.some(key => key === 'open-motion/templates/main/catalog.json' || /\/releases\/[^/]+\//.test(key)));
+  assert(!writes.some(key => key === 'open-game/templates/main/catalog.json' || /\/releases\/[^/]+\//.test(key)));
   assert.throws(() => releaseCatalogPromotion('0.7.0', { version: '0.7.1', phase: 'verified' }), /match/);
   assert.throws(() => releaseCatalogPromotion('0.7.0', { version: '0.7.0', phase: 'fixed-write-attempted' }), /completed/);
 });
@@ -171,7 +172,7 @@ test('failed snapshot uploads leave the main pointer untouched and remove stagin
     },
     fetcher: async () => { throw new Error('Pointer must not be verified after an upload failure'); },
   }), /Storage unavailable/);
-  assert(!keys.includes('open-motion/templates/main/catalog.json'));
+  assert(!keys.includes('open-game/templates/main/catalog.json'));
   assert(stagedFile);
   await assert.rejects(readFile(stagedFile), { code: 'ENOENT' });
 });

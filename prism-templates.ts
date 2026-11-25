@@ -10,7 +10,7 @@ import { templateConfig } from './shared/template-config.ts';
 import { libraryTemplates, templateRecipe } from './template-catalog.ts';
 import { copyTemplate } from './template-library.ts';
 import { loadRepositoryCatalog, lfsPointer, maxLfsAssetBytes, maxTemplateAssetBytes, readRepositoryFile, repositoryCatalogRoot } from './shared/repository-template-catalog.ts';
-import { loadHostedCatalog, restoreHostedCatalog, serializeHostedCatalog, type HostedRepositoryCatalog, type HostedSourceManifest } from './shared/hosted-template-catalog.ts';
+import { hostedCatalogUrl, loadHostedCatalog, restoreHostedCatalog, serializeHostedCatalog, type HostedRepositoryCatalog, type HostedSourceManifest } from './shared/hosted-template-catalog.ts';
 import { boundedMediaBody, downloadMedia, validateMediaLock } from './shared/repository-media.ts';
 
 type TemplateFile = { path: string; url?: string; bytes: number; sha256: string };
@@ -63,7 +63,7 @@ export class TemplateCatalog {
     this.source = options.source ?? config.source;
     this.repositoryRoot = options.repositoryRoot ?? repositoryCatalogRoot;
     const origin = this.environment === 'dev' ? 'https://r.powerformer.net' : 'https://r.open-design.ai';
-    this.url = `${origin}/resources/${encodeURIComponent(this.resourceId)}/channels/default/main.json`;
+    this.url = this.source === 'hosted' ? hostedCatalogUrl : `${origin}/resources/${encodeURIComponent(this.resourceId)}/channels/default/main.json`;
     this.directory = path.resolve(dataDirectory, 'template-cache', hash(this.source + ':' + this.url + this.locale).slice(0, 16));
     this.request = options.fetch ?? fetch;
   }

@@ -56,7 +56,7 @@ try {
   const commit = (await runFile('git', ['rev-parse', 'HEAD'], { cwd: root })).trim();
   publication = await buildTemplatePublication(root, commit);
   const files = publication.uploads.map(file => ['https://releases.open-design.ai/' + file.key, file.body]);
-  files.push(['https://releases.open-design.ai/open-motion/templates/main/catalog.json', publication.uploads.find(file => file.key.endsWith('/catalog.json')).body]);
+  files.push(['https://releases.open-design.ai/open-game/templates/main/catalog.json', publication.uploads.find(file => file.key.endsWith('/catalog.json')).body]);
   const hook = path.join(work, 'hosted.mjs');
   await writeFile(hook, `import {readFile} from 'node:fs/promises';\nconst files=new Map(${JSON.stringify(files)}),original=globalThis.fetch;globalThis.fetch=async(input,init)=>{const file=files.get(String(input));return file?new Response(await readFile(file)):original(input,init);};`);
   await scenario(app, 'hosted', hook);

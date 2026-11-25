@@ -4,7 +4,8 @@ import { createHash } from 'node:crypto';
 import { boundedMediaBody } from './repository-media.ts';
 import type { PublishedTemplate, TemplatePublication } from './repository-template-catalog.ts';
 
-export const hostedCatalogUrl = 'https://releases.open-design.ai/open-motion/templates/main/catalog.json';
+const catalogRootUrl = 'https://releases.open-design.ai/open-game/templates';
+export const hostedCatalogUrl = `${catalogRootUrl}/main/catalog.json`;
 const maxJsonBytes = 1024 * 1024;
 // The main catalog embeds library Skill instructions; per-file reads keep the 1 MB cap.
 const maxCatalogBytes = 16 * 1024 * 1024;
@@ -60,10 +61,17 @@ async function fetchJson(request: Request, url: string): Promise<any> {
   }), maxCatalogBytes)).toString('utf8'));
 }
 
+function catalogLocations(manifest: { commit: string; baseUrl?: string; objectBaseUrl?: string }) {
+  const baseUrl = `${catalogRootUrl}/snapshots/${manifest.commit}`;
+  const objectBaseUrl = `${catalogRootUrl}/objects`;
+  assert.equal(manifest.baseUrl ?? baseUrl, baseUrl, 'Unexpected OpenGame catalog snapshot URL');
+  assert.equal(manifest.objectBaseUrl ?? objectBaseUrl, objectBaseUrl, 'Unexpected OpenGame catalog object URL');
+  return { baseUrl, objectBaseUrl };
+}
+
 function createCatalog(manifest: any, publication: TemplatePublication, records: Map<string, TemplateRecord>, request: Request, warning?: string): HostedRepositoryCatalog {
   const commit = manifest.commit;
-  const baseUrl = new URL(manifest.baseUrl || `./snapshots/${commit}`, hostedCatalogUrl).href.replace(/\/$/, '');
-  const objectBaseUrl = new URL(manifest.objectBaseUrl || './objects', hostedCatalogUrl).href.replace(/\/$/, '');
+  const { baseUrl, objectBaseUrl } = catalogLocations(manifest);
   const sourceManifests = new Map<string, HostedSourceManifest>();
   const loadSourceManifest = async (templateId: string) => {
     let value = sourceManifests.get(templateId);
@@ -110,7 +118,7 @@ export function restoreHostedCatalog(value: unknown, request: Request = fetch): 
   return createCatalog(snapshot, snapshot.publication as TemplatePublication, records, request, snapshot.warning);
 }
 
-/** Read the latest published main catalog from OpenMotion's own public CDN. */
+/** Read the latest published main catalog from OpenGame's public CDN. */
 export async function loadHostedCatalog(request: Request = fetch): Promise<HostedRepositoryCatalog> {
   const manifest = await fetchJson(request, hostedCatalogUrl);
   assert(manifest.schemaVersion === 1 && typeof manifest.commit === 'string' && /^[a-f0-9]{40}$/.test(manifest.commit), 'Invalid hosted template catalog identity');
@@ -123,7 +131,7 @@ export async function loadHostedCatalog(request: Request = fetch): Promise<Hoste
   const records = new Map<string, TemplateRecord>();
   const failures: string[] = [];
   let cursor = 0;
-  const baseUrl = new URL(manifest.baseUrl || `./snapshots/${manifest.commit}`, hostedCatalogUrl).href.replace(/\/$/, '');
+  const { baseUrl } = catalogLocations(manifest);
   const worker = async () => {
     while (cursor < manifest.templateIds.length) {
       const id = manifest.templateIds[cursor++];
