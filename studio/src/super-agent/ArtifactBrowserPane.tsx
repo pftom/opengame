@@ -1968,8 +1968,16 @@ export function ArtifactBrowserPane({
 
   // Bundled and community templates are play-and-remix previews: the editing tools
   // (view mode, annotate, viewport, screenshot, console) only apply to the user's own games.
+  // External community games have no projectId; their reported source can be reset to null when the
+  // artifact switches, so treat any non-own game without a project as a template too.
   const isTemplateGame = activeArtifact?.kind === 'game-project'
-    && (gameSourceKind === 'template' || gameSourceKind === 'community');
+    && (gameSourceKind === 'template' || gameSourceKind === 'community'
+      || (!activeArtifact.projectId && gameSourceKind !== 'mine'));
+
+  // A template has no code view; if its source resolves while Code is open, return to Preview.
+  useEffect(() => {
+    if (isTemplateGame && viewMode !== 'preview') setViewMode('preview');
+  }, [isTemplateGame, viewMode]);
   const supportsAnnotate = Boolean(
     activeArtifact && (
       activeArtifact.kind === 'web'
