@@ -144,19 +144,21 @@ A dedicated upgrade source needs AMR to register it first. The page address
 retains `billing=plan` and contains no account, installation or credential data.
 AMR must accept the OpenMotion origin and entry source in its attribution
 validation before these parameters can reach its subscription/payment events.
+OpenGame builds preserve these AMR-registered values, prefix payment-link `od_entry_id` with `opengame-`, and use
+`utm_source=opengame` wherever UTM fields are set; removing the prefix matches the plugin event's raw UUID `entry_id`.
 
 The Black Friday banner above the application header and the header **Pricing** entry link to the
 website Pricing page (`open-design.ai/[zh/]pricing/`) with `od_origin=openmotion`,
 `od_entry_source=openmotion_manage_subscription` (the OpenMotion source AMR already accepts; an unregistered
 source would drop the whole attribution), a fresh `od_entry_id` / UTC `od_entry_at` per
-click, and `utm_source=openmotion`, `utm_medium=banner|header`, `utm_campaign=black_friday_2026`. The
+click, and `utm_source=opengame`, `utm_medium=banner|header`, `utm_campaign=black_friday_2026`. The
 Pricing page keeps an inbound `od_entry_id` / `od_entry_source` as the first touch through checkout.
 OpenMotion reports `surface_view` (`area=campaign_banner`, `element=banner`) once per page load while the
 banner is shown, and `ui_click` for `claim_offer` and `close_banner` (`area=campaign_banner`) and
 `open_pricing` (`area=header`), each with `campaign_id=black_friday_2026`. The two link clicks also send
-`entry_id`, equal to that click's `od_entry_id`, so a click joins the Pricing visit and payment. `utm_medium`
-and the click's `element` tell the banner and the header entry apart; dedicated entry sources need AMR to register
-them first.
+`entry_id`, equal to that click's `od_entry_id` after removing any `opengame-` prefix, so a click joins the Pricing
+visit and payment. OpenGame builds use `utm_source=opengame`. `utm_medium` and the click's `element` tell the banner
+and the header entry apart; dedicated entry sources need AMR to register them first.
 The campaign shows from 2026-11-21 18:00 until 2026-12-05 00:00 Beijing time. Outside that window the banner is hidden,
 the Pricing entry has no badge, links omit `utm_campaign` and clicks omit `campaign_id`. A dismissed banner stays
 hidden for the rest of the visitor's local day and returns the next day.
@@ -276,6 +278,21 @@ Settings, and clears `entry_from` when navigating out of Settings (including to
 are rejected with `INVALID_ARGUMENT` on MCP calls, while Studio drops
 unrecognized URL `entry_from` values; neither side accepts prompts, account IDs
 or credentials.
+
+Media inspection (`openmotion_media_use` with `action=inspect`) emits the MCP-only
+`upgrade_link_result` event once per successful stdio MCP call that attempts a
+Free/Go upgrade link. `entry_from` is `agent_media_upgrade_free` or
+`agent_media_upgrade_go`; `outcome=success` includes the generated UUID `entry_id`,
+while a link-generation exception reports `outcome=failure` without `entry_id`
+and preserves the settings handoff. WebMCP/direct HTTP calls do not emit this
+event. AMR `traffic_entry` and payment records can be joined using the link's `od_entry_id`.
+OpenGame payment links use an `opengame-` prefix on `od_entry_id` and `utm_source=opengame`; removing the prefix
+matches the raw UUID in `upgrade.entryId` and the `upgrade_link_result` event's `entry_id`.
+This measures link generation, not a click or payment; URLs and account information are never event fields.
+
+Agent upgrade links contain no one-time sign-in credentials: they skip account
+intents and point directly to the console dashboard, which requests browser
+sign-in when needed.
 
 The research sources are the [supported MCP lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle),
 [Codex's MCP client](https://github.com/openai/codex/blob/main/codex-rs/rmcp-client/src/utils.rs)
@@ -654,8 +671,8 @@ All plugin login and upgrade touchpoints share the closed `entitlementHookIds` e
   `studio_free_gate`), Model Hub (`model_hub_signin` / `model_hub_upgrade`), and Cloud Share (`game_publish_signin` /
   `cloud_share_signin`).
 - Backend join: `POST /api/settings/account/login` forwards `{ hookId, entryId }` to `account_sign_in_result`;
-  `POST /api/settings/account/subscription` forwards `entryId` into `od_entry_id` while preserving the AMR-registered
-  `od_entry_source=openmotion_manage_subscription`.
+  `POST /api/settings/account/subscription` forwards `entryId` into `od_entry_id` (prefixed with `opengame-` in
+  OpenGame builds) while preserving the AMR-registered `od_entry_source=openmotion_manage_subscription`.
 - Return refresh: returning to the window after checkout emits `entitlement_refresh_result` (`hook_id`, `entry_id`,
   `outcome`, `plan_changed`).
 

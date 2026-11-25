@@ -761,7 +761,7 @@ test('the subscription page opens in the system browser through a one-time accou
   assert.deepEqual([...params.keys()].sort(), ['billing', 'od_entry_at', 'od_entry_id', 'od_entry_source', 'od_origin']);
   assert.equal(params.get('billing'), 'plan'); assert.equal(params.get('od_origin'), 'openmotion');
   assert.equal(params.get('od_entry_source'), 'openmotion_manage_subscription');
-  assert.match(params.get('od_entry_id')!, /^[0-9a-f-]{36}$/); assert.equal(new Date(params.get('od_entry_at')!).toISOString(), params.get('od_entry_at'));
+  assert.match(params.get('od_entry_id')!, /^opengame-[0-9a-f-]{36}$/); assert.equal(new Date(params.get('od_entry_at')!).toISOString(), params.get('od_entry_at'));
   // Each open carries a fresh entry; a refused or malformed intent still opens the plain page.
   for (const refusal of [() => Response.json({ error: 'unauthorized' }, { status: 401 }), () => Response.json({ intentId: '../evil' }), () => { throw new TypeError('offline'); }]) {
     response = refusal;
@@ -770,6 +770,11 @@ test('the subscription page opens in the system browser through a one-time accou
     assert.equal(new URL(result.url).searchParams.get('od_origin'), 'openmotion'); assert.equal(result.opened, true);
   }
   assert.equal(new Set(targets.map(value => new URL(value, 'https://x.test').searchParams.get('od_entry_id'))).size, targets.length);
+  const entryId = randomUUID();
+  const attributed = await account.openSubscription(launch, { entryId });
+  assert.equal(new URL(attributed.url).searchParams.get('od_entry_id'), `opengame-${entryId}`);
+  assert.equal(new URL(attributed.url).searchParams.has('utm_source'), false);
+  assert.equal(new URL(targets.at(-1)!, 'https://x.test').searchParams.get('od_entry_id'), `opengame-${entryId}`);
   // A launcher failure hands the link back to Studio.
   response = () => Response.json({ intentId: 'intent-2' });
   assert.deepEqual(await account.openSubscription(async () => { throw new Error('no browser'); }), { url: 'https://open-design.ai/cloud/login?intentId=intent-2', opened: false });
@@ -1006,7 +1011,8 @@ test('media setup discovery rechecks saved and removed keys without executing a 
 test('media inspection refreshes advisory billing without disabling account models or leaking balances', t => fixture(async store => {
   await chmod(binary, 0o755);
   const gateway = gatewayFor(store); gateway.options.detect = async () => [];
-  const account = gateway.account = new OpenDesignAccount(store.directory, { binary });
+  const fetcher = t.mock.fn(async () => Response.json({ intentId: 'must-not-be-exposed' }));
+  const account = gateway.account = new OpenDesignAccount(store.directory, { binary, fetcher });
   t.after(() => gateway.close());
   const inspect = () => mediaUse(store, { action: 'inspect' });
   const signedOut = (await inspect()).providers.find(p => p.id === 'account')!;
@@ -1063,6 +1069,7 @@ test('media inspection refreshes advisory billing without disabling account mode
   const rejected = expired.providers.find(p => p.id === 'account')!;
   assert.equal(rejected.available, false); assert.equal(Object.hasOwn(rejected, 'mediaEntitlement'), false);
   assert.equal((await account.summary()).state, 'reauth-required');
+  assert.equal(fetcher.mock.callCount(), 0, 'media inspection must never request account intents');
 }));
 
 

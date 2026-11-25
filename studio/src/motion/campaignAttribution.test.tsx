@@ -23,22 +23,24 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(Date.parse('2026-11-25T12:00:00+08:00'));
   vi.mocked(trackMotion).mockClear();
+  // Keep account status reads local to the test; individual cases override this response as needed.
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json({ state: 'signed-out' })));
   resetBlackFridayImpression();
   container = document.createElement('div');
   document.body.append(container);
   root = createRoot(container);
 });
-afterEach(() => { act(() => root.unmount()); container.remove(); vi.useRealTimers(); localStorage.clear(); resetBannerDismissal(); });
+afterEach(() => { act(() => root.unmount()); container.remove(); vi.unstubAllGlobals(); vi.useRealTimers(); localStorage.clear(); resetBannerDismissal(); });
 
 const render = (node: React.ReactNode) => act(() => root.render(<I18nProvider initialLocale="zh-CN">{node}</I18nProvider>));
 const params = (href: string) => new URL(href).searchParams;
 
-it('builds a Pricing link that carries the OpenMotion entry the website keeps through checkout', () => {
+it('builds a Pricing link that carries the OpenGame entry the website keeps through checkout', () => {
   const url = new URL(campaignPricingUrl('zh-CN', 'openmotion_bf_banner', '7d1c6f4e-6a1f-4c55-9a43-0c7a4a0a8f11', new Date('2026-11-22T00:00:00Z')));
   expect(url.origin + url.pathname).toBe('https://open-design.ai/zh/pricing/');
   expect(Object.fromEntries(url.searchParams)).toEqual({
-    od_origin: 'openmotion', od_entry_source: 'openmotion_manage_subscription', od_entry_id: '7d1c6f4e-6a1f-4c55-9a43-0c7a4a0a8f11', od_entry_at: '2026-11-22T00:00:00.000Z',
-    utm_source: 'openmotion', utm_medium: 'banner', utm_campaign: 'black_friday_2026',
+    od_origin: 'openmotion', od_entry_source: 'openmotion_manage_subscription', od_entry_id: 'opengame-7d1c6f4e-6a1f-4c55-9a43-0c7a4a0a8f11', od_entry_at: '2026-11-22T00:00:00.000Z',
+    utm_source: 'opengame', utm_medium: 'banner', utm_campaign: 'black_friday_2026',
   });
   expect(new URL(campaignPricingUrl('en', 'openmotion_header_pricing', 'x')).pathname).toBe('/pricing/');
   expect(params(campaignPricingUrl('en', 'openmotion_header_pricing', 'x')).get('utm_medium')).toBe('header');
@@ -55,11 +57,13 @@ it('reports one banner impression per page load and joins each claim click to it
   const cta = container.querySelector<HTMLAnchorElement>('a[href*="pricing"]')!;
   cta.addEventListener('click', event => event.preventDefault());
   const firstEntry = params(cta.href).get('od_entry_id');
+  expect(firstEntry).toMatch(/^opengame-[0-9a-f-]{36}$/);
+  expect(params(cta.href).get('utm_source')).toBe('opengame');
   expect(params(cta.href).get('od_entry_source')).toBe('openmotion_manage_subscription');
   expect(params(cta.href).get('utm_medium')).toBe('banner');
   await act(async () => { cta.click(); await new Promise(resolve => setTimeout(resolve, 0)); });
   const click = tracked().find(row => row.event === 'ui_click')!.properties;
-  expect(click).toMatchObject({ page_name: 'explore', area: 'campaign_banner', element: 'claim_offer', campaign_id: 'black_friday_2026', entry_id: firstEntry });
+  expect(click).toMatchObject({ page_name: 'explore', area: 'campaign_banner', element: 'claim_offer', campaign_id: 'black_friday_2026', entry_id: firstEntry!.slice('opengame-'.length) });
   expect(params(cta.href).get('od_entry_id')).not.toBe(firstEntry);
 
   act(() => container.querySelector<HTMLButtonElement>('button[aria-label="关闭活动 Banner"]')!.click());
@@ -72,9 +76,11 @@ it('reports the header Pricing click with the entry id on its link', async () =>
   const link = container.querySelector<HTMLAnchorElement>('a')!;
   link.addEventListener('click', event => event.preventDefault());
   const entry = params(link.href).get('od_entry_id');
+  expect(entry).toMatch(/^opengame-[0-9a-f-]{36}$/);
+  expect(params(link.href).get('utm_source')).toBe('opengame');
   expect(params(link.href).get('od_entry_source')).toBe('openmotion_manage_subscription');
   await act(async () => { link.click(); await new Promise(resolve => setTimeout(resolve, 0)); });
-  expect(tracked()).toEqual([{ event: 'ui_click', properties: expect.objectContaining({ page_name: 'studio', area: 'header', element: 'open_pricing', campaign_id: 'black_friday_2026', entry_id: entry }) }]);
+  expect(tracked()).toEqual([{ event: 'ui_click', properties: expect.objectContaining({ page_name: 'studio', area: 'header', element: 'open_pricing', campaign_id: 'black_friday_2026', entry_id: entry!.slice('opengame-'.length) }) }]);
 });
 
 it('registers every reported campaign event in the closed schema', () => {
@@ -186,7 +192,7 @@ it('reports checkout-return plan upgrades and billing failures for PricingEntry 
     await act(async () => { link.click(); });
     await act(async () => { window.dispatchEvent(new Event('focus')); });
     expect(tracked().filter(row => row.event === 'entitlement_refresh_result')).toEqual([
-      { event: 'entitlement_refresh_result', properties: { page_name: 'studio', hook_id: 'header_pricing', entry_id: pricingEntryId, outcome: 'success', plan_changed: true } },
+      { event: 'entitlement_refresh_result', properties: { page_name: 'studio', hook_id: 'header_pricing', entry_id: pricingEntryId!.slice('opengame-'.length), outcome: 'success', plan_changed: true } },
     ]);
 
     vi.mocked(trackMotion).mockClear();
@@ -197,7 +203,7 @@ it('reports checkout-return plan upgrades and billing failures for PricingEntry 
     await act(async () => { bannerLink.click(); });
     await act(async () => { window.dispatchEvent(new Event('focus')); });
     expect(tracked().filter(row => row.event === 'entitlement_refresh_result')).toEqual([
-      { event: 'entitlement_refresh_result', properties: { page_name: 'explore', hook_id: 'bf_banner', entry_id: bannerEntryId, outcome: 'failure', plan_changed: false } },
+      { event: 'entitlement_refresh_result', properties: { page_name: 'explore', hook_id: 'bf_banner', entry_id: bannerEntryId!.slice('opengame-'.length), outcome: 'failure', plan_changed: false } },
     ]);
   } finally {
     fetchSpy.mockRestore();

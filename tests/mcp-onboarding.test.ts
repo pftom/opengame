@@ -115,6 +115,12 @@ test('media example preserves setup and task continuation across supported langu
   assert.match(media.prompt, /original request/);
   const chinesePrompt = translations['zh-CN'][media.prompt];
   assert.match(chinesePrompt, /agent_media_upgrade_go.*agent_media_upgrade_free.*升级到 Plus.*agent_media_signed_out.*使用 OpenDesign 登录.*agent_media_key_rejected.*agent_media_handbook/);
+  for (const [locale, messages] of Object.entries(translations) as [string, Record<string, string>][]) {
+    const prompt = messages[media.prompt];
+    for (const token of ['upgrade.url', 'settingsHandoff', 'inspect', 'entry=agent_media_upgrade_go', 'entry=agent_media_upgrade_free']) {
+      assert.ok(prompt?.includes(token), `${locale}: ${token}`);
+    }
+  }
   const skill = readFileSync(new URL('../skills/openmotion-media/SKILL.md', import.meta.url), 'utf8');
   const setupLink = skill.match(/\[Discovery and setup\]\(([^)]+)\)/);
   assert.ok(setupLink, 'Media entry must expose provider setup');
@@ -124,6 +130,8 @@ test('media example preserves setup and task continuation across supported langu
   assert.match(setup, /settingsHandoff.*openmotion_open_preview.*target: "providers".*page handoff/);
   assert.match(setup, /signed-in account.*available: true.*unknown/);
   assert.match(setup, /not-included.*agent_media_upgrade_go.*agent_media_upgrade_free.*Upgrade to Plus.*directly/);
+  assert.match(setup, /first present it as a clickable.*Upgrade to Plus \/ 升级到 Plus/);
+  assert.match(setup, /confirms payment.*inspect again.*original request/);
   assert.match(setup, /MCP handbook media-generation example/);
   assert.match(setup, /read-only `inspect`/);
   assert.match(skill, /MCP handbook example \| \[Discovery and setup\]/);

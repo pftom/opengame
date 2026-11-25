@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { ToolInputError } from '../shared/tool-input-error.ts';
 import type { OmTracking } from '../shared/tracking.ts';
 import type { HostContext } from '../tracking/host.ts';
@@ -58,10 +59,25 @@ export async function mediaUse(store: WorkspaceStore, args: any, tracking?: OmTr
       ? args.modality as Modality
       : undefined;
     const entry = resolveMediaSetupEntry(providers, modality ? { modality, capabilities: status.capabilities } : undefined);
+    let upgrade: { url: string; entryId: string; plan: 'plus'; instruction: string } | undefined;
+    let upgradeLinkResult: { entry_from: 'agent_media_upgrade_free' | 'agent_media_upgrade_go'; outcome: 'success' | 'failure'; entry_id?: string } | undefined;
+    if (entry === 'agent_media_upgrade_free' || entry === 'agent_media_upgrade_go') {
+      try {
+        const entryId = randomUUID();
+        const { url } = await gateway.account.upgradeLink(entryId);
+        upgrade = { url, entryId, plan: 'plus', instruction: 'Present url to the user as a clickable "Upgrade to Plus / 升级到 Plus" link, then inspect again after payment and continue the original request.' };
+        upgradeLinkResult = { entry_from: entry, outcome: 'success', entry_id: entryId };
+      } catch {
+        upgradeLinkResult = { entry_from: entry, outcome: 'failure' };
+      }
+    }
     return { providers,
       defaults: status.routes,
       settings: 'Open Settings > Model providers > OpenDesign to sign in or upgrade to Plus in place. Save or replace API keys in Model providers.',
       settingsHandoff: buildMediaSettingsHandoff(entry),
+      ...(upgrade ? { upgrade } : {}),
+      // Service metadata crosses the local HTTP bridge; only stdio MCP records it.
+      ...(upgradeLinkResult ? { _upgradeLinkResult: upgradeLinkResult } : {}),
       references: status.providers.filter(p => supported(p.id)).map(p => ({ provider: p.id, uri: `openmotion://workflow/media/${referenceSection(p.id)}` })),
       credentials: 'Read by the local service; keys are never returned to the Agent.' };
   }

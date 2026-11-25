@@ -203,6 +203,8 @@ export const omEvents = {
     studio_id: creative.studio_id, scene_id: creative.scene_id, model_provider: creative.model_provider, model_id: creative.model_id, explore_community: creative.explore_community, medium: creative.medium, landing: creative.landing, hub_id: modelHub.hub_id, signed_in: modelHub.signed_in }, required: ['page_name', 'view_id', 'embedded', 'has_project'] },
   provider_setup_opened: { producers: ['mcp'], fields: { entry_from: providerSetupEntries, presentation: ['foreground', 'background', 'now'], embedded: 'boolean' },
     required: ['entry_from', 'presentation', 'embedded'] },
+  upgrade_link_result: { producers: ['mcp'], fields: { entry_from: ['agent_media_upgrade_free', 'agent_media_upgrade_go'], entry_id: 'uuid', outcome: ['success', 'failure'] },
+    required: ['entry_from', 'outcome'] },
   studio_load_result: { producers: ['studio'], fields: { load_id: 'uuid', outcome, duration_ms: 'integer', embedded: 'boolean', ...project, ...projectScale, ...template }, required: ['load_id', 'outcome', 'duration_ms', 'embedded'] },
   ui_click: { producers: ['studio'], fields: { page_name: pages,
     area: ['workspace', 'templates', 'template_card', 'template_detail', 'template_instruction', 'template_discovery', 'template_series_card', 'template_series_detail',

@@ -638,6 +638,93 @@ test('provider setup handoff tracks MCP entries exclusively without counting Web
   }
 }));
 
+test('upgrade links track one result per stdio MCP inspect, excluding WebMCP and HTTP calls', t => fixture(async store => {
+  const { rpc } = await import('../mcp.ts');
+  const { gatewayFor } = await import('../gateway/service.ts');
+  const events: PendingEvent[] = [];
+  const tracking = core(async batch => { events.push(...batch); return 'accepted'; });
+  store.tracking = tracking;
+  const gateway = gatewayFor(store);
+  gateway.options.detect = async () => [];
+  let plan = 'free';
+  t.mock.method(gateway.account, 'summary', async () => ({ state: 'signed-in', plan, billingUnavailable: false }));
+  const http = transport(store, { tracking, runtimeRoot: pluginRoot });
+  const callPhase1 = async (payload: unknown) => {
+    const response = await http('/motion-api/phase1/call', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+    assert.equal(response.status, 200);
+    return response.json();
+  };
+  const inspect = (id: string) => rpc({ jsonrpc: '2.0', id, method: 'tools/call',
+    params: { name: 'openmotion_media_use', arguments: { action: 'inspect' } } }, store, undefined, undefined, undefined, { callPhase1 });
+  const upgradeEvents = () => events.filter(event => event.event === 'upgrade_link_result');
+  const fetcher = t.mock.fn(async () => { throw new Error('Must not request account intents'); });
+  gateway.account.options.fetcher = fetcher;
+  const checkUpgrade = (upgrade: { url: string; entryId: string }) => {
+    const params = new URL(upgrade.url).searchParams;
+    assert.match(params.get('od_entry_id')!, /^opengame-/);
+    assert.equal(params.get('od_entry_id')!.slice('opengame-'.length), upgrade.entryId);
+    assert.equal(params.get('utm_source'), 'opengame');
+    assert.equal(params.get('utm_medium'), 'agent');
+    assert.equal(params.has('intentId'), false);
+    assert.equal(fetcher.mock.callCount(), 0);
+  };
+  try {
+    await rpc({ jsonrpc: '2.0', id: 'init', method: 'initialize', params: { clientInfo: { name: 'codex-mcp-client', version: '1.2.3' } } }, store);
+    for (const tier of ['free', 'go']) {
+      plan = tier;
+      const before = upgradeEvents().length;
+      const web: any = await callPhase1({ name: 'openmotion_media_use', arguments: { action: 'inspect' } });
+      assert.ok(web.upgrade);
+      checkUpgrade(web.upgrade);
+      await tracking.flush();
+      assert.equal(upgradeEvents().length, before);
+      const result: any = await inspect(tier);
+      assert.ok(result.result.structuredContent.upgrade);
+      checkUpgrade(result.result.structuredContent.upgrade);
+      assert.equal(Object.hasOwn(result.result.structuredContent, '_upgradeLinkResult'), false);
+      assert.doesNotMatch(result.result.content[0].text, /_upgradeLinkResult/);
+      await tracking.flush();
+      assert.equal(upgradeEvents().length, before + 1);
+      const event = upgradeEvents().at(-1)!;
+      assert.deepEqual(event.properties, { entry_from: `agent_media_upgrade_${tier}`, outcome: 'success', entry_id: result.result.structuredContent.upgrade.entryId });
+      assert.equal(event.host_context?.host_agent, 'codex');
+    }
+    plan = 'plus';
+    const included: any = await inspect('plus');
+    assert.equal(Object.hasOwn(included.result.structuredContent, 'upgrade'), false);
+    await tracking.flush();
+    assert.equal(upgradeEvents().length, 2);
+
+    plan = 'go';
+    t.mock.method(gateway.account, 'upgradeLink', () => { throw new Error('private-account-error'); });
+    const webFailure: any = await callPhase1({ name: 'openmotion_media_use', arguments: { action: 'inspect' } });
+    assert.equal(Object.hasOwn(webFailure, 'upgrade'), false);
+    await tracking.flush();
+    assert.equal(upgradeEvents().length, 2);
+    const failed: any = await inspect('failed');
+    assert.equal(failed.result.isError, undefined);
+    assert.equal(Object.hasOwn(failed.result.structuredContent, 'upgrade'), false);
+    assert.equal(Object.hasOwn(failed.result.structuredContent, '_upgradeLinkResult'), false);
+    assert.deepEqual(failed.result.structuredContent.settingsHandoff.arguments, { target: 'providers', entry: 'agent_media_upgrade_go' });
+    await tracking.flush();
+    assert.equal(upgradeEvents().length, 3);
+    assert.deepEqual(upgradeEvents()[2].properties, { entry_from: 'agent_media_upgrade_go', outcome: 'failure' });
+    assert.equal(Object.hasOwn(studioEvents, 'upgrade_link_result'), false);
+    assert.deepEqual(omEvents.upgrade_link_result.producers, ['mcp']);
+    assert.equal(validProperties(omEvents, 'upgrade_link_result', { entry_from: 'agent_media_upgrade_free', outcome: 'success', entry_id: crypto.randomUUID() }), true);
+    for (const properties of [
+      { entry_from: 'agent_media_signed_out', outcome: 'failure' },
+      { entry_from: 'agent_media_upgrade_free', outcome: 'failure', entry_id: 'private-id' },
+      { entry_from: 'agent_media_upgrade_go', outcome: 'success', url: 'https://private.invalid' },
+      { entry_from: 'agent_media_upgrade_go', outcome: 'failure', account_id: 'private-account' },
+      { entry_from: 'agent_media_upgrade_go' }, { outcome: 'failure' },
+    ]) assert.equal(validProperties(omEvents, 'upgrade_link_result', properties), false);
+  } finally {
+    await gateway.close();
+    tracking.close();
+  }
+}));
+
 test('template handoff admits observed results and rejects content, made-up outcomes and invalid identities', () => {
   const ids = { template_id: 'motion-example', operation_id: crypto.randomUUID(), handoff_attempt_id: crypto.randomUUID(), detail_view_id: crypto.randomUUID() };
   const valid = { ...ids, page_name: 'studio', stage: 'open', outcome: 'success', project_id: crypto.randomUUID() };

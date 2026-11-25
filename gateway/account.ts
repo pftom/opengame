@@ -6,6 +6,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import type { AccountAttempt, AccountErrorCode, AccountSummary, DirectoryModel } from '../shared/provider-directory.ts';
 import type { GenerationJob, Model } from '../shared/gateway.ts';
+import { attributedEntryId, PRODUCT_UTM_SOURCE } from '../shared/product-identity.ts';
 import { validField, type EventFields } from '../tracking/core.ts';
 import { accountErrorKinds, accountStages, entitlementHookIds, type EntitlementHookId, type omEvents } from '../tracking/events.ts';
 import { readSettings, writeSettings } from './settings-storage.ts';
@@ -792,6 +793,17 @@ export class OpenDesignAccount {
     }
     return { exitCode: attempt.exitCode, cancelled };
   }
+  /** Returns a shareable Agent upgrade link without account intents or browser side effects. */
+  upgradeLink(entryId: string) {
+    const params = new URLSearchParams({
+      billing: 'plan', od_origin: 'openmotion',
+      od_entry_source: 'openmotion_manage_subscription',
+      od_entry_id: attributedEntryId(entryId), od_entry_at: new Date().toISOString(),
+      utm_source: PRODUCT_UTM_SOURCE, utm_medium: 'agent',
+    });
+    return { url: consoleUrl + '/dashboard?' + params };
+  }
+
   /**
    * Opens the subscription page in the system browser, the one the connector used for sign-in, so its OpenDesign session
    * carries over. A one-time account intent makes the page confirm it is the account signed in here before any purchase.
@@ -802,7 +814,7 @@ export class OpenDesignAccount {
     const target = '/dashboard?' + new URLSearchParams({
       billing: 'plan', od_origin: 'openmotion',
       od_entry_source: 'openmotion_manage_subscription',
-      od_entry_id: entryId, od_entry_at: new Date().toISOString(),
+      od_entry_id: attributedEntryId(entryId), od_entry_at: new Date().toISOString(),
     });
     let url = consoleUrl + target;
     const profile = await this.profile();

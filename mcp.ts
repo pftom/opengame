@@ -124,6 +124,12 @@ export async function rpc(message: any, store = new WorkspaceStore(), registry =
       embedded: message.params.arguments.embedded !== false,
     }, undefined, undefined, host);
   }
+  if (name === 'motion_media_use' && value && !value.isError && args?.action === 'inspect' && content?._upgradeLinkResult) {
+    const { _upgradeLinkResult, ...visible } = content;
+    tracking.track('upgrade_link_result', _upgradeLinkResult, undefined, undefined, host);
+    value.structuredContent = visible;
+    value.content = [{ type: 'text', text: JSON.stringify(visible) }];
+  }
   const lifecycleStatus = gameResultStatusIsLifecycle(name);
   const outcome = value?.isError || !lifecycleStatus && content?.status === 'failed' ? 'failure'
     : !lifecycleStatus && content?.status === 'partial' ? 'partial' : value ? 'success' : 'unknown';
