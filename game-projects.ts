@@ -22,7 +22,7 @@ import { injectPreviewBridgeHtml, isValidPreviewBridgeToken } from './shared/pre
 import { attachmentDisposition } from './shared/http-header.ts';
 import { zip } from './scripts/zip.mjs';
 import { escapeHtml } from './shared/scenario-content.ts';
-import { gameAssetInstructions, gameGenres, gameStyles, gameSettings, type GameBrief, type GameCard, type GameCatalog, type GameCatalogIssue, type GameCreated, type GameHandoff, type GameRemixOptions, type RoomServerMessage, type GameTrailer, type GameTrailerStatus } from './shared/game-contract.ts';
+import { formatGameBriefPrompt, gameAssetInstructions, gameGenres, gameStyles, gameSettings, type GameBrief, type GameCard, type GameCatalog, type GameCatalogIssue, type GameCreated, type GameHandoff, type GameRemixOptions, type RoomServerMessage, type GameTrailer, type GameTrailerStatus } from './shared/game-contract.ts';
 
 const templatesRoot = fileURLToPath(new URL('./templates/games/', import.meta.url));
 const kitsRoot = fileURLToPath(new URL('./templates/game-kits/', import.meta.url));
@@ -733,10 +733,8 @@ export class GameProjects {
   }
   async create(raw: GameBrief): Promise<GameCreated> { return this.mutate(async () => {
     const brief = briefInput(raw), id = randomUUID(), dir = path.join(this.root, id), now = new Date().toISOString();
-    // A portrait brief tells the Agent to build for a phone held upright; the card keeps the shape for the 9:16 stage.
-    const layout = brief.orientation === 'portrait' ? `${brief.prompt}\n\nLayout: portrait 9:16 phone game. Design every screen, HUD and control for a phone held upright (390×844); in a landscape window, centre the 9:16 play area and letterbox the sides.` : brief.prompt;
-    // A playable-ad brief adds the ad recipe on top of the portrait layout; the card keeps the flag for the market tag.
-    const rawPrompt = brief.playableAd ? `${layout}\n\nFormat: playable ad. Follow the playable-ad recipe in the openmotion-game skill (references/game-playable-ad.md): interactive on the first frame with a hand tutorial, no title screen, 3–8 short levels, a fail or win end card with Play again and a call-to-action button, one self-contained HTML that loads nothing from the network.` : layout;
+    // Append canonical portrait-layout and playable-ad paragraphs; the card keeps orientation/playableAd metadata for stage & tags.
+    const rawPrompt = formatGameBriefPrompt(brief.prompt, brief);
     const game: StoredGame = { rawPrompt, orientation: brief.orientation, ...(brief.playableAd ? { playableAd: true } : {}), id, title: brief.prompt.slice(0,80), description: brief.prompt, genre: brief.genre ?? 'casual', style: brief.style, setting: brief.setting, multiplayer: brief.multiplayer, maxPlayers: brief.multiplayer ? 4 : 1, status: 'draft', cover: null, playUrl: `/api/games/${id}/play/index.html`, plays: 0, likes: 0, dislikes: 0, reaction: 0, favorite: false, source: 'mine', remixOf: null, controls: '', createdAt: now, updatedAt: now };
     return this.populate(dir, async () => {
     // Multiplayer briefs with no genre ("play with friends") or a shooter/3D brief get the co-op room kit; other multiplayer
@@ -781,12 +779,10 @@ export class GameProjects {
     const setting = overrides.setting ?? original.setting;
     const orientation = overrides.orientation ?? original.orientation;
     const playableAd = orientation === 'landscape' ? false : original.playableAd;
-    const basePrompt = orientation === 'landscape' && original.orientation === 'portrait'
-      ? (originalMeta.rawPrompt ?? original.description).split(/\n\n(?:Layout: portrait 9:16 phone game\.|Format: playable ad\.)/, 1)[0].trim() || original.description
-      : (originalMeta.rawPrompt ?? original.description);
-    const rawPrompt = orientation === 'portrait' && original.orientation !== 'portrait' && !basePrompt.includes('Layout: portrait 9:16 phone game.')
-      ? `${basePrompt}\n\nLayout: portrait 9:16 phone game. Design every screen, HUD and control for a phone held upright (390×844); in a landscape window, centre the 9:16 play area and letterbox the sides.`
-      : (orientation === 'landscape' && original.orientation === 'portrait' ? basePrompt : originalMeta.rawPrompt);
+    const hasLayoutChange = orientation !== original.orientation || playableAd !== original.playableAd;
+    const rawPrompt = hasLayoutChange
+      ? formatGameBriefPrompt(originalMeta.rawPrompt ?? original.description, { orientation, playableAd })
+      : originalMeta.rawPrompt;
     // A remix preserves the original brief unless explicit overrides update genre, style, setting, or screen layout.
     const game = { ...original, genre, style, setting, orientation, playableAd, titleCustomized: undefined, tags: undefined, kit: originalMeta.kit, cover: originalMeta.cover ?? null, ...(rawPrompt ? { rawPrompt } : {}), id: newId, title: `${original.title.slice(0,72)} remix`, source: 'mine' as const, status: 'draft' as const, plays: 0, likes: 0, dislikes: 0, reaction: 0 as const, favorite: false, remixOf: id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     await this.save(newId, game);

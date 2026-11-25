@@ -1,4 +1,4 @@
-import { gameAssetInstructions } from '../../../../shared/game-contract';
+import { gameAssetInstructions, stripGameBriefPromptSuffixes } from '../../../../shared/game-contract';
 import type { CapabilityResourceRef } from '../../../../shared/capability-hub';
 import { gameGenres, gameSettings, gameStyles } from '../../../../shared/game-contract';
 import type { GameCard, GameGenre, GameSetting, GameStyle } from '../../../../shared/game-contract';
@@ -160,8 +160,7 @@ export function readDirectGameBrief(text: string, gameId: string): string | unde
   const notesMarker = '\n\nAdditional user notes: ';
   const notesStart = text.indexOf(notesMarker, steps);
   if (notesStart >= 0 && notesStart < context) return text.slice(notesStart + notesMarker.length, context).trim();
-  const brief = text.slice(briefStart, steps)
-    .split(/\n\n(?:Layout: portrait 9:16 phone game\.|Format: playable ad\. Follow the playable-ad recipe)/, 1)[0]
+  const brief = stripGameBriefPromptSuffixes(text.slice(briefStart, steps))
     .replace(gameBriefOptions, '')
     .trim();
   return brief || undefined;
