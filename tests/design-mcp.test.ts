@@ -202,7 +202,13 @@ test('stdio MCP subprocess runs all 4 openmotion_design_* tools and openmotion-d
     const restored = await call('openmotion_design_edit', {
       action: 'restore_version', projectId: pid, requestId: 'stdio-r1', versionId: v1.id, expectedRevision: written.project.revision,
     });
-    assert.equal(restored.version.label, 'v3');
+    assert.equal(restored.changed, true);
+    assert.deepEqual(restored.version, v1);
+    assert.equal(restored.project.versionId, v1.id);
+    const restoredHistory = await call('openmotion_design_edit', { action: 'list_versions', projectId: pid });
+    assert.deepEqual(restoredHistory, { ...versions, currentVersionId: v1.id });
+    const restoredFile = await call('openmotion_design_edit', { action: 'read_file', projectId: pid, path: 'index.html' });
+    assert.equal(restoredFile.content, readRes.content);
 
     const exported = await call('openmotion_design_project', { action: 'export', projectId: pid, format: 'open-design' });
     assert.ok(exported.outputPath.endsWith('.zip'));

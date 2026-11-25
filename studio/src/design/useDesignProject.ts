@@ -23,13 +23,20 @@ export type DesignProjectState = {
 export function useDesignProject(projectId: string): DesignProjectState {
   const [project, setProject] = useState<DesignProjectDetail | null>(null);
   const [versions, setVersions] = useState<DesignVersion[]>([]);
-  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [comments, setComments] = useState<DesignComment[]>([]);
   const [editors, setEditors] = useState<DesignEditorApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const revRef = useRef<string | null>(null);
+  const versionRef = useRef<string | null>(null);
   const commentsCountRef = useRef<number | null>(null);
+
+  const applyProject = useCallback((next: DesignProjectDetail) => {
+    revRef.current = next.revision;
+    versionRef.current = next.versionId;
+    commentsCountRef.current = next.openComments;
+    setProject(next);
+  }, []);
 
   const loadAll = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -39,11 +46,8 @@ export function useDesignProject(projectId: string): DesignProjectState {
         designClient.listVersions(projectId).catch(() => ({ versions: [] as DesignVersion[], currentVersionId: null })),
         designClient.listComments(projectId).catch(() => ({ comments: [] as DesignComment[] })),
       ]);
-      revRef.current = detail.revision;
-      commentsCountRef.current = detail.openComments;
-      setProject(detail);
+      applyProject(detail);
       setVersions(Array.isArray(verRes?.versions) ? verRes.versions : []);
-      setCurrentVersionId(verRes?.currentVersionId ?? detail.versionId ?? null);
       setComments(Array.isArray(comRes?.comments) ? comRes.comments : []);
       setError(null);
     } catch (err) {
@@ -51,7 +55,7 @@ export function useDesignProject(projectId: string): DesignProjectState {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, applyProject]);
 
   useEffect(() => {
     void loadAll(false);
@@ -62,7 +66,7 @@ export function useDesignProject(projectId: string): DesignProjectState {
     async signal => {
       const state = await designClient.getState(projectId);
       if (signal.aborted) return;
-      if (state.revision !== revRef.current || state.openComments !== commentsCountRef.current) {
+      if (state.revision !== revRef.current || state.versionId !== versionRef.current || state.openComments !== commentsCountRef.current) {
         await loadAll(true);
       }
     },
@@ -70,9 +74,9 @@ export function useDesignProject(projectId: string): DesignProjectState {
   );
 
   return {
-    project, versions, currentVersionId, comments, editors, loading, error,
+    project, versions, currentVersionId: project?.versionId ?? null, comments, editors, loading, error,
     refresh: () => loadAll(true),
-    setProject: (next) => { revRef.current = next.revision; commentsCountRef.current = next.openComments; setProject(next); },
+    setProject: applyProject,
     setComments,
   };
 }

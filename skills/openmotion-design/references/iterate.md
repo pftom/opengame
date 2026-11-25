@@ -14,4 +14,4 @@ Users annotate rendered HTML elements and regions in Design Studio (Comment pin,
 ## Version history and rollback
 
 - List snapshots with `openmotion_design_edit` (`action="list_versions"`, `projectId`).
-- Roll back safely with `openmotion_design_edit` (`action="restore_version"`, `projectId`, `versionId`, `expectedRevision`, `requestId`). Restoring `v3` while on `v5` creates `v6` with `v3`'s bytes while preserving `v4` and `v5`.
+- Switch to a saved version with `openmotion_design_edit` (`action="restore_version"`, `projectId`, `versionId`, `expectedRevision`, `requestId`). Selecting `v3` while on `v5` makes `v3` current and keeps `v4` and `v5` available. The next edit creates `v6`. If `v3` is already current and its files and entry point match, the tool returns `changed: false`.

@@ -2,11 +2,12 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { gameProjectsFor } from '../game-projects.ts';
 import { brandCatalogFile, type BrandCatalogEntry } from '../shared/brand-catalog.ts';
-import { assetMediaUrl, assetVersion } from '../shared/asset-library.ts';
+import { assetMediaUrl, assetVersion, type LibraryAsset } from '../shared/asset-library.ts';
 import { CAPABILITY_DOMAINS } from '../shared/capability-hub.ts';
 import { designRoutes, designScenarios } from '../shared/design-project.ts';
 import { designCatalog } from '../shared/design-catalog.ts';
 import { rankSearchResults } from '../shared/fuzzy-search.ts';
+import type { Modality } from '../shared/gateway.ts';
 import { loadLibrarySkills } from '../shared/library-skill-catalog.ts';
 import { scenarioDefinitions } from '../shared/scenarios.ts';
 import { creativeStudios, studioScenes } from '../shared/studio-catalog.ts';
@@ -18,7 +19,7 @@ import type {
 import { designProjectsFor } from '../design-projects.ts';
 import { templateCatalogFor } from '../prism-templates.ts';
 import type { WorkspaceStore } from '../workspace.ts';
-import { AssetLibrary } from './asset-library.ts';
+import { AssetLibrary, assetSearchDocument } from './asset-library.ts';
 import { readBrandCatalog } from './brand-catalog.ts';
 import { brandKitsFor } from './brand-kits.ts';
 import { gatewayFor } from './service.ts';
@@ -147,9 +148,13 @@ function matchesKindFilter(item: SuperAgentResourceAttachment, kind: string): bo
   return item.kind === kind;
 }
 
+function assetResourceSearchDocument(asset: LibraryAsset) {
+  return { ...assetSearchDocument(asset), extra: [asset.modality, 'asset'] };
+}
+
 export async function collectWorkspaceResources(
   store: WorkspaceStore,
-  options: { kind?: string; query?: string; limit?: number; locale?: string } = {},
+  options: { kind?: string; query?: string; limit?: number; locale?: string; modality?: Modality; offset?: number } = {},
 ): Promise<SuperAgentResourceCatalog> {
   const rootStore = store.workspaceStore ?? store;
   const dirKey = path.resolve(rootStore.directory);
@@ -162,6 +167,7 @@ export async function collectWorkspaceResources(
   const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(maxResourceResults, Math.floor(rawLimit))) : 60;
 
   const wanted = requestedKinds(kind);
+  const wantsAssets = wanted.has('asset');
   const cachedCounts = kind !== 'all' ? readTimed(dynamicCountCache.get(dirKey)) : undefined;
   const needAllCounts = !cachedCounts;
 
@@ -179,11 +185,16 @@ export async function collectWorkspaceResources(
     modelsRes,
     gamesRes,
   ] = await Promise.allSettled([
-    kind === 'asset'
-      ? new AssetLibrary(rootStore).list({ limit: query ? maxResourceResults : limit }, { maxPageSize: maxResourceResults })
-      : wanted.has('asset') || needAllCounts
-        ? new AssetLibrary(rootStore).list({ limit: wanted.has('asset') ? 100 : 1 })
-        : Promise.resolve(null),
+    wantsAssets || needAllCounts
+      ? new AssetLibrary(rootStore).list(
+          {
+            ...(kind === 'asset' ? { modality: options.modality, offset: options.offset } : {}),
+            query: wantsAssets ? query : undefined,
+            limit: kind === 'asset' || (wantsAssets && query) ? limit : wantsAssets ? 100 : 1,
+          },
+          { maxPageSize: maxResourceResults, includeUnfilteredTotal: true, toSearchDocument: assetResourceSearchDocument },
+        )
+      : Promise.resolve(null),
     wanted.has('brand-kit') || needAllCounts
       ? brandKitsFor(rootStore.directory).list()
       : Promise.resolve(null),
@@ -234,7 +245,7 @@ export async function collectWorkspaceResources(
   const gamesResult = gamesRes.status === 'fulfilled' ? gamesRes.value : null;
 
   const counts: SuperAgentResourceCounts = {
-    assets: assets?.total ?? cachedCounts?.assets ?? 0,
+    assets: assets?.unfilteredTotal ?? cachedCounts?.assets ?? 0,
     brandKits: savedKits?.length ?? cachedCounts?.brandKits ?? 0,
     officialBrandKits: brandCatalogEntries.length || cachedCounts?.officialBrandKits || 0,
     motionTemplates: motionTemplates.length || cachedCounts?.motionTemplates || 0,
@@ -255,8 +266,9 @@ export async function collectWorkspaceResources(
     dynamicCountCache.set(dirKey, writeTimed(counts, DYNAMIC_SUMMARY_TTL_MS));
   }
 
-  const searchExtra = new WeakMap<SuperAgentResourceAttachment, { description?: string; aliases?: string[] }>();
-  const track = (item: SuperAgentResourceAttachment, meta: { description?: string; aliases?: string[] }) => {
+  type SearchMetadata = { description?: string; aliases?: string[]; tags?: string[] };
+  const searchExtra = new WeakMap<SuperAgentResourceAttachment, SearchMetadata>();
+  const track = (item: SuperAgentResourceAttachment, meta: SearchMetadata) => {
     searchExtra.set(item, meta);
     return item;
   };
@@ -298,7 +310,7 @@ export async function collectWorkspaceResources(
     ...(wanted.has('asset') && assets
       ? assets.assets.map((asset): SuperAgentResourceAttachment => {
           const current = assetVersion(asset);
-          return {
+          const item: SuperAgentResourceAttachment = {
             id: asset.id,
             kind: 'asset',
             title: asset.name,
@@ -307,6 +319,7 @@ export async function collectWorkspaceResources(
             versionId: asset.currentVersionId,
             previewUrl: assetMediaUrl(asset.id, asset.currentVersionId),
           };
+          return query && kind !== 'asset' ? track(item, assetSearchDocument(asset)) : item;
         })
       : []),
     ...(wanted.has('brand-kit') && savedKits
@@ -398,7 +411,7 @@ export async function collectWorkspaceResources(
   const translations = /[\p{Script=Han}]/u.test(query) && [...wanted].some(hasTranslatedSearchTitle)
     ? await loadTranslatedSearchTitles()
     : undefined;
-  const ranked = query
+  const ranked = query && kind !== 'asset'
     ? rankSearchResults(byKind, query, item => {
         const meta = searchExtra.get(item);
         const translatedTitle = hasTranslatedSearchTitle(item.kind) ? translations?.get(item.title) : undefined;
@@ -407,7 +420,7 @@ export async function collectWorkspaceResources(
           title: item.title,
           subtitle: item.subtitle,
           description: meta?.description,
-          tags: item.tags,
+          tags: meta?.tags ?? item.tags,
           aliases: translatedTitle ? [...(meta?.aliases ?? []), translatedTitle] : meta?.aliases,
           extra: [item.scenario ?? '', item.modality ?? '', item.kind],
         };
@@ -415,7 +428,12 @@ export async function collectWorkspaceResources(
     : byKind;
   const items = ranked.slice(0, limit);
 
-  return { counts, items, generatedAt: Date.now() };
+  return {
+    counts,
+    items,
+    generatedAt: Date.now(),
+    ...(kind === 'asset' && assets ? { assetPage: { total: assets.total, nextOffset: assets.nextOffset } } : {}),
+  };
 }
 
 export async function buildResourceContextManifest(

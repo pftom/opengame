@@ -71,6 +71,19 @@ test('the shipped history availability module loads without plugin-local node_mo
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test('composition thumbnail requests keep native validation on both capture queues', () => fixture(async store => {
+  const studio = await startWorkspaceStudio(pluginRoot, store.directory, store.projectDirectory, 0);
+  const root = `${studio.origin}/api/projects/${store.projectId}/thumbnail`;
+  try {
+    for (const file of ['opening.html', 'black-friday.html']) {
+      await mkdir(path.join(store.projectDirectory, 'compositions', file), { recursive: true });
+      const response = await fetch(`${root}/compositions/${file}?t=1&v=v4`);
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: 'not found' });
+    }
+  } finally { await studio.close(); }
+}));
+
 test('installed font import copies an actual face into only the requested project', () => fixture(async store => {
   const studio = await startWorkspaceStudio(pluginRoot, store.directory, store.projectDirectory, 0);
   const url = `${studio.origin}/api/projects/${store.projectId}/fonts/import`;

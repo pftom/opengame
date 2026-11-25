@@ -1039,7 +1039,13 @@ export function buildModeContextTags(
   }
 
   if (mode.id === 'design') {
-    tags.push({ kind: 'mode', label: t('Design Studio'), icon: 'palette-line', tone: 'image' });
+    tags.push({
+      kind: 'mode',
+      label: t('Design Studio'),
+      icon: 'palette-line',
+      tone: 'image',
+      ...(options.designFormat === 'html' ? { designScenario: options.designScenario } : {}),
+    });
     if (options.designFormat === 'image') {
       tags.push({ kind: 'param', label: t('Image design') });
       const sceneChoice = IMAGE_SCENE_CHOICES.find(item => item.id === options.imageScene);

@@ -4,11 +4,11 @@
  * Uses an ephemeral token so only messages from the active preview iframe are accepted.
  */
 import type { DesignCommentAnchor } from '../../../shared/design-project';
+import { DESIGN_ANNOTATION_BRIDGE } from '../../../shared/design-annotation-bridge.ts';
+import { DESIGN_DECK_BRIDGE, DESIGN_DECK_SLIDE_SELECTOR } from '../../../shared/design-deck-bridge.ts';
 
 export type PickedElement = NonNullable<DesignCommentAnchor['element']>;
 export type DeckStateMessage = { active: number; count: number };
-
-const SLIDE_SELECTORS = '.slide, [data-screen-label], .deck-slide, .ppt-slide, .slide-frame';
 
 /** Extract speaker notes from raw deck HTML (<script id="speaker-notes"> or aside.notes). */
 export function parseSpeakerNotes(html: string): string[] {
@@ -33,7 +33,8 @@ export function parseSpeakerNotes(html: string): string[] {
 export function parseDeckSlides(html: string): { index: number; label: string }[] {
   try {
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    const nodes = Array.from(doc.querySelectorAll(SLIDE_SELECTORS));
+    const nodes = Array.from(doc.querySelectorAll(DESIGN_DECK_SLIDE_SELECTOR))
+      .filter(slide => !slide.parentElement?.closest(DESIGN_DECK_SLIDE_SELECTOR));
     return nodes.map((node, index) => {
       const explicit = node.getAttribute('data-screen-label');
       const heading = node.querySelector('h1, h2, h3')?.textContent?.trim();
@@ -60,6 +61,8 @@ export function buildBridgeSrcDoc(rawHtml: string, baseHref: string, token: stri
   const bridge = `<script data-om-design-bridge>
 (function(){
   const TOKEN = ${safeToken};
+${DESIGN_ANNOTATION_BRIDGE}
+${DESIGN_DECK_BRIDGE}
   let pick = ${pickEnabled ? 'true' : 'false'};
   const box = document.createElement('div');
   box.setAttribute('data-om-hover', '1');
@@ -137,46 +140,17 @@ export function buildBridgeSrcDoc(rawHtml: string, baseHref: string, token: stri
       element: describe(el),
       clientPoint: { x: e.clientX || Math.round(r.left + r.width / 2), y: e.clientY || Math.round(r.top + r.height / 2) },
       viewport: { width: innerWidth, height: innerHeight },
+      scroll: designAnnotationScroll(el.parentElement),
       rect: { x: r.left, y: r.top, width: r.width, height: r.height }
     }, '*');
   }, true);
 
-  // Fallback deck navigation ONLY when the page itself did not react to od:slide.
-  const slides = () => Array.from(document.querySelectorAll('${SLIDE_SELECTORS}'));
   window.addEventListener('message', (e) => {
     const m = e.data;
     if (!m || typeof m !== 'object') return;
     if (m.type === 'om:design-mode' && m.token === TOKEN) {
       pick = Boolean(m.pick);
       if (!pick) box.style.display = 'none';
-    }
-    if (m.type === 'od:slide') {
-      const list = slides();
-      if (list.length > 1) {
-        const before = Math.max(0, list.findIndex(el => el.classList.contains('active')));
-        setTimeout(() => {
-          const current = slides();
-          const after = Math.max(0, current.findIndex(el => el.classList.contains('active')));
-          if (after !== before) return;
-          let next = before;
-          if (m.action === 'next') next = Math.min(current.length - 1, before + 1);
-          else if (m.action === 'prev') next = Math.max(0, before - 1);
-          else if (m.action === 'first') next = 0;
-          else if (m.action === 'last') next = current.length - 1;
-          else if (m.action === 'go' && typeof m.index === 'number') next = Math.max(0, Math.min(current.length - 1, m.index));
-          if (next !== before) {
-            current.forEach((el, i) => el.classList.toggle('active', i === next));
-            window.parent.postMessage({ type: 'od:slide-state', active: next, count: current.length, protocolVersion: 1 }, '*');
-          }
-        }, 0);
-      }
-    }
-  });
-  window.addEventListener('load', () => {
-    const list = slides();
-    if (list.length > 1) {
-      const active = Math.max(0, list.findIndex(el => el.classList.contains('active')));
-      window.parent.postMessage({ type: 'od:slide-state', active, count: list.length, protocolVersion: 1 }, '*');
     }
   });
 })();

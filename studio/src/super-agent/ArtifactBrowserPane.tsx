@@ -148,11 +148,13 @@ function ManagedMediaElement({ kind, src }: { kind: 'video' | 'audio'; src: stri
   const ref = useRef<HTMLVideoElement & HTMLAudioElement>(null);
   useEffect(() => {
     const element = ref.current;
+    // Attach the source after the previous effect has released the player.
+    element?.setAttribute('src', src);
     return () => releaseMediaElement(element);
   }, [src, kind]);
   return kind === 'video'
-    ? <video ref={ref} controls playsInline src={src} />
-    : <audio ref={ref} controls src={src} />;
+    ? <video ref={ref} controls playsInline />
+    : <audio ref={ref} controls />;
 }
 
 function isInspectableGameFile(filePath: string): boolean {

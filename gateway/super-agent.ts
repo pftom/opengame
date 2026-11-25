@@ -12,7 +12,7 @@ import { GameError, gameProjectsFor } from '../game-projects.ts';
 import type { Phase1Service } from '../phase1.ts';
 import { assetMediaUrl, assetReadToolResult, assetVersion, type AssetReadResult } from '../shared/asset-library.ts';
 import { webAddress } from '../shared/browser.ts';
-import { designRoutes } from '../shared/design-project.ts';
+import { designRoutes, isDesignScenario } from '../shared/design-project.ts';
 import { localAgents, type AgentDefinition } from '../shared/local-agents.ts';
 import type { OmTracking } from '../shared/tracking.ts';
 import { modelId, slug } from '../tracking/core.ts';
@@ -35,8 +35,8 @@ import {
   type AgentToolCallRequest,
   type AgentToolCallResponse,
 } from '../shared/agent-runtimes.ts';
-import { phase1Tools, validateInput } from '../shared/phase1-tools.ts';
 import type { Modality } from '../shared/gateway.ts';
+import { normalizeToolInput, phase1Tools, validateInput } from '../shared/phase1-tools.ts';
 import {
   artifactToSuperAgentIntent,
   classifySuperAgentTool,
@@ -160,6 +160,7 @@ interface ActiveSuperAgentChat {
   writtenGameCodeIds?: Set<string>;
   presentedArtifactIds?: Set<string>;
   turnUserMessageId?: string;
+  attachedDesignComments: ReadonlyArray<{ projectId?: string; commentId?: string }>;
   beforeSnapshot?: WorkspaceSnapshot;
 }
 
@@ -591,6 +592,7 @@ function sanitizeContextTags(raw: unknown): SuperAgentContextTag[] | undefined {
       label,
       ...(icon ? { icon } : {}),
       ...(tone ? { tone } : {}),
+      ...(kind === 'mode' && isDesignScenario(obj.designScenario) ? { designScenario: obj.designScenario } : {}),
     });
   }
   return out.length ? out : undefined;
@@ -1950,6 +1952,11 @@ export class SuperAgentConversations {
         reasoningStartedAt: new Map(),
         codexToolMeta: new Map(),
         codexToolOutputs: new Map(),
+        attachedDesignComments: (input.attachments ?? []).flatMap(attachment => {
+          if (attachment?.kind !== 'browser-annotation' || attachment.annotation?.mode !== 'design-comment') return [];
+          const { projectId, commentId } = attachment.annotation;
+          return [{ projectId, commentId }];
+        }),
         runtime,
         runtimeId: resolvedRuntimeId,
         bin: resolvedBin,
@@ -2537,6 +2544,12 @@ export class SuperAgentConversations {
     }
     if (input.hiddenInstructions?.trim()) {
       taskDirectiveParts.push(input.hiddenInstructions.trim());
+    }
+    if (active.attachedDesignComments.length) {
+      taskDirectiveParts.push([
+        'Update or delete only the saved Design comments attached to the current message, identified by projectId and commentId.',
+        'Mark an attached comment resolved after verifying that its requested change is complete.',
+      ].join(' '));
     }
     if (taskDirectiveParts.length > 0) {
       blocks.push(`<openmotion-task-instructions>\n${taskDirectiveParts.join('\n\n')}\n</openmotion-task-instructions>`);
@@ -3913,6 +3926,14 @@ export class SuperAgentConversations {
     const phase1Def = exposedPhase1Tools.find(tool => tool.name === normalizedTool);
     if (!phase1Def) throw new Error(`Unknown tool: ${toolName}`);
     const args = { ...rawArgs };
+    if (normalizedTool === 'openmotion_design_comments' && active.attachedDesignComments.length) {
+      const { action, projectId, commentId } = normalizeToolInput(phase1Def.inputSchema, args);
+      if ((action === 'update' || action === 'delete')
+        && !(typeof projectId === 'string' && typeof commentId === 'string'
+          && active.attachedDesignComments.some(comment => comment.projectId === projectId && comment.commentId === commentId))) {
+        throw new Error('This turn can update or delete only the saved Design comments attached to the current message.');
+      }
+    }
     const isLegacyGenerate = (normalizedTool === 'openmotion_assets_use' || normalizedTool === 'openmotion_media_use') && args.action === 'generate';
     const isCapabilityRun = normalizedTool === 'openmotion_capability_run'
       && (args.action === undefined || args.action === 'run')
@@ -4021,6 +4042,7 @@ export class SuperAgentConversations {
         title: customTitle || 'Exported Video (MP4)',
         subtitle: 'Motion export',
         jobId: job.id,
+        exportRequestedAt: job.createdAt,
         projectId: job.projectId,
         downloadUrl: `/api/exports/${encodeURIComponent(job.id)}/file`,
         mimeType: 'video/mp4',
@@ -4320,6 +4342,7 @@ export class SuperAgentConversations {
         title: `${value.project?.title || 'Motion'} · MP4`,
         subtitle: 'Exported MP4',
         jobId: job.id,
+        exportRequestedAt: job.createdAt,
         projectId: value.projectId ?? job.projectId,
         downloadUrl: `/api/exports/${encodeURIComponent(job.id)}/file`,
         mimeType: 'video/mp4',

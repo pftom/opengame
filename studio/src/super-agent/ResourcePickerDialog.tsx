@@ -1,6 +1,6 @@
 import { Button } from 'open-design-ui/button';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { findDesignScenario } from '../../../shared/design-project';
+import { designRoutes, findDesignScenario } from '../../../shared/design-project';
 import {
   formatAttachmentBytes,
   resourceAttachmentKey,
@@ -55,8 +55,14 @@ export function fileAttachmentIcon(filePath?: string, mimeType?: string): string
 const NON_IMAGE_URL_RE = /\.(?:x?html?|htm)(?:$|[?#])/i;
 
 export function resourceImagePreviewUrl(
-  item: Pick<SuperAgentResourceAttachment, 'kind' | 'modality' | 'mimeType' | 'previewUrl' | 'swatches'>,
+  item: Pick<SuperAgentResourceAttachment, 'kind' | 'modality' | 'mimeType' | 'previewUrl' | 'swatches' | 'annotation'>,
 ): string | null {
+  const annotation = item.annotation;
+  if (item.kind === 'browser-annotation' && annotation?.mode === 'design-comment'
+    && annotation.projectId && annotation.commentId
+    && annotation.screenshotSource !== 'saved-design-comment') {
+    return designRoutes.commentPreview(annotation.projectId, annotation.commentId);
+  }
   const raw = item.previewUrl?.trim();
   if (!raw || NON_IMAGE_URL_RE.test(raw) || /^data:text\/html\b/i.test(raw)) {
     return null;

@@ -1,5 +1,6 @@
 import type { BrowserScreenshotResult } from '../../../shared/browser';
 import { assetMediaUrl, assetVersion } from '../../../shared/asset-library';
+import type { Modality } from '../../../shared/gateway';
 import {
   SUPER_AGENT_API,
   type SuperAgentArtifact,
@@ -35,12 +36,23 @@ let inflightChatList: Promise<{ conversations: SuperAgentChatSummary[] }> | null
 const resourcesCache = new Map<string, { value: SuperAgentResourceCatalog; expiresAt: number }>();
 const inflightResources = new Map<string, Promise<SuperAgentResourceCatalog>>();
 
-function resourcesCacheKey(params: { kind?: string; query?: string; limit?: number; locale?: string } = {}): string {
+type WorkspaceResourceQuery = {
+  kind?: string;
+  query?: string;
+  limit?: number;
+  locale?: string;
+  modality?: Modality;
+  offset?: number;
+};
+
+function resourcesCacheKey(params: WorkspaceResourceQuery = {}): string {
   return JSON.stringify([
     params.kind && params.kind !== 'all' ? params.kind : 'all',
     params.query?.trim() ?? '',
     params.limit ?? null,
     params.locale?.trim() ?? '',
+    params.modality ?? null,
+    params.offset ?? 0,
   ]);
 }
 
@@ -95,7 +107,7 @@ export function peekCachedSuperAgentChatList(): SuperAgentChatSummary[] | undefi
   return chatListCache?.value;
 }
 
-export function peekCachedWorkspaceResources(params: { kind?: string; query?: string; limit?: number; locale?: string } = {}): SuperAgentResourceCatalog | undefined {
+export function peekCachedWorkspaceResources(params: WorkspaceResourceQuery = {}): SuperAgentResourceCatalog | undefined {
   if (!isClientCacheEnabled()) return undefined;
   return resourcesCache.get(resourcesCacheKey(params))?.value;
 }
@@ -131,7 +143,7 @@ async function saRequest<T>(path: string, method = 'GET', body?: unknown, signal
   return data as T;
 }
 
-export async function fetchWorkspaceResources(params: { kind?: string; query?: string; limit?: number; locale?: string; signal?: AbortSignal } = {}) {
+export async function fetchWorkspaceResources(params: WorkspaceResourceQuery & { signal?: AbortSignal } = {}) {
   const key = resourcesCacheKey(params);
   if (isClientCacheEnabled()) {
     const cached = resourcesCache.get(key);
@@ -147,6 +159,8 @@ export async function fetchWorkspaceResources(params: { kind?: string; query?: s
   if (params.query?.trim()) search.set('query', params.query.trim());
   if (params.limit) search.set('limit', String(params.limit));
   if (params.locale?.trim()) search.set('locale', params.locale.trim());
+  if (params.modality) search.set('modality', params.modality);
+  if (params.offset) search.set('offset', String(params.offset));
   const qs = search.toString();
   const gen = resourcesCacheGeneration;
   const run = saRequest<SuperAgentResourceCatalog>(`/resources${qs ? `?${qs}` : ''}`, 'GET', undefined, params.signal).then(res => {

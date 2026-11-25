@@ -1,12 +1,13 @@
 import { Button } from 'open-design-ui/button';
 import { IconButton } from 'open-design-ui/icon-button';
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { preconnect } from 'react-dom';
 import { blackFridayTemplates } from '../../../shared/black-friday-collection';
 import type { GalleryTemplate } from '../../../shared/catalog';
 import { designScenarios, isDesignScenario } from '../../../shared/design-project';
 import { rankSearchResults } from '../../../shared/fuzzy-search';
 import { gameGenres, type GameCard, type GameGenre } from '../../../shared/game-contract';
+import type { Modality } from '../../../shared/gateway';
 import type { SuperAgentDesignModuleId, SuperAgentResourceAttachment } from '../../../shared/super-agent';
 import { Select } from '../components/ui/Select';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -791,29 +792,74 @@ const GAME_STATUS_LABELS: Partial<Record<GameCard['status'], string>> = {
 
 type ResourceListState =
   | { status: 'loading' | 'error' }
-  | { status: 'ready'; items: SuperAgentResourceAttachment[] };
+  | { status: 'ready'; items: SuperAgentResourceAttachment[]; total: number; nextOffset: number | null; pageError?: boolean };
 
-function useShowcaseResourceList(kind: 'asset' | 'brand-kit', enabled: boolean) {
-  const [state, setState] = useState<ResourceListState>({ status: 'loading' });
-  const [attempt, setAttempt] = useState(0);
+const loadingResources: ResourceListState = { status: 'loading' };
+
+function useShowcaseResourceList(kind: 'asset' | 'brand-kit', enabled: boolean, modality?: Modality, query = '') {
+  const key = JSON.stringify([kind, modality, query]);
+  const initial: { key: string; state: ResourceListState; offset: number; attempt: number } = {
+    key, state: loadingResources, offset: 0, attempt: 0,
+  };
+  const [request, setRequest] = useState(initial);
+  const { state, offset, attempt } = request.key === key ? request : initial;
+  if (request.key !== key) setRequest(initial);
+  const loadingMore = state.status === 'ready' && offset > 0 && state.nextOffset === offset && !state.pageError;
 
   useEffect(() => {
     if (!enabled) return;
-    let cancelled = false;
-    void fetchWorkspaceResources({ kind, limit: 1000 }).then(({ items }) => {
-      if (!Array.isArray(items)) throw new Error('Invalid workspace resource list');
-      if (!cancelled) setState({ status: 'ready', items });
-    }).catch(() => {
-      if (!cancelled) setState({ status: 'error' });
-    });
-    return () => { cancelled = true; };
-  }, [kind, enabled, attempt]);
+    const controller = new AbortController();
+    const load = () => {
+      void fetchWorkspaceResources({
+        kind, modality, query, offset, limit: kind === 'asset' ? PAGE_BATCH_SIZE : 1000, signal: controller.signal,
+      }).then(({ items, assetPage }) => {
+        if (!Array.isArray(items) || (kind === 'asset' && !assetPage)) throw new Error('Invalid workspace resource list');
+        if (controller.signal.aborted) return;
+        setRequest(previous => {
+          if (previous.key !== key) return previous;
+          const prior = offset && previous.state.status === 'ready' ? previous.state.items : [];
+          const merged = offset ? [...new Map([...prior, ...items].map(item => [item.id, item])).values()] : items;
+          return { ...previous, state: {
+            status: 'ready',
+            items: merged,
+            total: assetPage?.total ?? items.length,
+            nextOffset: assetPage?.nextOffset ?? null,
+          } };
+        });
+      }).catch(() => {
+        if (controller.signal.aborted) return;
+        setRequest(previous => previous.key !== key ? previous : {
+          ...previous,
+          state: offset && previous.state.status === 'ready'
+            ? { ...previous.state, pageError: true }
+            : { status: 'error' },
+        });
+      });
+    };
+    const timer = query && offset === 0 ? setTimeout(load, 160) : undefined;
+    if (timer === undefined) load();
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [kind, enabled, modality, query, key, offset, attempt]);
+
+  const loadMore = useCallback(() => {
+    if (state.status !== 'ready' || state.nextOffset === null || loadingMore) return;
+    const nextOffset = state.nextOffset;
+    if (state.pageError) {
+      setRequest(previous => ({ ...previous, state: { ...state, pageError: false }, attempt: previous.attempt + 1 }));
+      return;
+    }
+    setRequest(previous => ({ ...previous, offset: nextOffset }));
+  }, [loadingMore, state]);
 
   return {
     state,
+    loadingMore,
+    loadMore,
     retry: () => {
-      setState({ status: 'loading' });
-      setAttempt(value => value + 1);
+      setRequest(previous => ({ ...previous, state: loadingResources, offset: 0, attempt: previous.attempt + 1 }));
     },
   };
 }
@@ -1111,19 +1157,20 @@ export function ModeResourceShowcase({
   }, [mode.id, modeOptions?.designFormat, isPureVideoView, designTemplates, designProjects, designSkills, publishedGameTemplates, myGames, coveredMotion.catalog, motionCatalog, motionPurposes, isZh]);
 
   const brandKitList = useShowcaseResourceList('brand-kit', active && filters.some(filter => filter.id === 'brand-kit'));
-  const assetList = useShowcaseResourceList('asset', active && filters.some(filter => filter.id === 'asset'));
   const resourceQuery = mode.id === 'design' || mode.id === 'research' || mode.id === 'visualization'
     ? designQuery.trim().toLocaleLowerCase()
     : '';
   const assetModality = mode.id === 'audio' ? 'audio' : isPureVideoView ? 'video' : 'image';
+  const assetList = useShowcaseResourceList('asset', active && filters.some(filter => filter.id === 'asset'), assetModality, resourceQuery);
   const brandKits = useMemo(() => brandKitList.state.status === 'ready'
     ? filterByShowcaseQuery(brandKitList.state.items, resourceQuery)
     : null, [brandKitList.state, resourceQuery]);
-  const assets = useMemo(() => assetList.state.status === 'ready'
-    ? filterByShowcaseQuery(assetList.state.items.filter(asset => asset.modality === assetModality), resourceQuery)
-    : null, [assetList.state, assetModality, resourceQuery]);
+  const assets = assetList.state.status === 'ready' ? assetList.state.items : null;
   const activeResourceList = activeFilter === 'brand-kit' ? brandKitList : activeFilter === 'asset' ? assetList : null;
-  const workspaceCounts: Record<string, number | undefined> = { 'brand-kit': brandKits?.length, asset: assets?.length };
+  const workspaceCounts: Record<string, number | undefined> = {
+    'brand-kit': brandKits?.length,
+    asset: assetList.state.status === 'ready' ? assetList.state.total : undefined,
+  };
 
   // Reset active tab when switching mode.
   useEffect(() => {
@@ -1400,23 +1447,28 @@ export function ModeResourceShowcase({
     : curatedCards
       ? curatedCards.length
       : resourceItems.length;
-  const hasMore = visibleCount < totalCount;
+  const assetPage = activeFilter === 'asset' && assetList.state.status === 'ready' ? assetList.state : null;
+  const hasMore = assetPage ? assetPage.nextOffset !== null : visibleCount < totalCount;
+  const loadMore = useCallback(() => {
+    if (assetPage) assetList.loadMore();
+    else setVisibleCount(prev => Math.min(totalCount, prev + PAGE_BATCH_SIZE));
+  }, [assetPage, assetList.loadMore, totalCount]);
 
   // Automatic continuous scrolling via IntersectionObserver.
   useEffect(() => {
     const node = sentinelRef.current;
-    if (!node || !hasMore || typeof IntersectionObserver === 'undefined') return;
+    if (!node || !hasMore || assetPage?.pageError || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
       entries => {
         if (entries.some(entry => entry.isIntersecting)) {
-          setVisibleCount(prev => Math.min(totalCount, prev + PAGE_BATCH_SIZE));
+          loadMore();
         }
       },
       { rootMargin: '280px 0px' },
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, totalCount]);
+  }, [assetPage?.pageError, hasMore, loadMore]);
 
   const isLoading = activeResourceList ? activeResourceList.state.status === 'loading' : !curatedCards
     && (
@@ -1470,7 +1522,9 @@ export function ModeResourceShowcase({
   }
   const visibleGames = showGameCards ? filteredGames.slice(0, visibleCount) : null;
   const visibleCurated = !showGameCards && curatedCards ? curatedCards.slice(0, visibleCount) : null;
-  const visibleResources = !showGameCards && !curatedCards ? resourceItems.slice(0, visibleCount) : [];
+  const visibleResources = !showGameCards && !curatedCards
+    ? assetPage ? resourceItems : resourceItems.slice(0, visibleCount)
+    : [];
 
   return (
     <div className="om-sa-mode-showcase">
@@ -2270,10 +2324,11 @@ export function ModeResourceShowcase({
               variant="plain"
               type="button"
               className="om-sa-load-more-btn"
-              onClick={() => setVisibleCount(prev => Math.min(totalCount, prev + PAGE_BATCH_SIZE))}
+              disabled={Boolean(assetPage && assetList.loadingMore)}
+              onClick={loadMore}
             >
-              <span>{t('Load more')}</span>
-              <span className="om-sa-tab-count">{totalCount - visibleCount}</span>
+              <span>{assetPage?.pageError ? t('Retry') : t('Load more')}</span>
+              <span className="om-sa-tab-count">{assetPage ? Math.max(0, assetPage.total - assetPage.items.length) : totalCount - visibleCount}</span>
             </Button>
           </div>
         )}

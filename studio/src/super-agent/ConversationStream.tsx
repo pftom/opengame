@@ -10,6 +10,7 @@ import type { GatewayStatus, Model } from '../../../shared/gateway';
 import type { LocalAgent } from '../../../shared/local-agents';
 import {
   modeToSuperAgentIntent,
+  superAgentChatPresentation,
   superAgentIntentMeta,
   type SuperAgentActionCard,
   type SuperAgentArtifact,
@@ -173,13 +174,12 @@ const EXTRA_STARTERS: {
   { key: 'image', id: 'design', designModule: 'image', tone: 'image', icon: 'image-line', title: 'Generate image' },
   { key: 'website', id: 'design', designModule: 'prototype', tone: 'image', icon: 'layout-line', title: 'Build a website' },
   { key: 'audio', id: 'audio', tone: 'audio', icon: 'music-2-line', title: 'Create audio' },
-  { key: 'media', id: 'media', tone: 'video', icon: 'clapperboard-line', title: 'Cinema video' },
   { key: 'coding', id: 'coding', tone: 'coding', icon: 'code-s-slash-line', title: 'Coding' },
 ];
 
-const COMPOSER_MODES = [...PRIMARY_STARTERS, ...EXTRA_STARTERS]
-  .map(starter => findSuperAgentMode(starter.id))
-  .filter((mode, index, all): mode is NonNullable<typeof mode> => mode !== null && all.findIndex(item => item?.id === mode.id) === index);
+const COMPOSER_MODES = (['game', 'design', 'motion', 'research', 'visualization', 'audio', 'media', 'coding'] satisfies SuperAgentCreationModeId[])
+  .map(findSuperAgentMode)
+  .filter(mode => mode !== null);
 
 export type AgentSelection = {
   runtimeId?: string;
@@ -455,17 +455,15 @@ export function ConversationStream({
   const pendingSampleUploadRef = useRef<Promise<void> | null>(null);
   const submittingRef = useRef(false);
   const activeMode = findSuperAgentMode(activeModeId);
-  const headerIntentMeta = superAgentIntentMeta(
-    chat?.intent ?? (
-      activeMode
-        ? activeMode.id === 'design'
-          ? (modeOptions.designFormat === 'image'
-            ? 'image'
-            : (modeOptions.designScenario === 'deck' || modeOptions.designScenario === 'document' ? 'slides' : 'design'))
-          : modeToSuperAgentIntent(activeMode.id)
-        : undefined
-    ),
-  );
+  const headerPresentation = chat ? superAgentChatPresentation(chat) : {
+    intent: activeMode?.id === 'design' && modeOptions.designFormat === 'image'
+      ? 'image' as const
+      : modeToSuperAgentIntent(activeMode?.id),
+    designScenario: activeMode?.id === 'design' && modeOptions.designFormat === 'html' ? modeOptions.designScenario : undefined,
+    isGeneratedVideo: (activeMode?.id === 'motion' && modeOptions.motionEngine === 'video-model')
+      || (activeMode?.id === 'media' && modeOptions.mediaSubMode === 'video'),
+  };
+  const headerIntentMeta = superAgentIntentMeta(headerPresentation.intent, headerPresentation);
   const modeOptionsRef = useRef<ModeComposerOptions>(modeOptions);
   modeOptionsRef.current = modeOptions;
   const [templateRevision, setTemplateRevision] = useState(0);
@@ -2126,6 +2124,7 @@ export function ConversationStream({
                   }
 
                   const annot = att.annotation;
+                  const previewUrl = resourceImagePreviewUrl(att);
                   const sourceLoc = annot?.element?.sourceFile
                     ? `${annot.element.sourceFile}${typeof annot.element.sourceLine === 'number' ? `:${annot.element.sourceLine}` : ''}`
                     : '';
@@ -2138,7 +2137,7 @@ export function ConversationStream({
                     >
                       <ResourceThumbImage
                         className="om-sa-attachment-thumb"
-                        src={resourceImagePreviewUrl(att)}
+                        src={previewUrl}
                         fallback={<RemixIcon name={resourceIcon(att)} size={13} />}
                       />
                       <span>{chipTitle}</span>
@@ -2162,8 +2161,8 @@ export function ConversationStream({
                         trigger={chipTrigger}
                       >
                         <div className="om-sa-annot-preview-body">
-                          {att.previewUrl && (
-                            <img className="om-sa-annot-preview-img" src={att.previewUrl} alt={chipTitle} />
+                          {previewUrl && (
+                            <img className="om-sa-annot-preview-img" src={previewUrl} alt={chipTitle} />
                           )}
                           <div className="om-sa-annot-preview-meta">
                             <strong>{chipTitle}</strong>

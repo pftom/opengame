@@ -1,9 +1,10 @@
 import type { BrowserPickedElement, BrowserRect } from '../../../shared/browser';
-import type { DesignComment, DesignProjectDetail } from '../../../shared/design-project';
+import { designRoutes, type DesignComment, type DesignProjectDetail } from '../../../shared/design-project';
 import type { ReviewAnnotation } from '../../../shared/review-comments';
 import type { SuperAgentResourceAttachment } from '../../../shared/super-agent';
 import type { PickedElement } from './previewBridge';
 import { uploadSuperAgentAnnotationImage } from '../super-agent/superAgentClient';
+import { readCommentPreviewSlideIndex } from './designClient';
 
 export type DesignDraftSelection = {
   element?: PickedElement;
@@ -234,6 +235,7 @@ export async function buildDesignSelectionAttachment({
       ...(strokeBounds ? { strokeBounds } : {}),
       ...(screenshotUrl ? { screenshotUrl } : {}),
       ...(screenshotPath ? { screenshotPath } : {}),
+      ...(commentId && screenshotUrl ? { screenshotSource: 'saved-design-comment' as const } : {}),
       artifactId: artifactId || `design:${project.id}`,
       artifactKind: 'design-project',
       projectId: project.id,
@@ -245,32 +247,50 @@ export async function buildDesignSelectionAttachment({
   };
 }
 
+async function readDesignCommentSnapshot(projectId: string, commentId: string) {
+  try {
+    const response = await fetch(designRoutes.commentPreview(projectId, commentId), { cache: 'no-store' });
+    if (!response.ok || response.headers.get('content-type')?.split(';')[0] !== 'image/png') return null;
+    const blob = await response.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Invalid screenshot'));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+    return { dataUrl, slideIndex: readCommentPreviewSlideIndex(response) };
+  } catch {
+    return null;
+  }
+}
+
 export async function designCommentToAttachment(params: {
   project: DesignProjectDetail;
   comment: DesignComment;
   artifactId?: string;
   chatId?: string | null;
-  pageUrl: string;
   slideCount?: number;
-  captureBase?: () => Promise<string | null>;
 }): Promise<SuperAgentResourceAttachment> {
+  const { anchor } = params.comment;
+  const filePath = anchor.filePath || params.project.entry;
+  const snapshot = params.chatId ? await readDesignCommentSnapshot(params.project.id, params.comment.id) : null;
   return buildDesignSelectionAttachment({
     project: params.project,
     artifactId: params.artifactId,
     chatId: params.chatId,
-    pageUrl: params.pageUrl,
-    filePath: params.comment.anchor.filePath || params.project.entry,
-    slideIndex: params.comment.anchor.slideIndex,
+    pageUrl: designRoutes.raw(params.project.id, filePath),
+    filePath,
+    slideIndex: snapshot?.slideIndex ?? anchor.slideIndex,
     slideCount: params.slideCount,
-    viewport: params.comment.anchor.viewport,
+    viewport: anchor.annotation ?? anchor.viewport,
     draft: {
-      element: params.comment.anchor.element,
-      region: params.comment.anchor.region,
-      annotation: params.comment.anchor.annotation,
+      element: anchor.element,
+      region: anchor.region,
+      annotation: anchor.annotation,
     },
     comment: params.comment.text,
     commentId: params.comment.id,
-    captureBase: params.captureBase,
+    captureBase: snapshot ? async () => snapshot.dataUrl : undefined,
   });
 }
 
