@@ -1806,6 +1806,7 @@ export function ModeResourceShowcase({
         })()}
 
       </div>
+      {(composer || mode.id !== 'game') && (
       <div className="om-sa-mode-composer-group">
         {composer}
         {mode.id !== 'game' && (
@@ -1852,6 +1853,7 @@ export function ModeResourceShowcase({
         </div>
         )}
       </div>
+      )}
 
       {mode.id !== 'coding' && (
       <section ref={showcaseSectionRef} className="om-sa-showcase-panel" aria-labelledby={templateHeadingId}>

@@ -6009,7 +6009,7 @@
   gap: var(--motion-space-8);
 }
 
-.om-sa-stream[data-mode='game'] .om-sa-mode-composer-group .om-sa-composer-top-bar {
+.om-sa-stream[data-mode='game'] .om-sa-composer-wrap .om-sa-composer-top-bar {
   margin-block-end: var(--motion-space-4);
 }
 

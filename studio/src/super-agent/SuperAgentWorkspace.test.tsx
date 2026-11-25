@@ -2401,6 +2401,9 @@ it('keeps multiplayer games playable in the catalog and only scaffolds single-pl
     expect(legacyCard).toBeTruthy();
     expect(legacyCard?.querySelector('.om-sa-game-tile-remix')).toBeNull();
     expect(container.querySelector('.om-sa-mode-ideas')).toBeNull();
+    // Game mode keeps the composer pinned at the bottom so templates remain visible above the fold.
+    expect(container.querySelector('.om-sa-mode-composer-group')).toBeNull();
+    expect(container.querySelector('.om-sa-stream > .om-sa-messages + .om-sa-composer-placement .om-sa-composer-editor')).toBeTruthy();
 
     // Clicking a Hero genre badge updates both composer options and the template filter tab, scrolls to templates, and toggles back cleanly.
     const scroller = container.querySelector<HTMLElement>('.om-sa-messages')!;

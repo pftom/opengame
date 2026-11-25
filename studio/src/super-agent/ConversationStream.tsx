@@ -1456,6 +1456,7 @@ export function ConversationStream({
   };
 
   const hasModeLanding = Boolean(activeMode && !chat?.messages.length && !pendingSubmission && !loading && !loadFailed);
+  const hasInlineModeComposer = hasModeLanding && activeMode?.id !== 'game';
   const sendAction = (!busy || Boolean(editingQueuedId) || (isRunning && hasDraft)) && (
     <IconButton
       variant="plain"
@@ -1735,17 +1736,16 @@ export function ConversationStream({
               onToggleAttachment={toggleResourceAttachment}
               onPlayGame={onPlayGame}
               onDeployGame={onDeployGame}
-              composer={activeMode.id === 'coding'
-                ? <div className="om-sa-composer-placement" ref={mountComposer} />
-                : <DockableModeComposer ref={dockRef} scrollRef={listRef} mountEditor={mountComposer}
-                    focusEditor={focusEditor} templateRevision={templateRevision}
-                    preview={text.trim()
-                      || (activeMode.id === 'game' && modeOptions.gameTemplate
-                        ? t('Remix · {title}', { title: localizedGameTitle(modeOptions.gameTemplate, locale) })
-                        : getModeComposerPlaceholder(activeMode, modeOptions, t))}
-                    action={sendAction} />}
+              composer={activeMode.id === 'game'
+                ? null
+                : activeMode.id === 'coding'
+                  ? <div className="om-sa-composer-placement" ref={mountComposer} />
+                  : <DockableModeComposer ref={dockRef} scrollRef={listRef} mountEditor={mountComposer}
+                      focusEditor={focusEditor} templateRevision={templateRevision}
+                      preview={text.trim() || getModeComposerPlaceholder(activeMode, modeOptions, t)}
+                      action={sendAction} />}
               onApplyTemplate={() => setTemplateRevision(value => value + 1)}
-              onFocusComposer={focusModeComposer}
+              onFocusComposer={activeMode.id === 'game' ? focusEditor : focusModeComposer}
               onPickPrompt={(prompt, meta) => {
                 setText(prompt);
                 composerRef.current?.setPlainText(prompt);
@@ -1881,7 +1881,7 @@ export function ConversationStream({
         })()}
       </div>
 
-      {!hasModeLanding && <div className="om-sa-composer-placement" ref={mountComposer} />}
+      {!hasInlineModeComposer && <div className="om-sa-composer-placement" ref={mountComposer} />}
       {createPortal(<div className="om-sa-composer-wrap">
         {hasPendingApproval && (
           <div className="om-sa-approval-dock" role="region" aria-label={t('Approval needed')}>
