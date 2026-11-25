@@ -9559,7 +9559,7 @@
   font-weight: var(--motion-weight-semibold);
 }
 
-.om-sa-game-use-btn:hover {
+.om-sa-game-use-btn:is(:hover, :focus-visible) {
   background: var(--motion-accent-hover);
   color: var(--motion-on-action);
 }
@@ -9810,7 +9810,7 @@
   transition: background var(--motion-duration-fast) var(--motion-ease-out), color var(--motion-duration-fast) var(--motion-ease-out);
 }
 
-.om-sa-game-tile-deploy:hover {
+.om-sa-game-tile-deploy:is(:hover, :focus-visible) {
   background: var(--motion-accent);
   color: var(--motion-on-action);
 }
@@ -9831,7 +9831,7 @@
   transition: background var(--motion-duration-fast) var(--motion-ease-out), color var(--motion-duration-fast) var(--motion-ease-out);
 }
 
-.om-sa-game-tile-remix:hover,
+.om-sa-game-tile-remix:is(:hover, :focus-visible),
 .om-sa-game-tile-remix[data-selected] {
   background: var(--motion-accent);
   color: var(--motion-on-action);
@@ -10013,7 +10013,7 @@
   .om-sa-showcase-action-cue,
   .om-sa-game-tile-cover img,
   .om-sa-game-tile-actions,
-  .om-sa-game-tile-play,
+  .om-sa-game-tile-remix,
   .om-sa-game-tile-deploy {
     transition: none;
   }
