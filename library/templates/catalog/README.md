@@ -53,7 +53,7 @@ Submit PRs against `main`. CI runs **Template library policy** without CMS publi
 
 Source Studio and MCP load this directory directly. See [local startup and plugin paths](../../../docs/template-repository.md#run-from-a-local-clone). For editable projects, commit unpacked source and keep `template.json.entry.files` paths, byte lengths and SHA-256 hashes aligned with `source/manifest.json`. Project-file URLs and a ZIP download are optional for repository/hosted entries; contributors do not need to upload files to the old CMS service. See [the editable-project checklist](../../../docs/template-repository.md#contribute-editable-project-files).
 
-After final review, a maintainer runs **Prepare and merge PR** to transfer eligible media and merge the prepared change. Merging to `main` automatically publishes source objects and hosted metadata, then updates `https://releases.open-design.ai/open-motion/templates/main/catalog.json` for hosted NPM consumers. The website and explicit CMS-mode clients continue to consume CMS publications; updating them is a separate internal task. A merged source change does not publish CMS content.
+After final review, a maintainer runs **Prepare and merge PR** to transfer eligible media and merge the prepared change. Merging to `main` automatically publishes source objects and hosted metadata, then updates `https://releases.open-design.ai/open-game/templates/main/catalog.json` for hosted NPM consumers. The website and explicit CMS-mode clients continue to consume CMS publications; updating them is a separate internal task. A merged source change does not publish CMS content.
 
 To export CMS-compatible metadata for review:
 
