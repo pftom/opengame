@@ -1612,6 +1612,22 @@ export async function dispatchGameTool(name: string, args: any, workspace: strin
     default: throw new GameError('Unknown game tool');
   }
 }
+async function optionalJsonInput(req: IncomingMessage, maxBytes: number): Promise<unknown> {
+  if (!req.headers['content-type']?.startsWith('application/json') || req.headers['content-length'] === '0') {
+    return undefined;
+  }
+  let size = 0;
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += buf.length;
+    if (size > maxBytes) throw new GameError('Payload too large', 413);
+    chunks.push(buf);
+  }
+  const text = Buffer.concat(chunks).toString('utf8').trim();
+  return text ? JSON.parse(text) : undefined;
+}
+
 export async function gameHttp(req: IncomingMessage, res: ServerResponse, url: URL, workspace: string, input: (req: IncomingMessage, maxBytes?: number) => Promise<any>, runtimeRoot?: string) {
   const prefix = /^\/(?:api|motion-api)\/games(?=\/|$)/.exec(url.pathname)?.[0];
   if (!prefix) return false;
@@ -1663,8 +1679,7 @@ export async function gameHttp(req: IncomingMessage, res: ServerResponse, url: U
       if (action === 'playtest') return json(200,await service.playtest(id,await input(req, LIMIT)));
       if (action === 'update-meta') return json(200,await service.updateMeta(id,await input(req, LIMIT)));
       if (action === 'remix') {
-        const isEmptyBody = req.headers['content-length'] === '0' || !req.headers['content-type']?.startsWith('application/json');
-        return json(201, await service.remix(id, isEmptyBody ? undefined : await input(req, LIMIT)));
+        return json(201, await service.remix(id, await optionalJsonInput(req, LIMIT) as GameRemixOptions | undefined));
       }
       if (action === 'play') return json(200,await service.interact(id,'play'));
       if (action === 'reaction') return json(200,await service.interact(id,'reaction',(await input(req,1024))?.value));
