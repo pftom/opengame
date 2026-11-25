@@ -7585,7 +7585,7 @@ it('folds intermediate progress notes into WorkLogSection, renders 16:9 game cov
             id: 'tidepost-chat',
             intent: 'game',
             state: 'idle',
-            projectDir: '/Users/demo/Library/Application Support/OpenDesign-dev/games/b0789372-b520-472b-acc9-ceca1dabeadf',
+            projectDir: '/tmp/Library/Application Support/OpenDesign-dev/games/b0789372-b520-472b-acc9-ceca1dabeadf',
             lastTurnUsage: { totalTokens: 2_232_924 },
             approvals: [],
             artifacts: [
@@ -7617,7 +7617,7 @@ it('folds intermediate progress notes into WorkLogSection, renders 16:9 game cov
               {
                 id: 'a-final',
                 role: 'assistant',
-                text: '《潮汐邮差》已可试玩，支持点击 [开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html) 直接进入关卡，详见 [验收记录](</Users/demo/Library/Application Support/OpenDesign-dev/games/b0789372-b520-472b-acc9-ceca1dabeadf/design/verification.md>)。[开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html)',
+                text: '《潮汐邮差》已可试玩，支持点击 [开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html) 直接进入关卡，详见 [验收记录](</tmp/Library/Application Support/OpenDesign-dev/games/b0789372-b520-472b-acc9-ceca1dabeadf/design/verification.md>)。[开始游戏](/motion-api/games/b0789372-b520-472b-acc9-ceca1dabeadf/play/index.html)',
                 createdAt: 3000,
                 status: 'completed',
               },
