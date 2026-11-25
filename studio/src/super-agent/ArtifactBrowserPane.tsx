@@ -1977,6 +1977,8 @@ export function ArtifactBrowserPane({
       || (activeArtifact.kind === 'game-project' && Boolean(activeArtifact.projectId) && !isTemplateGame && viewMode === 'preview')
     ),
   );
+  // Templates keep the viewport presets so players can try phone and tablet sizes.
+  const showViewportMenu = supportsAnnotate || (isTemplateGame && viewMode === 'preview');
   const canCaptureScreenshot = supportsAnnotate && Boolean(onAttachBrowserAnnotation);
   const isMultiplayerGame = Boolean(activeArtifact?.kind === 'game-project' && (
     activeArtifact.id === multiplayerArtifactId || isMultiplayerGameArtifact(activeArtifact)
@@ -2613,8 +2615,9 @@ export function ArtifactBrowserPane({
                   <span className="om-sa-toolbar-divider" aria-hidden="true" />
                 )}
 
-                {supportsAnnotate && (
+                {showViewportMenu && (
                   <div className="om-sa-tool-group">
+                    {supportsAnnotate && (
                     <Tooltip label={t('Annotate elements, regions, and drawings')}>
                       <IconButton
                         variant="ghost"
@@ -2632,6 +2635,7 @@ export function ArtifactBrowserPane({
                         icon={<RemixIcon name="focus-3-line" size={15} />}
                       />
                     </Tooltip>
+                    )}
 
                     <Popover
                       open={deviceMenuOpen}
@@ -2756,7 +2760,7 @@ export function ArtifactBrowserPane({
                       </Tooltip>
                     )}
 
-                    {(webErrorCount > 0 || consoleOpen) && (
+                    {supportsAnnotate && (webErrorCount > 0 || consoleOpen) && (
                       <Tooltip label={t('Console & errors')}>
                         <Button
                           variant="ghost"
@@ -2778,7 +2782,7 @@ export function ArtifactBrowserPane({
 
                 {toolbarGameAction && activeArtifact && (
                   <>
-                    {(hasModeSwitch || supportsAnnotate) && (
+                    {(hasModeSwitch || showViewportMenu) && (
                       <span className="om-sa-toolbar-divider" aria-hidden="true" />
                     )}
                     <Tooltip label={t('Remix')}>
@@ -2848,7 +2852,7 @@ export function ArtifactBrowserPane({
                   </div>
                 )}
 
-                {canCloudShare && (hasModeSwitch || supportsAnnotate || toolbarGameAction || (activeArtifact?.kind === 'motion-project' && Boolean(activeArtifact.projectId))) && (
+                {canCloudShare && (hasModeSwitch || showViewportMenu || toolbarGameAction || (activeArtifact?.kind === 'motion-project' && Boolean(activeArtifact.projectId))) && (
                   <span className="om-sa-toolbar-divider" aria-hidden="true" />
                 )}
 
