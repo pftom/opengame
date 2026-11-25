@@ -97,6 +97,14 @@ export type GameTrailer = {
 export type GameCatalogIssue = { id: string; message: string };
 export type GameCatalog = { games: GameCard[]; issues?: GameCatalogIssue[] };
 
+/** Optional metadata overrides applied when remixing an existing local game or template. */
+export type GameRemixOptions = {
+  genre?: GameGenre | null;
+  style?: GameStyle | null;
+  setting?: GameSetting | null;
+  orientation?: 'landscape' | 'portrait' | null;
+};
+
 /** POST /api/games and POST /api/games/:id/remix return the new project and the Agent brief. */
 export type GameCreated = { game: GameCard; agentInstruction: string };
 /** GET /api/games/:id/handoff — the full instruction to give the user's Agent for a workspace draft. */

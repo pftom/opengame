@@ -3332,6 +3332,7 @@ it('forwards explicit composer parameter overrides when remixing a local built-i
     updatedAt: '2026-11-22T00:00:00.000Z',
   };
   let remixEndpointCalls = 0;
+  let remixRequestBody: any = null;
   let turnBody: any = null;
   const createdChat: SuperAgentChat = {
     id: REMIX_CHAT_ID,
@@ -3381,9 +3382,11 @@ it('forwards explicit composer parameter overrides when remixing a local built-i
     }
     if (url.endsWith('/motion-api/games/local-lantern-hop/remix') && method === 'POST') {
       remixEndpointCalls += 1;
+      remixRequestBody = JSON.parse(String(init?.body ?? '{}'));
       return jsonResponse({
         game: {
           ...localTemplate,
+          ...remixRequestBody,
           id: REMIXED_GAME_ID,
           source: 'mine',
           remixOf: localTemplate.id,
@@ -3454,6 +3457,7 @@ it('forwards explicit composer parameter overrides when remixing a local built-i
   await flush();
 
   expect(remixEndpointCalls).toBe(1);
+  expect(remixRequestBody).toEqual({ style: 'pixel', orientation: 'portrait' });
   expect(turnBody?.text).toBe('Remix · Lantern Hop');
   expect(turnBody?.hiddenInstructions).toContain('Requested remix overrides: Style: Pixel art, Layout: Portrait (9:16).');
   expect(turnBody?.hiddenInstructions).toContain('style=pixel');

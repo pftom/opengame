@@ -5281,7 +5281,7 @@
   padding-top: var(--motion-space-12);
 }
 
-.om-sa-stream[data-mode='game'] > .om-sa-composer-wrap {
+.om-sa-stream[data-mode='game'] > .om-sa-composer-placement .om-sa-composer-wrap {
   position: relative;
   z-index: 4;
   padding-top: var(--motion-space-8);

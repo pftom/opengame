@@ -1447,3 +1447,40 @@ test('headless playtest lets native dialog form close modals while form-action n
   assert.equal(extClient.authoritative?.state.blockedDirective,'form-action');
   assert.match(String(extClient.authoritative?.state.href),/\/api\/games\/.*\/play\/index\.html/);
 }));
+
+test('remix persists optional genre/style/setting/orientation overrides on the game record, handoff, and HTTP endpoint',async t=>fixture(async(service,workspace)=>{
+  const created=await service.create({...brief,genre:'platformer',style:'3d',setting:'fantasy',orientation:'landscape',prompt:'Rooftop lantern jump'});
+  const remixed=await service.remix(created.game.id,{genre:'racing',style:'pixel',setting:'cyberpunk',orientation:'portrait'});
+  assert.equal(remixed.game.genre,'racing');
+  assert.equal(remixed.game.style,'pixel');
+  assert.equal(remixed.game.setting,'cyberpunk');
+  assert.equal(remixed.game.orientation,'portrait');
+  assert.match(remixed.agentInstruction,/pixel style, racing, cyberpunk setting/);
+  assert.match(remixed.agentInstruction,/portrait 9:16/);
+  const handoff=await service.handoff(remixed.game.id);
+  assert.equal(handoff.agentInstruction,remixed.agentInstruction);
+
+  // Switching a portrait playable-ad template to landscape clears playableAd and strips the portrait/ad suffix.
+  const ad=await service.create({...brief,orientation:'portrait',playableAd:true,prompt:'Tap the coins'});
+  const landscapeRemix=await service.remix(ad.game.id,{orientation:'landscape'});
+  assert.equal(landscapeRemix.game.orientation,'landscape');
+  assert.equal(landscapeRemix.game.playableAd,false);
+  assert(!landscapeRemix.agentInstruction.includes('portrait 9:16'));
+  assert(!landscapeRemix.agentInstruction.includes('Format: playable ad.'));
+
+  // HTTP POST /api/games/:id/remix accepts JSON overrides, empty body, and rejects invalid override values.
+  const server=createServer((req,res)=>{void gameHttp(req,res,new URL(req.url!,'http://localhost'),workspace,input);});
+  if(!await listen(t,server))return;
+  t.after(()=>new Promise<void>(resolve=>server.close(()=>resolve())));
+  const port=(server.address() as any).port;
+  const httpRemixed=await httpCall(port,'POST',`/api/games/${created.game.id}/remix`,{style:'voxel',orientation:'portrait'});
+  assert.equal(httpRemixed.status,201);
+  const parsed=JSON.parse(httpRemixed.body);
+  assert.equal(parsed.game.style,'voxel');
+  assert.equal(parsed.game.orientation,'portrait');
+  assert.match(parsed.agentInstruction,/voxel style/);
+  const emptyRemix=await httpCall(port,'POST',`/api/games/${created.game.id}/remix`);
+  assert.equal(emptyRemix.status,201);
+  const invalidRemix=await httpCall(port,'POST',`/api/games/${created.game.id}/remix`,{orientation:'square'});
+  assert.equal(invalidRemix.status,400);
+}));

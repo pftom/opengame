@@ -1108,8 +1108,16 @@ export function ConversationStream({
         setScaffoldingGame(true);
         let gameScaffoldSent = false;
         try {
+          const localRemixOverrides = selectedTemplate && !selectedTemplate.external
+            ? {
+                ...(activeModeOptions.gameGenre ? { genre: activeModeOptions.gameGenre } : {}),
+                ...(activeModeOptions.gameStyle ? { style: activeModeOptions.gameStyle } : {}),
+                ...(activeModeOptions.gameSetting ? { setting: activeModeOptions.gameSetting } : {}),
+                ...(activeModeOptions.gameOrientation ? { orientation: activeModeOptions.gameOrientation } : {}),
+              }
+            : undefined;
           const created = selectedTemplate && !selectedTemplate.external
-            ? await gameApi.remix(selectedTemplate.id)
+            ? await gameApi.remix(selectedTemplate.id, localRemixOverrides)
             : await gameApi.create(
                 selectedTemplate?.external
                   ? {
@@ -1165,6 +1173,9 @@ export function ConversationStream({
                 style: activeModeOptions.gameStyle ?? created.game.style,
                 setting: activeModeOptions.gameSetting ?? created.game.setting,
                 orientation: activeModeOptions.gameOrientation ?? created.game.orientation,
+                playableAd: (activeModeOptions.gameOrientation ?? created.game.orientation) === 'landscape'
+                  ? false
+                  : created.game.playableAd,
               }
             : created.game;
           const hiddenInstructions = buildGameHiddenInstructions(
@@ -1181,7 +1192,7 @@ export function ConversationStream({
               ? [{ kind: 'param' as const, label: `${t('Remix')} · ${localizedGameTitle(selectedTemplate, locale)}` }]
               : []),
           ];
-          const nextAttachments = [...cappedAttachments, toGameResourceAttachment(created.game, displayTitle)];
+          const nextAttachments = [...cappedAttachments, toGameResourceAttachment(effectiveGameForInstructions, displayTitle)];
           clearComposerAfterSubmit({ clearAttachments: true, resetMode: true });
           followRef.current = true;
           gameScaffoldSent = true;
@@ -1191,7 +1202,7 @@ export function ConversationStream({
             contextTags,
             mode: 'game',
             overrideAttachments: nextAttachments,
-            ...(ready ? { initialArtifact: toGameArtifact(created.game, displayTitle) } : {}),
+            ...(ready ? { initialArtifact: toGameArtifact(effectiveGameForInstructions, displayTitle) } : {}),
           });
           if (!ok) {
             restoreComposerDraft(draftSnapshot);

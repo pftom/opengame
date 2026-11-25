@@ -1,4 +1,4 @@
-import { gameGenres, gameSettings, gameStyles, type GameBrief, type GameCard, type GameCatalog, type GameCreated, type GameGenre, type GameSetting, type GameStyle, type GameTrailer, type GameHandoff } from '../../../../shared/game-contract';
+import { gameGenres, gameSettings, gameStyles, type GameBrief, type GameCard, type GameCatalog, type GameCreated, type GameGenre, type GameRemixOptions, type GameSetting, type GameStyle, type GameTrailer, type GameHandoff } from '../../../../shared/game-contract';
 import { motionApi } from '../useWorkspace';
 
 export const genreLabels: Record<GameGenre, string> = { shooter: 'Shooter', platformer: 'Platformer', story: 'Story', casual: 'Casual', racing: 'Racing', horror: 'Horror' };
@@ -144,7 +144,7 @@ const json = (body: unknown): RequestInit => ({ method: 'POST', headers: { 'Cont
 export const gameApi = {
   catalog: () => motionApi<GameCatalog>('/games'),
   create: (brief: GameBrief) => motionApi<GameCreated>('/games', json(brief)),
-  remix: (id: string) => motionApi<GameCreated>(`/games/${encodeURIComponent(id)}/remix`, json({})),
+  remix: (id: string, overrides?: GameRemixOptions) => motionApi<GameCreated>(`/games/${encodeURIComponent(id)}/remix`, json(overrides ?? {})),
   play: (id: string) => motionApi<GameCard>(`/games/${encodeURIComponent(id)}/play`, json({})),
   react: (id: string, value: -1 | 0 | 1) => motionApi<GameCard>(`/games/${encodeURIComponent(id)}/reaction`, json({ value })),
   favorite: (id: string, favorite: boolean) => motionApi<GameCard>(`/games/${encodeURIComponent(id)}/favorite`, json({ favorite })),
