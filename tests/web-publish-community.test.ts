@@ -1222,3 +1222,118 @@ test('OpenDesignAccount.controlApiJson only treats explicit PRIVATE_SHARE_REQUIR
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('reopening a stopped curated game after editing content confirms Unlisted before resume and publish', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'om-reopen-changed-unlisted-'));
+  try {
+    const gameDir = path.join(root, 'reopen-edited');
+    await mkdir(gameDir, { recursive: true });
+    await writeFile(path.join(gameDir, 'index.html'), '<!doctype html><h1>Reopen v1</h1>');
+
+    const baseMock = createCommunityMockAccount('go');
+    let failPut503BeforeCommit = false;
+    let dropPutResponseAfterCommit = false;
+    const callOrder: string[] = [];
+
+    const client: WebPublishAccountClient = {
+      isSignedIn: baseMock.client.isSignedIn,
+      listWorkspaces: baseMock.client.listWorkspaces,
+      summary: baseMock.client.summary,
+      async runWithEnv(args, extraEnv, opts) {
+        const cmd = args.slice(0, 2).join(' ');
+        if (cmd === 'share resume-existing' || cmd === 'share publish') {
+          callOrder.push(cmd);
+        }
+        return baseMock.client.runWithEnv(args, extraEnv, opts);
+      },
+      async controlApiJson(apiPath: string, options?: { method?: string; body?: unknown }) {
+        const method = options?.method ?? 'GET';
+        if (/^\/api\/v1\/collab\/shares\/[^/]+\/game-listing/.test(apiPath)) {
+          callOrder.push(`${method} game-listing`);
+          if (method === 'PUT') {
+            if (failPut503BeforeCommit) {
+              throw new AccountRequestError(JSON.stringify({ error: 'SERVICE_UNAVAILABLE', status: 503 }));
+            }
+            if (dropPutResponseAfterCommit) {
+              await baseMock.client.controlApiJson!(apiPath, options);
+              throw new Error('Request timed out after commit');
+            }
+          }
+        }
+        return baseMock.client.controlApiJson!(apiPath, options);
+      },
+    };
+
+    const service = new WebPublishService(path.join(root, 'pub-data'), client);
+    const targetV1 = {
+      kind: 'game' as const,
+      id: 'reopen-edited',
+      title: 'Reopen Edited Game',
+      entryPath: 'index.html',
+      sourceRevision: 'rev-1',
+      sourcePath: gameDir,
+      gameMeta: {
+        title: 'Reopen Edited Game',
+        description: 'v1',
+        genre: 'arcade',
+        orientation: 'landscape' as const,
+        controls: 'Arrows',
+      },
+    };
+
+    const initial = await service.publish(targetV1, { visibility: 'public' });
+    const slug = initial.publication.slug;
+    const initialListing = baseMock.listings.get(slug)!;
+    baseMock.listings.set(slug, { ...initialListing, feedStatus: 'featured' });
+    await service.unpublish(targetV1);
+
+    // Modify game content after unpublish so fast-path is bypassed.
+    await writeFile(path.join(gameDir, 'index.html'), '<!doctype html><h1>Reopen v2 (changed)</h1>');
+    const targetV2 = { ...targetV1, sourceRevision: 'rev-2' };
+
+    // 1. PUT /game-listing fails before commit -> neither share resume-existing nor share publish executes.
+    failPut503BeforeCommit = true;
+    callOrder.length = 0;
+    await assert.rejects(
+      () => service.publish(targetV2, { mode: 'resume', visibility: 'unlisted' }),
+      /Could not confirm Unlisted visibility/i,
+    );
+    assert.equal(callOrder.includes('share resume-existing'), false);
+    assert.equal(callOrder.includes('share publish'), false);
+    assert.equal(baseMock.listings.get(slug)?.visibility, 'public');
+    assert.equal((await service.status(targetV2)).active?.status, 'stopped');
+
+    // 2. PUT commits Unlisted then drops HTTP response -> GET confirms Unlisted BEFORE resume & publish.
+    failPut503BeforeCommit = false;
+    dropPutResponseAfterCommit = true;
+    callOrder.length = 0;
+    const recovered = await service.publish(targetV2, { mode: 'resume', visibility: 'unlisted' });
+    assert.equal(recovered.publication.status, 'published');
+    assert.equal(recovered.publication.slug, slug);
+    assert.equal(recovered.publication.visibility, 'unlisted');
+    assert.equal(recovered.publication.listingSyncPending, undefined);
+    const getIdx = callOrder.indexOf('GET game-listing');
+    const resumeIdx = callOrder.indexOf('share resume-existing');
+    const publishIdx = callOrder.indexOf('share publish');
+    assert.ok(getIdx >= 0 && resumeIdx > getIdx && publishIdx > getIdx, `unexpected call order: ${callOrder.join(', ')}`);
+    assert.equal(baseMock.listings.get(slug)?.visibility, 'unlisted');
+
+    // 3. Re-stop, edit again, and succeed cleanly: PUT (unlisted) runs strictly before resume & publish.
+    await service.unpublish(targetV2);
+    await writeFile(path.join(gameDir, 'index.html'), '<!doctype html><h1>Reopen v3 (changed)</h1>');
+    const targetV3 = { ...targetV2, sourceRevision: 'rev-3' };
+    dropPutResponseAfterCommit = false;
+    callOrder.length = 0;
+    const cleanResumed = await service.publish(targetV3, { mode: 'resume', visibility: 'unlisted' });
+    assert.equal(cleanResumed.publication.slug, slug);
+    assert.equal(cleanResumed.publication.visibility, 'unlisted');
+    assert.equal(cleanResumed.publication.listingSyncPending, undefined);
+    const putIdx3 = callOrder.indexOf('PUT game-listing');
+    const resumeIdx3 = callOrder.indexOf('share resume-existing');
+    const publishIdx3 = callOrder.indexOf('share publish');
+    assert.ok(putIdx3 >= 0 && resumeIdx3 > putIdx3 && publishIdx3 > putIdx3, `unexpected call order: ${callOrder.join(', ')}`);
+    assert.equal(baseMock.listings.get(slug)?.visibility, 'unlisted');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

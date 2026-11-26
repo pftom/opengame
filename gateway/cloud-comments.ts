@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   extractCommentableElements,
+  findCommentableElement,
   groupCloudCommentThreads,
   isGameShareUrl,
   parseCloudShareUrl,
@@ -321,8 +322,7 @@ export class CloudCommentsService {
     return meta;
   }
 
-  async inspectElements(rawInput: Record<string, unknown>) {
-    const ref = await this.resolveShareRef(rawInput);
+  private async fetchEntryHtml(ref: CloudShareRef): Promise<{ meta: ShareViewerMetadata; html: string }> {
     const meta = await this.fetchMetadata(ref);
     const encodedEntryPath = meta.entryPath
       .split('/')
@@ -336,6 +336,12 @@ export class CloudCommentsService {
         responseType: 'text',
       },
     );
+    return { meta, html };
+  }
+
+  async inspectElements(rawInput: Record<string, unknown>) {
+    const ref = await this.resolveShareRef(rawInput);
+    const { meta, html } = await this.fetchEntryHtml(ref);
     const query = typeof rawInput.query === 'string' ? rawInput.query : undefined;
     const limit = typeof rawInput.limit === 'number' ? rawInput.limit : undefined;
     const extracted = extractCommentableElements(html, { query, limit });
@@ -450,15 +456,9 @@ export class CloudCommentsService {
         selector = stageAnchor.selector;
         htmlHint = stageAnchor.htmlHint;
       } else {
-        const inspection = await this.inspectElements({
-          projectId: ref.projectId,
-          slug: ref.slug,
-          limit: 200,
-        });
-        inspectedShare = inspection.share;
-        const match: CloudCommentElement | undefined =
-          (selector ? inspection.elements.find((item) => item.selector === selector) : undefined) ??
-          (elementId ? inspection.elements.find((item) => item.elementId === elementId || item.id === elementId) : undefined);
+        const { meta, html } = await this.fetchEntryHtml(ref);
+        inspectedShare = { filePath: meta.entryPath, version: meta.version };
+        const match = findCommentableElement(html, { selector, elementId });
         if (!match && (!selector || !elementId)) {
           throw new Error(`COMMENT_TARGET_NOT_FOUND: element "${selector || elementId}" was not found in published HTML`);
         }

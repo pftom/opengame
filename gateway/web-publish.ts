@@ -1041,6 +1041,62 @@ export class WebPublishService {
     });
   }
 
+  private async confirmUnlistedBeforeReopen(params: {
+    target: Pick<WebPublishTarget, 'kind' | 'gameMeta'>;
+    cloudProjectId: string;
+    workspaceId: string;
+    slug: string;
+    displayName: string;
+    allowRemix?: boolean;
+    hasCommunityUrl: boolean;
+  }): Promise<{ listing: GameListingControlResponse | null; legacyUnsupported: boolean }> {
+    const preResumeError =
+      'DEPLOY_FAILED: Could not confirm Unlisted visibility on OpenDesign Cloud before reopening the stopped share link. Please retry.';
+    const fetchCurrentListing = async () =>
+      this.account.controlApiJson
+        ? await this.account
+            .controlApiJson<GameListingControlResponse>(
+              `/api/v1/collab/shares/${encodeURIComponent(params.slug)}/game-listing?projectId=${encodeURIComponent(params.cloudProjectId)}`,
+              { method: 'GET', workspaceId: params.workspaceId, timeoutMs: 8_000 },
+            )
+            .catch(() => null)
+        : null;
+    if (!this.account.controlApiJson) {
+      throw new Error(preResumeError);
+    }
+    let listing: GameListingControlResponse | null = null;
+    let legacyUnsupported = false;
+    try {
+      listing = await this.syncGameListing({
+        target: params.target,
+        cloudProjectId: params.cloudProjectId,
+        workspaceId: params.workspaceId,
+        slug: params.slug,
+        displayName: params.displayName,
+        visibility: 'unlisted',
+        allowRemix: params.allowRemix,
+      });
+    } catch (syncError) {
+      if (isPrivateSharePlanError(syncError) || isAuthRequiredError(syncError)) {
+        throw syncError;
+      }
+      if (isUnsupportedGameListingEndpointError(syncError) && !params.hasCommunityUrl) {
+        legacyUnsupported = true;
+      } else {
+        const probed = await fetchCurrentListing();
+        if (probed?.visibility === 'unlisted') {
+          listing = probed;
+        } else {
+          throw new Error(preResumeError);
+        }
+      }
+    }
+    if (!legacyUnsupported && listing?.visibility !== 'unlisted') {
+      throw new Error(preResumeError);
+    }
+    return { listing, legacyUnsupported };
+  }
+
   private async publishEntry(target: WebPublishTarget, filePath: string, options: PublishOptions): Promise<{
     publication: WebPublicationRecord;
     deployment: WebPublicationRecord;
@@ -1118,43 +1174,17 @@ export class WebPublishService {
       let preResumeListing: GameListingControlResponse | null = null;
       let preResumeLegacyUnsupported = false;
       if (target.kind === 'game' && requestedVisibility === 'unlisted') {
-        if (!this.account.controlApiJson) {
-          throw new Error(
-            'DEPLOY_FAILED: Could not confirm Unlisted visibility on OpenDesign Cloud before reopening the stopped share link. Please retry.',
-          );
-        }
-        try {
-          preResumeListing = await this.syncGameListing({
-            target,
-            cloudProjectId: existingProjectId,
-            workspaceId: workspace.workspaceId,
-            slug: existingPublication.slug,
-            displayName: displayGameTitle,
-            visibility: 'unlisted',
-            allowRemix: requestedAllowRemix,
-          });
-        } catch (syncError) {
-          if (isPrivateSharePlanError(syncError) || isAuthRequiredError(syncError)) {
-            throw syncError;
-          }
-          if (isUnsupportedGameListingEndpointError(syncError) && !existingPublication.communityUrl) {
-            preResumeLegacyUnsupported = true;
-          } else {
-            const probed = await fetchCurrentListing();
-            if (probed?.visibility === 'unlisted') {
-              preResumeListing = probed;
-            } else {
-              throw new Error(
-                'DEPLOY_FAILED: Could not confirm Unlisted visibility on OpenDesign Cloud before reopening the stopped share link. Please retry.',
-              );
-            }
-          }
-        }
-        if (!preResumeLegacyUnsupported && preResumeListing?.visibility !== 'unlisted') {
-          throw new Error(
-            'DEPLOY_FAILED: Could not confirm Unlisted visibility on OpenDesign Cloud before reopening the stopped share link. Please retry.',
-          );
-        }
+        const confirmed = await this.confirmUnlistedBeforeReopen({
+          target,
+          cloudProjectId: existingProjectId,
+          workspaceId: workspace.workspaceId,
+          slug: existingPublication.slug,
+          displayName: displayGameTitle,
+          allowRemix: requestedAllowRemix,
+          hasCommunityUrl: Boolean(existingPublication.communityUrl),
+        });
+        preResumeListing = confirmed.listing;
+        preResumeLegacyUnsupported = confirmed.legacyUnsupported;
       }
 
       const resumedRecord = await this.runVelaJson(
@@ -1297,6 +1327,28 @@ export class WebPublishService {
       return next;
     });
     const cloudProjectId = reservation.cloudProjectId || existingProjectId;
+
+    const resumingStoppedSlugAsUnlisted =
+      target.kind === 'game'
+      && mode === 'resume'
+      && existingPublication?.status === 'stopped'
+      && reservation.slug === existingPublication.slug
+      && requestedVisibility === 'unlisted';
+    let preReopenListing: GameListingControlResponse | null = null;
+    let preReopenLegacyUnsupported = false;
+    if (resumingStoppedSlugAsUnlisted) {
+      const confirmed = await this.confirmUnlistedBeforeReopen({
+        target,
+        cloudProjectId,
+        workspaceId: workspace.workspaceId,
+        slug: reservation.slug,
+        displayName,
+        allowRemix: options.allowRemix ?? existingPublication?.allowRemix,
+        hasCommunityUrl: Boolean(existingPublication?.communityUrl),
+      });
+      preReopenListing = confirmed.listing;
+      preReopenLegacyUnsupported = confirmed.legacyUnsupported;
+    }
 
     const resourceId = publicFileResourceIdFor({
       workspaceId: workspace.workspaceId,
@@ -1443,12 +1495,12 @@ export class WebPublishService {
       // Best-effort community listing sync after `share publish` has already succeeded:
       // keep legacy 404 compatibility for paid plans on pre-community backends, reject Free 403
       // mislabeling immediately, and probe/mark pending on transient 5xx/timeout errors.
-      let listingSync: GameListingControlResponse | null = null;
+      let listingSync: GameListingControlResponse | null = preReopenListing;
       let listingSyncPending = false;
       let pendingVisibility: WebPublishVisibility | undefined;
-      let legacyListingUnsupported = false;
+      let legacyListingUnsupported = preReopenLegacyUnsupported;
       let listingPlanRejection: unknown = null;
-      if (target.kind === 'game') {
+      if (target.kind === 'game' && !resumingStoppedSlugAsUnlisted) {
         try {
           listingSync = await this.syncGameListing({
             target,

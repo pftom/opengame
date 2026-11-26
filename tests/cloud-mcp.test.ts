@@ -1050,3 +1050,223 @@ test('parseCloudShareUrl preserves ?kind=game and trackingError keeps Cloud medi
     assert.equal(trackingError(new Error(`${code}: detail`)), code);
   }
 });
+
+test('CloudCommentsService comments on elements past index 200 and preserves caller idempotencyKey across image comment/reply retries', async () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'om-cloud-240-retry-'));
+  const buttons = Array.from({ length: 240 }, (_, i) => `<button id="choice-${i}">Choice ${i}</button>`).join('');
+  const html240 = `<!doctype html><html><body><div id="choices">${buttons}</div></body></html>`;
+  const pngPath = path.join(root, 'shot.png');
+  writeFileSync(
+    pngPath,
+    Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+      0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
+      0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
+      0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
+      0x42, 0x60, 0x82,
+    ]),
+  );
+
+  let uploadSeq = 0;
+  let commentSeq = 0;
+  const storedByKey = new Map<string, CloudComment>();
+  const storedComments: CloudComment[] = [];
+
+  const server = http.createServer(async (req, res) => {
+    const reqUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(Buffer.from(chunk));
+    const raw = Buffer.concat(chunks);
+
+    if (req.method === 'GET' && reqUrl.pathname === '/api/v1/public/snapshots/large-slug') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ slug: 'large-slug', snapshotSlug: 'snap-240', entryPath: 'index.html', version: 1 }));
+      return;
+    }
+    if (req.method === 'GET' && reqUrl.pathname === '/api/v1/public/snapshots/snap-240/files/index.html') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html240);
+      return;
+    }
+    if (req.method === 'POST' && reqUrl.pathname === '/api/v1/collab/client-share/large-slug/attachments') {
+      uploadSeq += 1;
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          attachment: {
+            id: `att-up-${uploadSeq}`,
+            uploadToken: `tok-${uploadSeq}`,
+            mimeType: 'image/png',
+            sizeBytes: raw.byteLength,
+            width: 1,
+            height: 1,
+          },
+        }),
+      );
+      return;
+    }
+    if (req.method === 'POST' && reqUrl.pathname === '/api/v1/collab/client-share/large-slug/comments') {
+      const body = JSON.parse(raw.toString('utf8')) as Record<string, unknown>;
+      const key = String(body.idempotencyKey ?? '');
+      const existing = storedByKey.get(key);
+      if (existing) {
+        if (existing.note !== body.note || existing.parentCommentId !== body.parentCommentId) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ code: 'INVALID_COMMENT' }));
+          return;
+        }
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            comment: existing,
+            share: { projectId: 'proj-240', slug: 'large-slug', filePath: 'index.html', version: 1 },
+          }),
+        );
+        return;
+      }
+      commentSeq += 1;
+      const attachments = Array.isArray(body.attachments)
+        ? (body.attachments as Array<{ uploadToken: string; alt?: string }>).map((att, idx) => ({
+            id: `att-saved-${commentSeq}-${idx}`,
+            mimeType: 'image/png' as const,
+            sizeBytes: 67,
+            width: 1,
+            height: 1,
+            ...(att.alt ? { alt: att.alt } : {}),
+            url: `/api/v1/collab/share/large-slug/attachments/att-saved-${commentSeq}-${idx}`,
+          }))
+        : undefined;
+      const created: CloudComment = {
+        id: `c-${commentSeq}`,
+        seq: commentSeq,
+        ...(typeof body.parentCommentId === 'string' ? { parentCommentId: body.parentCommentId } : {}),
+        author: { kind: 'user', authorKey: 'alice-hash', displayName: 'Alice' },
+        isMine: true,
+        note: String(body.note ?? ''),
+        ...(attachments ? { attachments } : {}),
+        filePath: 'index.html',
+        elementId: String(body.elementId ?? 'choice-239'),
+        selector: String(body.selector ?? '#choice-239'),
+        htmlHint: String(body.htmlHint ?? '<button id="choice-239">'),
+        status: 'open',
+        createdAt: 1000 + commentSeq,
+        updatedAt: 1000 + commentSeq,
+      };
+      storedByKey.set(key, created);
+      storedComments.push(created);
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          comment: created,
+          share: { projectId: 'proj-240', slug: 'large-slug', filePath: 'index.html', version: 1 },
+        }),
+      );
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  });
+
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const apiUrl = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  try {
+    const store = new WorkspaceStore(path.join(root, 'ws'));
+    const credDir = path.join(store.directory, 'account', 'credentials');
+    mkdirSync(credDir, { recursive: true });
+    writeFileSync(
+      path.join(credDir, 'config.json'),
+      JSON.stringify({
+        profiles: {
+          prod: {
+            apiUrl,
+            controlKey: 'alice-key',
+            controlKeyId: 'ck-alice',
+            runtimeKey: 'rk-alice',
+            user: { id: 'u-alice', name: 'Alice', email: 'alice@example.com' },
+          },
+        },
+      }),
+    );
+    const account = new OpenDesignAccount(store.directory);
+
+    const inspected = (await cloudCommentsOperation(
+      store,
+      {
+        action: 'inspect_elements',
+        shareUrl: 'https://open-design.app/artifact/proj-240/large-slug',
+        query: '#choice-239',
+      },
+      'http://127.0.0.1:4179',
+      { account },
+    )) as { elements: Array<{ selector: string; elementId: string }> };
+    assert.equal(inspected.elements[0]?.selector, '#choice-239');
+
+    const root1 = (await cloudCommentsOperation(
+      store,
+      {
+        action: 'comment',
+        shareUrl: 'https://open-design.app/artifact/proj-240/large-slug',
+        selector: '#choice-239',
+        note: 'Anchor on 240th choice',
+        imagePaths: [pngPath],
+        idempotencyKey: 'retry-root-key',
+      },
+      'http://127.0.0.1:4179',
+      { account },
+    )) as { comment: CloudComment };
+    assert.equal(root1.comment.elementId, 'choice-239');
+    assert.equal(root1.comment.selector, '#choice-239');
+    assert.equal(root1.comment.htmlHint, '<button id="choice-239">');
+
+    const rootRetry = (await cloudCommentsOperation(
+      store,
+      {
+        action: 'comment',
+        shareUrl: 'https://open-design.app/artifact/proj-240/large-slug',
+        selector: '#choice-239',
+        note: 'Anchor on 240th choice',
+        imagePaths: [pngPath],
+        idempotencyKey: 'retry-root-key',
+      },
+      'http://127.0.0.1:4179',
+      { account },
+    )) as { comment: CloudComment };
+    assert.equal(rootRetry.comment.id, root1.comment.id);
+    assert.equal(rootRetry.comment.attachments?.[0]?.id, root1.comment.attachments?.[0]?.id);
+    assert.equal(storedComments.length, 1);
+
+    const reply1 = (await cloudCommentsOperation(
+      store,
+      {
+        action: 'reply',
+        shareUrl: 'https://open-design.app/artifact/proj-240/large-slug',
+        parentCommentId: root1.comment.id,
+        note: 'Reply screenshot',
+        imagePaths: [pngPath],
+        idempotencyKey: 'retry-reply-key',
+      },
+      'http://127.0.0.1:4179',
+      { account },
+    )) as { comment: CloudComment };
+
+    const replyRetry = (await cloudCommentsOperation(
+      store,
+      {
+        action: 'reply',
+        shareUrl: 'https://open-design.app/artifact/proj-240/large-slug',
+        parentCommentId: root1.comment.id,
+        note: 'Reply screenshot',
+        imagePaths: [pngPath],
+        idempotencyKey: 'retry-reply-key',
+      },
+      'http://127.0.0.1:4179',
+      { account },
+    )) as { comment: CloudComment };
+    assert.equal(replyRetry.comment.id, reply1.comment.id);
+    assert.equal(replyRetry.comment.attachments?.[0]?.id, reply1.comment.attachments?.[0]?.id);
+    assert.equal(storedComments.length, 2);
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    rmSync(root, { recursive: true, force: true });
+  }
+});

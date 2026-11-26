@@ -251,14 +251,11 @@ function formatHtmlHint(tag: string, attrs: Record<string, string>): string {
 }
 
 /**
- * Extracts commentable visible DOM elements with deterministic unique CSS
+ * Collects all commentable visible DOM elements with deterministic unique CSS
  * selectors (`#id`, `[data-testid="..."]`, or `:nth-of-type(...)` path) from
  * deployed static HTML without booting a browser.
  */
-export function extractCommentableElements(
-  html: string,
-  options: { query?: string; limit?: number } = {},
-): { elements: CloudCommentElement[]; totalElements: number } {
+function collectCommentableElements(html: string): CloudCommentElement[] {
   const nodes: ParsedNode[] = [];
   const rootCounts = new Map<string, number>();
   const stack: ParsedNode[] = [];
@@ -423,7 +420,19 @@ export function extractCommentableElements(
       ...(ariaLabel ? { ariaLabel } : {}),
     });
   }
+  return candidates;
+}
 
+/**
+ * Extracts commentable visible DOM elements with deterministic unique CSS
+ * selectors (`#id`, `[data-testid="..."]`, or `:nth-of-type(...)` path) from
+ * deployed static HTML without booting a browser.
+ */
+export function extractCommentableElements(
+  html: string,
+  options: { query?: string; limit?: number } = {},
+): { elements: CloudCommentElement[]; totalElements: number } {
+  const candidates = collectCommentableElements(html);
   const normalizedQuery = options.query?.trim().toLowerCase();
   const filtered = normalizedQuery
     ? candidates.filter((item) =>
@@ -441,4 +450,22 @@ export function extractCommentableElements(
     elements: filtered.slice(0, limit),
     totalElements: filtered.length,
   };
+}
+
+/**
+ * Finds an exact element match across the entire published HTML document
+ * regardless of element count so selectors beyond index 199 stay commentable.
+ */
+export function findCommentableElement(
+  html: string,
+  target: { selector?: string; elementId?: string },
+): CloudCommentElement | undefined {
+  const selector = target.selector?.trim();
+  const elementId = target.elementId?.trim();
+  if (!selector && !elementId) return undefined;
+  const candidates = collectCommentableElements(html);
+  return (
+    (selector ? candidates.find((item) => item.selector === selector) : undefined) ??
+    (elementId ? candidates.find((item) => item.elementId === elementId || item.id === elementId) : undefined)
+  );
 }
