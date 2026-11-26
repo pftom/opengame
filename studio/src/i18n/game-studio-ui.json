@@ -151,7 +151,8 @@
     "Local link copied. It only opens on this computer — use Share to publish online.": "本地链接已复制，仅限本机打开——点击“分享”即可发布到线上。",
     "Local link copied. It only opens on this computer.": "本地链接已复制，仅限本机打开。",
     "Art style": "画风",
-    "Playing": "试玩中"
+    "Playing": "试玩中",
+    "Jump into a surprise community game — swipe for more": "随机打开社区小游戏，支持上下刷不停"
   },
   "ja": {
     "3D": "3D",
@@ -305,7 +306,8 @@
     "Local link copied. It only opens on this computer — use Share to publish online.": "ローカルリンクをコピーしました。このパソコンでのみ開けます。オンライン公開には「共有」を使用してください。",
     "Local link copied. It only opens on this computer.": "ローカルリンクをコピーしました。このパソコンでのみ開けます。",
     "Art style": "画風",
-    "Playing": "プレイ中"
+    "Playing": "プレイ中",
+    "Jump into a surprise community game — swipe for more": "コミュニティのゲームをランダムにすぐプレイ、スワイプで次々切り替え"
   },
   "ko": {
     "3D": "3D",
@@ -459,7 +461,8 @@
     "Local link copied. It only opens on this computer — use Share to publish online.": "로컬 링크를 복사했습니다. 이 컴퓨터에서만 열 수 있으며, 온라인 게시는 공유를 사용하세요.",
     "Local link copied. It only opens on this computer.": "로컬 링크를 복사했습니다. 이 컴퓨터에서만 열 수 있습니다.",
     "Art style": "화풍",
-    "Playing": "플레이 중"
+    "Playing": "플레이 중",
+    "Jump into a surprise community game — swipe for more": "커뮤니티 게임을 무작위로 바로 플레이하고 스와이프로 계속 넘겨보세요"
   },
   "de": {
     "3D": "3D",
@@ -613,7 +616,8 @@
     "Local link copied. It only opens on this computer — use Share to publish online.": "Lokaler Link kopiert. Er öffnet sich nur auf diesem Computer – nutze Teilen zum Veröffentlichen im Web.",
     "Local link copied. It only opens on this computer.": "Lokaler Link kopiert. Er öffnet sich nur auf diesem Computer.",
     "Art style": "Grafikstil",
-    "Playing": "Läuft"
+    "Playing": "Läuft",
+    "Jump into a surprise community game — swipe for more": "Starte ein zufälliges Community-Spiel und wische für mehr"
   },
   "fr": {
     "3D": "3D",
@@ -767,7 +771,8 @@
     "Local link copied. It only opens on this computer — use Share to publish online.": "Lien local copié. Il ne s’ouvre que sur cet ordinateur : utilisez Partager pour le publier en ligne.",
     "Local link copied. It only opens on this computer.": "Lien local copié. Il ne s’ouvre que sur cet ordinateur.",
     "Art style": "Style visuel",
-    "Playing": "En cours"
+    "Playing": "En cours",
+    "Jump into a surprise community game — swipe for more": "Lancez un jeu aléatoire de la communauté et faites défiler pour en découvrir d'autres"
   },
   "ru": {
     "3D": "3D",
@@ -921,7 +926,8 @@
     "Local link copied. It only opens on this computer — use Share to publish online.": "Локальная ссылка скопирована. Она открывается только на этом компьютере — используйте «Поделиться» для публикации онлайн.",
     "Local link copied. It only opens on this computer.": "Локальная ссылка скопирована. Она открывается только на этом компьютере.",
     "Art style": "Стиль графики",
-    "Playing": "Игра запущена"
+    "Playing": "Игра запущена",
+    "Jump into a surprise community game — swipe for more": "Запустите случайную игру сообщества и листайте дальше"
   },
   "es": {
     "3D": "3D",
@@ -1075,7 +1081,8 @@
     "Local link copied. It only opens on this computer — use Share to publish online.": "Enlace local copiado. Solo se abre en este ordenador; usa Compartir para publicarlo en línea.",
     "Local link copied. It only opens on this computer.": "Enlace local copiado. Solo se abre en este ordenador.",
     "Art style": "Estilo visual",
-    "Playing": "Jugando"
+    "Playing": "Jugando",
+    "Jump into a surprise community game — swipe for more": "Abre un juego sorpresa de la comunidad y desliza para ver más"
   },
   "pt-BR": {
     "3D": "3D",
@@ -1229,7 +1236,8 @@
     "Local link copied. It only opens on this computer — use Share to publish online.": "Link local copiado. Ele só abre neste computador — use Compartilhar para publicar online.",
     "Local link copied. It only opens on this computer.": "Link local copiado. Ele só abre neste computador.",
     "Art style": "Estilo visual",
-    "Playing": "Jogando"
+    "Playing": "Jogando",
+    "Jump into a surprise community game — swipe for more": "Abra um jogo surpresa da comunidade e deslize para ver mais"
   },
   "it": {
     "3D": "3D",
@@ -1383,7 +1391,8 @@
     "Local link copied. It only opens on this computer — use Share to publish online.": "Link locale copiato. Si apre solo su questo computer: usa Condividi per pubblicarlo online.",
     "Local link copied. It only opens on this computer.": "Link locale copiato. Si apre solo su questo computer.",
     "Art style": "Stile grafico",
-    "Playing": "In gioco"
+    "Playing": "In gioco",
+    "Jump into a surprise community game — swipe for more": "Apri subito un gioco a sorpresa della community e scorri per scoprirne altri"
   },
   "tr": {
     "3D": "3D",
@@ -1537,6 +1546,7 @@
     "Local link copied. It only opens on this computer — use Share to publish online.": "Yerel bağlantı kopyalandı. Yalnızca bu bilgisayarda açılır — çevrimiçi yayınlamak için Paylaş’ı kullanın.",
     "Local link copied. It only opens on this computer.": "Yerel bağlantı kopyalandı. Yalnızca bu bilgisayarda açılır.",
     "Art style": "Görsel stil",
-    "Playing": "Oynanıyor"
+    "Playing": "Oynanıyor",
+    "Jump into a surprise community game — swipe for more": "Sürpriz bir topluluk oyununu hemen açın, daha fazlası için kaydırın"
   }
 }

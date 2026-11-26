@@ -73,7 +73,7 @@ export type BrowserConsoleEntry = {
 };
 
 export type BrowserInput =
-  | { type: 'pointer'; event: 'move' | 'down' | 'up'; x: number; y: number; button: 'left' | 'middle' | 'right'; clickCount?: number }
+  | { type: 'pointer'; event: 'move' | 'down' | 'up'; x: number; y: number; button: 'left' | 'middle' | 'right'; buttons?: number; clickCount?: number }
   | { type: 'wheel'; x: number; y: number; deltaX: number; deltaY: number }
   | { type: 'text'; text: string }
   | { type: 'key'; key: string; modifiers: number };

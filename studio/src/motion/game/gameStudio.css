@@ -65,7 +65,31 @@ button.om-game-chip:hover, .om-game-chip[aria-expanded="true"] { background: var
 .om-game-filters input, .om-game-filters select { border: 0; outline: none; background: transparent; color: var(--motion-text); font: inherit; font-size: var(--motion-text-sm); }
 .om-game-search { width: min(100%, 260px); }
 .om-game-search input { width: 100%; }
-.om-game-selects { display: flex; gap: var(--motion-space-8); }
+.om-game-selects { display: flex; flex-wrap: wrap; align-items: center; gap: var(--motion-space-8); }
+.om-game-community-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--motion-space-6);
+  height: 34px;
+  min-height: 34px;
+  padding: 0 var(--motion-space-12);
+  padding-block: 0;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--motion-radius-md);
+  background: var(--motion-accent-soft);
+  color: var(--motion-strong);
+  font-size: var(--motion-text-sm);
+  font-weight: var(--motion-weight-medium);
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background var(--motion-duration-fast) var(--motion-ease-out), color var(--motion-duration-fast) var(--motion-ease-out);
+}
+.om-game-community-link:hover { background: color-mix(in srgb, var(--motion-accent) 22%, var(--motion-accent-soft)); color: var(--motion-strong); text-decoration: none; }
+.om-game-community-link:focus-visible { outline: 2px solid var(--motion-focus); outline-offset: 2px; }
 .om-game-note { margin: 0; font-size: var(--motion-text-sm); }
 .om-game-row { display: grid; gap: var(--motion-space-12); }
 .om-game-row > header { display: flex; align-items: center; justify-content: space-between; }
@@ -152,7 +176,7 @@ button.om-game-chip:hover, .om-game-chip[aria-expanded="true"] { background: var
   .om-game-option > span:last-child { bottom: var(--motion-space-6); font-size: var(--motion-text-xs); }
 }
 
-@media (prefers-reduced-motion: reduce) { .om-game-dock, .om-game-dock .om-game-options, .om-game-dock textarea { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .om-game-dock, .om-game-dock .om-game-options, .om-game-dock textarea, .om-game-community-link { transition: none !important; } }
 .om-game-chip-clear { width: 18px; height: 18px; padding: 0; color: var(--motion-muted); }
 .om-game-external { position: relative; display: grid; place-items: center; width: 100%; height: 100%; overflow: hidden; }
 .om-game-external img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45; }

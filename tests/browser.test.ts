@@ -162,6 +162,88 @@ test('browser supports inspectAt, screenshot, color scheme, zoom, clear cache/co
   }
 });
 
+test('browser streams 2x Retina frames with PNG settle and ignores slow child iframes for main loading state', { timeout: 60_000 }, async () => {
+  const site = createServer((req, res) => {
+    const reqUrl = new URL(req.url!, 'http://local');
+    if (reqUrl.pathname === '/slow-frame') {
+      setTimeout(() => {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end('<body>child ready</body>');
+      }, 600);
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(`<!doctype html><html><head><title>HiDPI Host</title></head>
+      <body style="margin:0;background:#101214;color:#fff">
+        <h1>Retina</h1>
+        <iframe src="/slow-frame" style="width:200px;height:100px"></iframe>
+      </body></html>`);
+  });
+  await new Promise<void>(resolve => site.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${(site.address() as { port: number }).port}`;
+  const browser = new WorkspaceBrowser(process.cwd());
+  try {
+    const tab = await browser.open('session-hidpi', 'tab-hidpi', `${base}/`, { width: 420, height: 320, dpr: 2 });
+    const doneDeadline = Date.now() + 8000;
+    while ((tab.state.loading || tab.state.title !== 'HiDPI Host') && Date.now() < doneDeadline) {
+      await new Promise(resolve => setTimeout(resolve, 40));
+    }
+    assert.equal(tab.state.loading, false, 'main document load should clear loading promptly');
+
+    // Injecting a new child iframe after initial load must not stick tab.state.loading at true.
+    await tab.page.evaluate(() => {
+      const f = document.createElement('iframe');
+      f.src = '/slow-frame';
+      document.body.appendChild(f);
+    });
+    await new Promise(resolve => setTimeout(resolve, 120));
+    assert.equal(tab.state.loading, false, 'child iframe start should not set main tab loading state');
+
+    assert.equal(browser.has('session-hidpi', 'tab-hidpi'), true);
+    await tab.input({ type: 'pointer', event: 'move', x: 50, y: 50, button: 'left', buttons: 1 });
+
+    let streamChunks = '';
+    const stream = Object.assign(new Writable({ write(chunk, _encoding, done) { streamChunks += chunk.toString(); done(); } }), { writeHead() {} });
+    await tab.watch(stream as unknown as ServerResponse);
+    const frameDeadline = Date.now() + 8000;
+    while (!streamChunks.includes('"mime":"image/png"') && Date.now() < frameDeadline) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    // Wait across a 1.2s heartbeat interval and confirm unchanged state is not re-emitted.
+    await new Promise(resolve => setTimeout(resolve, 1450));
+    stream.destroy();
+
+    const statePayloads = streamChunks
+      .split('\n\n')
+      .filter(block => block.startsWith('event: state\n'))
+      .map(block => block.split('data: ')[1]);
+    for (let i = 1; i < statePayloads.length; i += 1) {
+      assert.notEqual(statePayloads[i], statePayloads[i - 1], 'heartbeat should not emit duplicate identical state payloads');
+    }
+
+    const framePayloads = streamChunks
+      .split('\n\n')
+      .filter(block => block.startsWith('event: frame\n'))
+      .map(block => JSON.parse(block.split('data: ')[1]) as { data: string; mime?: string; width: number; height: number; dpr: number });
+    const pngFrame = framePayloads.find(f => f.mime === 'image/png');
+    assert.ok(pngFrame, 'idle watch stream should emit lossless image/png settle frame');
+    assert.equal(pngFrame.width, 420);
+    assert.equal(pngFrame.height, 320);
+    assert.equal(pngFrame.dpr, 2);
+    const pngBuf = Buffer.from(pngFrame.data, 'base64');
+    const physicalWidth = pngBuf.readUInt32BE(16);
+    const physicalHeight = pngBuf.readUInt32BE(20);
+    assert.equal(physicalWidth, 840);
+    assert.equal(physicalHeight, 640);
+    await browser.remove('session-hidpi', 'tab-hidpi');
+    assert.equal(browser.has('session-hidpi', 'tab-hidpi'), false);
+  } finally {
+    await browser.close();
+    site.closeAllConnections();
+    await new Promise<void>(resolve => site.close(() => resolve()));
+  }
+});
+
 test('real Chromium sandboxed ?omBridge= iframes deliver om:preview-pick, om:preview-console, and om:preview-capture under CSP', { timeout: 60_000 }, async () => {
   const DESIGN_TOKEN = ['omb', 'design', 'fixture'].join('_');
   const GAME_TOKEN = ['omb', 'game', 'fixture'].join('_');

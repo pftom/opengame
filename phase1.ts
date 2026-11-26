@@ -24,7 +24,10 @@ import { AssetLibrary } from './gateway/asset-library.ts';
 import { scenarioOperation, scenarioRunsFor } from './gateway/scenario-runs.ts';
 import { contentBatchOperation, contentBatchesFor } from './gateway/content-batch.ts';
 import { triggerOperation, triggersFor } from './gateway/triggers.ts';
-import { webPublishOperation } from './gateway/web-publish-ops.ts';
+import { cloudCommentsOperation } from './gateway/cloud-comments.ts';
+import { gatewayFor } from './gateway/service.ts';
+import { webPublishFor } from './gateway/web-publish.ts';
+import { cloudDeployOperation, webPublishOperation } from './gateway/web-publish-ops.ts';
 import { createAutomationHost } from './gateway/automation-host.ts';
 import { designProjectsFor, dispatchDesignTool } from './design-projects.ts';
 import { MAX_ASSET_BYTES, isAssetFileWithinLimit } from './shared/asset-limits.ts';
@@ -458,7 +461,14 @@ export class Phase1Service {
         return triggerOperation(triggersFor(this.store), args.trigger, host);
       }
       if (args.action === 'web_publish') {
-        return webPublishOperation(this.store, args.webPublish, this.context.origin());
+        const rootStore = this.store.workspaceStore ?? this.store;
+        const { account } = gatewayFor(rootStore, this.context.tracking);
+        return webPublishOperation(
+          this.store,
+          args.webPublish,
+          this.context.origin(),
+          webPublishFor(rootStore.directory, account),
+        );
       }
       if (args.action === 'transcript') {
         const input = args.transcript;
@@ -500,6 +510,24 @@ export class Phase1Service {
         })));
       }
       return assetOperation(this.store, args, (input, importOptions) => this.importAssets(input, importOptions), this.context.tracking, channel, host);
+    }
+    if (name === 'motion_cloud_deploy') {
+      const rootStore = this.store.workspaceStore ?? this.store;
+      const { account } = gatewayFor(rootStore, this.context.tracking);
+      return cloudDeployOperation(
+        this.store,
+        args,
+        this.context.origin(),
+        webPublishFor(rootStore.directory, account),
+      );
+    }
+    if (name === 'motion_cloud_comments') {
+      const rootStore = this.store.workspaceStore ?? this.store;
+      const { account } = gatewayFor(rootStore, this.context.tracking);
+      return cloudCommentsOperation(this.store, args, this.context.origin(), {
+        account,
+        webPublish: webPublishFor(rootStore.directory, account),
+      });
     }
     if (name === 'motion_capability_discover') return capabilityDiscover(this.store, args, this.context.tracking, 'mcp');
     if (name === 'motion_capability_run') return capabilityRun(this.store, args, this.context.tracking, 'mcp', host);

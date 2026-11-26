@@ -342,3 +342,424 @@ it('renders Link access switch, Update live link when outdated, new_link rotatio
   expect(popover.textContent).toContain(rotatedUrl);
   expect(popover.textContent).toContain('Up to date');
 });
+
+it('shows Public/Unlisted visibility control for games, locks Unlisted behind Go+ for free users, and lets Go users toggle live', async () => {
+  const freeUrl = 'https://open-design.app/artifact/cloud-free/44444444-4444-4444-8444-444444444444';
+  const freeCommunityUrl = 'https://open-design.app/games/44444444-4444-4444-8444-444444444444';
+  const patchCalls: Array<{ visibility: string }> = [];
+
+  // 1. Free user on a published public game (pending offline review)
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = (init?.method ?? 'GET').toUpperCase();
+    if (url.endsWith('/motion-api/settings/account')) {
+      return jsonResponse({
+        state: 'signed-in',
+        user: { id: 'u_free', email: 'free@example.com' },
+        plan: { id: 'free', name: 'Free', status: 'active' },
+        consoleUrl: 'https://open-design.app',
+      });
+    }
+    if (url.includes('/motion-api/web-publish/game/g_free') && method === 'GET') {
+      const pub = {
+        schemaVersion: 1,
+        targetKind: 'game',
+        targetId: 'g_free',
+        cloudProjectId: 'cloud-free',
+        projectId: 'g_free',
+        filePath: 'index.html',
+        entryPath: 'index.html',
+        name: 'Free Arcade',
+        workspaceId: 'ws_free',
+        workspaceName: 'Free Space',
+        ownerMemberId: 'm_free',
+        resourceId: 'res_free',
+        sourceFileId: 'sf_free',
+        sourceKey: 'sk_free',
+        slug: '44444444-4444-4444-8444-444444444444',
+        version: 1,
+        versionId: 'v1',
+        status: 'published',
+        url: freeUrl,
+        communityUrl: freeCommunityUrl,
+        visibility: 'public',
+        feedStatus: 'pending',
+        publishedAt: 1700000000000,
+        updatedAt: 1700000000000,
+        fileCount: 2,
+        totalBytes: 1024,
+        bundledAssetCount: 1,
+        contentFingerprint: 'fp-free',
+        sourceRevision: '1',
+      };
+      return jsonResponse({
+        targetKind: 'game',
+        targetId: 'g_free',
+        projectId: 'g_free',
+        title: 'Free Arcade',
+        accountSignedIn: true,
+        accountState: 'signed-in',
+        accountPlan: 'free',
+        canUsePrivateShare: false,
+        freshness: 'fresh',
+        fileCount: 2,
+        totalBytes: 1024,
+        bundledAssetCount: 1,
+        entryPath: 'index.html',
+        publications: [pub],
+        deployments: [pub],
+        active: pub,
+      });
+    }
+    if (method === 'PATCH') {
+      patchCalls.push(JSON.parse(String(init?.body ?? '{}')) as { visibility: string });
+      return jsonResponse({ error: 'should not be called for free user' }, 403);
+    }
+    throw new Error(`Unexpected fetch: ${method} ${url}`);
+  }));
+
+  await act(async () => {
+    root!.render(
+      <I18nProvider initialLocale="en">
+        <WebPublishPopover targetKind="game" targetId="g_free" title="Free Arcade" />
+      </I18nProvider>,
+    );
+  });
+  await flushUi();
+
+  const trigger = container!.querySelector('button.om-web-publish-trigger') as HTMLButtonElement;
+  await act(async () => {
+    trigger.click();
+  });
+  await flushUi();
+
+  const popover = document.body.querySelector('.om-web-publish-popover') as HTMLElement;
+  expect(popover.textContent).toContain('Visibility');
+  expect(popover.textContent).toContain('Public');
+  expect(popover.textContent).toContain('Unlisted');
+  expect(popover.textContent).toContain('Go+');
+  expect(popover.textContent).toContain('In review');
+
+  const radios = Array.from(popover.querySelectorAll('[role="radio"]')) as HTMLButtonElement[];
+  expect(radios).toHaveLength(2);
+  expect(radios[0].getAttribute('aria-checked')).toBe('true');
+  expect(radios[1].getAttribute('aria-checked')).toBe('false');
+
+  // Clicking Unlisted as a Free user surfaces inline Go+ upgrade guidance without firing PATCH.
+  await act(async () => {
+    radios[1].click();
+  });
+  await flushUi();
+
+  expect(patchCalls).toHaveLength(0);
+  expect(popover.textContent).toContain('Upgrade to Go+');
+
+  // 2. Paid Go user can publish Unlisted and switch live to Public via PATCH keeping the same slug.
+  let paidVisibility: 'public' | 'unlisted' = 'unlisted';
+  const paidSlug = '55555555-5555-4555-8555-555555555555';
+  const paidUrl = `https://open-design.app/artifact/cloud-go/${paidSlug}`;
+  const paidCommunityUrl = `https://open-design.app/games/${paidSlug}`;
+  const paidRequests: Array<{ method: string; body?: unknown }> = [];
+
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = (init?.method ?? 'GET').toUpperCase();
+    if (url.endsWith('/motion-api/settings/account')) {
+      return jsonResponse({
+        state: 'signed-in',
+        user: { id: 'u_go', email: 'go@example.com' },
+        plan: { id: 'go', name: 'Go', status: 'active' },
+        consoleUrl: 'https://open-design.app',
+      });
+    }
+    const makePaidPub = () => ({
+      schemaVersion: 1,
+      targetKind: 'game',
+      targetId: 'g_go',
+      cloudProjectId: 'cloud-go',
+      projectId: 'g_go',
+      filePath: 'index.html',
+      entryPath: 'index.html',
+      name: 'Go Sandbox',
+      workspaceId: 'ws_go',
+      workspaceName: 'Go Space',
+      ownerMemberId: 'm_go',
+      resourceId: 'res_go',
+      sourceFileId: 'sf_go',
+      sourceKey: 'sk_go',
+      slug: paidSlug,
+      version: 1,
+      versionId: 'v1',
+      status: 'published',
+      url: paidUrl,
+      communityUrl: paidCommunityUrl,
+      visibility: paidVisibility,
+      feedStatus: 'pending',
+      publishedAt: 1700000000000,
+      updatedAt: 1700000000000,
+      fileCount: 2,
+      totalBytes: 1024,
+      bundledAssetCount: 1,
+      contentFingerprint: 'fp-go',
+      sourceRevision: '1',
+    });
+    if (url.includes('/motion-api/web-publish/game/g_go') && method === 'GET') {
+      const pub = makePaidPub();
+      return jsonResponse({
+        targetKind: 'game',
+        targetId: 'g_go',
+        projectId: 'g_go',
+        title: 'Go Sandbox',
+        accountSignedIn: true,
+        accountState: 'signed-in',
+        accountPlan: 'go',
+        canUsePrivateShare: true,
+        freshness: 'fresh',
+        fileCount: 2,
+        totalBytes: 1024,
+        bundledAssetCount: 1,
+        entryPath: 'index.html',
+        publications: [pub],
+        deployments: [pub],
+        active: pub,
+      });
+    }
+    if (url.endsWith('/motion-api/web-publish/game/g_go') && method === 'PATCH') {
+      const body = JSON.parse(String(init?.body ?? '{}')) as { visibility: 'public' | 'unlisted' };
+      paidRequests.push({ method, body });
+      paidVisibility = body.visibility;
+      const pub = makePaidPub();
+      return jsonResponse({ publication: pub, deployment: pub, visibility: paidVisibility, feedStatus: 'pending' });
+    }
+    throw new Error(`Unexpected fetch: ${method} ${url}`);
+  }));
+
+  await act(async () => {
+    root!.render(
+      <I18nProvider initialLocale="en">
+        <WebPublishPopover targetKind="game" targetId="g_go" title="Go Sandbox" />
+      </I18nProvider>,
+    );
+  });
+  await flushUi();
+
+  const paidTrigger = container!.querySelector('button.om-web-publish-trigger') as HTMLButtonElement;
+  await act(async () => {
+    paidTrigger.click();
+  });
+  await flushUi();
+
+  const paidPopover = document.body.querySelector('.om-web-publish-popover') as HTMLElement;
+  const paidRadios = Array.from(paidPopover.querySelectorAll('[role="radio"]')) as HTMLButtonElement[];
+  expect(paidRadios).toHaveLength(2);
+  expect(paidRadios[1].getAttribute('aria-checked')).toBe('true');
+  expect(paidPopover.textContent).toContain('Link only');
+
+  await act(async () => {
+    paidRadios[0].click();
+  });
+  await flushUi();
+
+  expect(paidRequests).toEqual([{ method: 'PATCH', body: { visibility: 'public' } }]);
+  expect(paidRadios[0].getAttribute('aria-checked')).toBe('true');
+  expect(paidPopover.textContent).toContain('In review');
+});
+
+it('unlocks Unlisted for Pro users even if status omits accountPlan and defaults canUsePrivateShare to false', async () => {
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = (init?.method ?? 'GET').toUpperCase();
+    if (url.endsWith('/motion-api/settings/account')) {
+      return jsonResponse({
+        state: 'signed-in',
+        user: { id: 'u_pro', email: 'pro@example.com' },
+        plan: 'pro',
+        billingUnavailable: false,
+        consoleUrl: 'https://open-design.app',
+      });
+    }
+    if (url.includes('/motion-api/web-publish/game/g_pro_fallback') && method === 'GET') {
+      return jsonResponse({
+        targetKind: 'game',
+        targetId: 'g_pro_fallback',
+        projectId: 'g_pro_fallback',
+        title: 'Pro Community Game',
+        accountSignedIn: true,
+        accountState: 'signed-in',
+        canUsePrivateShare: false,
+        freshness: 'unknown',
+        fileCount: 2,
+        totalBytes: 1024,
+        bundledAssetCount: 1,
+        entryPath: 'index.html',
+        publications: [],
+        deployments: [],
+        active: null,
+      });
+    }
+    throw new Error(`Unexpected fetch: ${method} ${url}`);
+  }));
+
+  await act(async () => {
+    root!.render(
+      <I18nProvider initialLocale="en">
+        <WebPublishPopover targetKind="game" targetId="g_pro_fallback" title="Pro Community Game" />
+      </I18nProvider>,
+    );
+  });
+  await flushUi();
+
+  const trigger = container!.querySelector('button.om-web-publish-trigger') as HTMLButtonElement;
+  await act(async () => {
+    trigger.click();
+  });
+  await flushUi();
+
+  const popover = document.body.querySelector('.om-web-publish-popover') as HTMLElement;
+  const radios = Array.from(popover.querySelectorAll('[role="radio"]')) as HTMLButtonElement[];
+  expect(radios).toHaveLength(2);
+  expect(radios[0].getAttribute('aria-checked')).toBe('true');
+
+  await act(async () => {
+    radios[1].click();
+  });
+  await flushUi();
+
+  expect(radios[1].getAttribute('aria-checked')).toBe('true');
+  expect(popover.querySelector('[data-private-upgrade-hint]')).toBeNull();
+});
+
+it('lets paid users change draft visibility on a stopped game share and sends it when reopening', async () => {
+  const stoppedSlug = '66666666-6666-4666-8666-666666666666';
+  const stoppedUrl = `https://open-design.app/artifact/cloud-go/${stoppedSlug}`;
+  const communityUrl = `https://open-design.app/games/${stoppedSlug}`;
+  const postBodies: Array<Record<string, unknown>> = [];
+  let statusValue: 'stopped' | 'published' = 'stopped';
+  let currentVisibility: 'public' | 'unlisted' = 'public';
+
+  const makePub = () => ({
+    schemaVersion: 1,
+    targetKind: 'game',
+    targetId: 'g_stopped',
+    cloudProjectId: 'cloud-go',
+    projectId: 'g_stopped',
+    filePath: 'index.html',
+    entryPath: 'index.html',
+    name: 'Stopped Arcade',
+    workspaceId: 'ws_go',
+    workspaceName: 'Go Space',
+    ownerMemberId: 'm_go',
+    resourceId: 'res_go',
+    sourceFileId: 'sf_go',
+    sourceKey: 'sk_go',
+    slug: stoppedSlug,
+    version: 1,
+    versionId: 'v1',
+    status: statusValue,
+    url: stoppedUrl,
+    communityUrl,
+    visibility: currentVisibility,
+    feedStatus: 'pending',
+    publishedAt: 1700000000000,
+    updatedAt: 1700000000000,
+    fileCount: 2,
+    totalBytes: 1024,
+    bundledAssetCount: 1,
+    contentFingerprint: 'fp-stopped',
+    sourceRevision: '1',
+  });
+
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = (init?.method ?? 'GET').toUpperCase();
+    if (url.endsWith('/motion-api/settings/account')) {
+      return jsonResponse({
+        state: 'signed-in',
+        user: { id: 'u_go', email: 'go@example.com' },
+        plan: { id: 'go', name: 'Go', status: 'active' },
+        consoleUrl: 'https://open-design.app',
+      });
+    }
+    if (url.includes('/motion-api/web-publish/game/g_stopped') && method === 'GET') {
+      const pub = makePub();
+      return jsonResponse({
+        targetKind: 'game',
+        targetId: 'g_stopped',
+        projectId: 'g_stopped',
+        title: 'Stopped Arcade',
+        accountSignedIn: true,
+        accountState: 'signed-in',
+        accountPlan: 'go',
+        canUsePrivateShare: true,
+        freshness: 'fresh',
+        fileCount: 2,
+        totalBytes: 1024,
+        bundledAssetCount: 1,
+        entryPath: 'index.html',
+        publications: [pub],
+        deployments: [pub],
+        active: pub,
+      });
+    }
+    if (url.endsWith('/motion-api/web-publish/game/g_stopped') && method === 'POST') {
+      const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>;
+      postBodies.push(body);
+      statusValue = 'published';
+      if (body.visibility === 'unlisted' || body.visibility === 'public') {
+        currentVisibility = body.visibility;
+      }
+      const pub = makePub();
+      return jsonResponse({ publication: pub, deployment: pub, url: communityUrl, updated: false });
+    }
+    throw new Error(`Unexpected fetch: ${method} ${url}`);
+  }));
+
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: vi.fn().mockResolvedValue(undefined) },
+  });
+
+  await act(async () => {
+    root!.render(
+      <I18nProvider initialLocale="en">
+        <WebPublishPopover targetKind="game" targetId="g_stopped" title="Stopped Arcade" />
+      </I18nProvider>,
+    );
+  });
+  await flushUi();
+
+  const trigger = container!.querySelector('button.om-web-publish-trigger') as HTMLButtonElement;
+  await act(async () => {
+    trigger.click();
+  });
+  await flushUi();
+
+  const popover = document.body.querySelector('.om-web-publish-popover') as HTMLElement;
+  const radios = Array.from(popover.querySelectorAll('[role="radio"]')) as HTMLButtonElement[];
+  expect(radios).toHaveLength(2);
+  expect(radios[0].getAttribute('aria-checked')).toBe('true');
+  expect(radios[1].getAttribute('aria-checked')).toBe('false');
+
+  // Switch stopped share draft to Unlisted: radio updates immediately without PATCH.
+  await act(async () => {
+    radios[1].click();
+  });
+  await flushUi();
+
+  expect(radios[0].getAttribute('aria-checked')).toBe('false');
+  expect(radios[1].getAttribute('aria-checked')).toBe('true');
+
+  // Clicking "Reopen share link" sends the updated visibility in POST body.
+  const reopenBtn = Array.from(popover.querySelectorAll('button')).find(b =>
+    b.textContent?.includes('Reopen share link'),
+  ) as HTMLButtonElement;
+  expect(reopenBtn).toBeTruthy();
+
+  await act(async () => {
+    reopenBtn.click();
+  });
+  await flushUi();
+
+  expect(postBodies).toHaveLength(1);
+  expect(postBodies[0]).toMatchObject({ deployMode: 'resume', visibility: 'unlisted' });
+});

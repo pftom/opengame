@@ -9,6 +9,7 @@ export const toolNames = ['motion_capability_discover', 'motion_capability_run',
   'motion_import_assets', 'motion_get_project', 'motion_edit_project', 'motion_export_request', 'motion_list_versions',
   'motion_restore_version', 'motion_export_cancel', 'motion_project_archive', 'motion_manage_project',
   'motion_design_catalog', 'motion_design_project', 'motion_design_edit', 'motion_design_comments',
+  'motion_cloud_deploy', 'motion_cloud_comments',
   'motion_game_create', 'motion_game_get', 'motion_game_read_file', 'motion_game_write_files', 'motion_game_update_meta', 'motion_game_capture_cover', 'motion_game_playtest', 'motion_game_simulate', 'motion_game_trailer', 'motion_game_validate', 'motion_game_set_status', 'motion_game_publish', 'motion_game_wechat'] as const;
 const outcome = ['success', 'failure', 'partial', 'cancelled', 'unknown'] as const;
 export const mcpToolNames = [...toolNames, 'motion_show_video', 'motion_show_template_recommendations'] as const;
@@ -19,6 +20,7 @@ export const webMcpToolNames = ['openmotion_capability_discover', 'openmotion_ca
   'openmotion_edit_project', 'openmotion_export_request', 'openmotion_list_versions', 'openmotion_restore_version',
   'openmotion_export_cancel', 'openmotion_project_archive', 'openmotion_manage_project',
   'openmotion_design_catalog', 'openmotion_design_project', 'openmotion_design_edit', 'openmotion_design_comments',
+  'openmotion_cloud_deploy', 'openmotion_cloud_comments',
   'openmotion_studio_look', 'openmotion_studio_select', 'openmotion_studio_seek',
   'openmotion_studio_frame', 'openmotion_studio_inspect'] as const;
 const webMcp = { tool_name: webMcpToolNames, transport: ['webmcp'] } as const;

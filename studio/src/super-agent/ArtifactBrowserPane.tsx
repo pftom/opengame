@@ -50,9 +50,10 @@ import {
   rememberInstruction,
   storedInstruction,
 } from '../motion/game/gameCatalog';
+import { openGameCommunityExternal, useGameCommunityUrl } from '../motion/game/gameCommunityUrl';
 import { isMultiplayerGameArtifact } from '../motion/game/gameSuperAgent';
 import { diagnosticsActive, recordBrowserDiagnostic } from '../motion/diagnostics';
-import { lazyWithChunkReload, preloadableLazyWithChunkReload } from '../utils/chunkReload';
+import { preloadableLazyWithChunkReload } from '../utils/chunkReload';
 import { releaseMediaElement } from '../utils/releaseMediaElement';
 import {
   BrowserAnnotationOverlay,
@@ -94,9 +95,11 @@ const CodeViewer = preloadableLazyWithChunkReload(() =>
 const EmbeddedDesignProjectEditor = preloadableLazyWithChunkReload(() =>
   import('../design/DesignProjectEditor').then(m => ({ default: m.DesignProjectEditor })),
 );
-const WebBrowser = lazyWithChunkReload(() =>
+const WebBrowser = preloadableLazyWithChunkReload(() =>
   import('../motion/WebBrowser').then(m => ({ default: m.WebBrowser })),
 );
+
+export const preloadWebBrowser = WebBrowser.preload;
 
 function artifactTabIcon(kind: SuperAgentArtifactKind, filePath?: string, mimeType?: string): string {
   switch (kind) {
@@ -1788,6 +1791,7 @@ function ImageArtifactView({ url, title }: { url: string; title: string }) {
 export function ArtifactBrowserPane({
   active = true,
   chatId,
+  webBrowserChatId,
   workingDir,
   artifacts,
   openTabIds,
@@ -1820,6 +1824,7 @@ export function ArtifactBrowserPane({
 }: {
   active?: boolean;
   chatId: string | null;
+  webBrowserChatId?: string | null;
   workingDir?: string;
   artifacts: SuperAgentArtifact[];
   openTabIds: string[];
@@ -1829,7 +1834,7 @@ export function ArtifactBrowserPane({
   onSelectTab: (tabId: string) => void;
   onCloseTab: (tabId: string) => void;
   onNewTab: () => void;
-  onOpenWebUrl: (url: string) => void;
+  onOpenWebUrl: (url: string, options?: { id?: string; title?: string }) => void;
   onOpenFilePath?: (filePath: string, label?: string) => void;
   onOpenArtifact: (artifactId: string) => void;
   onOpenResource: (item: SuperAgentResourceAttachment) => void;
@@ -1851,6 +1856,7 @@ export function ArtifactBrowserPane({
   onOpenInBrandKit: (kitId?: string) => void;
 }) {
   const { t } = useI18n();
+  const gameCommunityUrl = useGameCommunityUrl();
   const [viewMode, setViewMode] = useState<'preview' | 'code' | 'trailer'>('preview');
   const [gameMetaEntry, setGameMetaEntry] = useState<{
     artifactId: string;
@@ -1874,6 +1880,12 @@ export function ArtifactBrowserPane({
   const [webDevicePreset, setWebDevicePreset] = useState<WebDevicePresetId>('responsive');
   const [webDeviceRotated, setWebDeviceRotated] = useState(false);
   const [browserMenuOpen, setBrowserMenuOpen] = useState(false);
+  const [browserSettingsOpen, setBrowserSettingsOpen] = useState(false);
+  const [optimisticColorScheme, setOptimisticColorScheme] = useState<BrowserColorScheme | null>(null);
+  const [optimisticZoom, setOptimisticZoom] = useState<number | null>(null);
+  const colorSchemeSeqRef = useRef(0);
+  const zoomSeqRef = useRef(0);
+  const zoomTimerRef = useRef<number | null>(null);
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [consoleFilter, setConsoleFilter] = useState<PreviewConsoleFilter>('all');
   const [consoleEntries, setConsoleEntries] = useState<BrowserConsoleEntry[]>([]);
@@ -1919,6 +1931,9 @@ export function ArtifactBrowserPane({
   const handleWebState = useCallback((state: WebPageState) => {
     if (!activeArtifact?.id) return;
     setWebStateEntry({ artifactId: activeArtifact.id, state });
+    if (!state.loading || Boolean(state.url)) {
+      setPendingWebUrl(null);
+    }
   }, [activeArtifact?.id]);
 
   const prevArtifactIdRef = useRef<string | undefined>(activeArtifact?.id);
@@ -2059,8 +2074,42 @@ export function ArtifactBrowserPane({
   ));
   const toolbarGameAction = isGameTrial && !isMultiplayerGame ? onUseGameInAgent : undefined;
 
-  const webColorScheme: BrowserColorScheme = webState?.colorScheme ?? 'auto';
-  const webZoom = webState?.zoom ?? 1;
+  const webColorScheme: BrowserColorScheme = optimisticColorScheme ?? webState?.colorScheme ?? 'auto';
+  const webZoom = optimisticZoom ?? webState?.zoom ?? 1;
+  const webColorSchemeLabel = t(webColorScheme === 'auto' ? 'Auto' : webColorScheme === 'light' ? 'Light' : 'Dark');
+
+  useEffect(() => {
+    if (!browserMenuOpen) setBrowserSettingsOpen(false);
+  }, [browserMenuOpen]);
+
+  useEffect(() => {
+    setBrowserSettingsOpen(false);
+    setOptimisticColorScheme(null);
+    setOptimisticZoom(null);
+    if (zoomTimerRef.current != null) {
+      window.clearTimeout(zoomTimerRef.current);
+      zoomTimerRef.current = null;
+    }
+  }, [activeTabId]);
+
+  useEffect(() => {
+    if (optimisticColorScheme && webState?.colorScheme === optimisticColorScheme) {
+      setOptimisticColorScheme(null);
+    }
+  }, [optimisticColorScheme, webState?.colorScheme]);
+
+  useEffect(() => {
+    if (optimisticZoom != null && webState?.zoom === optimisticZoom) {
+      setOptimisticZoom(null);
+    }
+  }, [optimisticZoom, webState?.zoom]);
+
+  useEffect(() => () => {
+    if (zoomTimerRef.current != null) {
+      window.clearTimeout(zoomTimerRef.current);
+      zoomTimerRef.current = null;
+    }
+  }, []);
   const webErrorCount = activeArtifact?.kind === 'web'
     ? (webState?.errorCount ?? consoleEntries.filter(e => e.level === 'error' || e.level === 'network').length)
     : consoleEntries.filter(e => e.level === 'error' || e.level === 'network').length;
@@ -2236,14 +2285,43 @@ export function ArtifactBrowserPane({
     action: Parameters<WebBrowserHandle['command']>[0],
     value?: unknown,
     toastMessage?: string,
-  ) => {
-    if (!webRef.current) return;
+  ): Promise<boolean> => {
+    if (!webRef.current) return false;
     try {
       await webRef.current.command(action, value);
       if (toastMessage) onNotify?.(toastMessage, 'info');
+      return true;
     } catch (err) {
       onNotify?.(err instanceof Error ? err.message : t('Browser command failed'), 'error');
+      return false;
     }
+  };
+
+  const handleChangeColorScheme = (next: BrowserColorScheme) => {
+    setOptimisticColorScheme(next);
+    const seq = ++colorSchemeSeqRef.current;
+    void handleBrowserCommand('set-color-scheme', next).then(ok => {
+      if (!ok && colorSchemeSeqRef.current === seq) {
+        setOptimisticColorScheme(null);
+      }
+    });
+  };
+
+  const handleChangeZoom = (next: number) => {
+    const clamped = Number(Math.max(0.5, Math.min(2, next)).toFixed(2));
+    setOptimisticZoom(clamped);
+    const seq = ++zoomSeqRef.current;
+    if (zoomTimerRef.current != null) {
+      window.clearTimeout(zoomTimerRef.current);
+    }
+    zoomTimerRef.current = window.setTimeout(() => {
+      zoomTimerRef.current = null;
+      void handleBrowserCommand('set-zoom', clamped).then(ok => {
+        if (!ok && zoomSeqRef.current === seq) {
+          setOptimisticZoom(null);
+        }
+      });
+    }, 75);
   };
 
   useEffect(() => {
@@ -2255,7 +2333,21 @@ export function ArtifactBrowserPane({
   const navigateWeb = (targetUrl: string) => {
     setPendingWebUrl(targetUrl);
     setAddressDraft(targetUrl);
+    if (!showNewTab && activeArtifact?.kind === 'web') {
+      if (webRef.current) {
+        void webRef.current.command('navigate', targetUrl).catch(() => {
+          onOpenWebUrl(targetUrl, { id: activeArtifact.id });
+        });
+      } else {
+        onOpenWebUrl(targetUrl, { id: activeArtifact.id });
+      }
+      return;
+    }
     onOpenWebUrl(targetUrl);
+  };
+
+  const openGameCommunity = () => {
+    openGameCommunityExternal(gameCommunityUrl);
   };
 
   const webLoading = Boolean(pendingWebUrl) || Boolean(activeArtifact?.kind === 'web' && webState?.loading);
@@ -2440,6 +2532,19 @@ export function ArtifactBrowserPane({
                 requestAnimationFrame(() => newTabInputRef.current?.focus());
               }}
               icon={<RemixIcon name="add-line" size={15} />}
+            />
+          </Tooltip>
+          <Tooltip label={t('Jump into a surprise community game — swipe for more')}>
+            <IconButton
+              variant="plain"
+              className="om-sa-new-tab-btn om-sa-community-tab-btn"
+              data-browser-game-community=""
+              aria-label={t('Surprise me')}
+              onClick={event => {
+                event.currentTarget.blur();
+                openGameCommunity();
+              }}
+              icon={<RemixIcon name="gamepad-line" size={15} />}
             />
           </Tooltip>
         </div>
@@ -3239,85 +3344,110 @@ export function ArtifactBrowserPane({
                   <>
                     <div role="separator" />
 
-                    <div className="om-sa-browser-menu-row">
-                      <span className="om-sa-browser-menu-label">{t('Appearance')}</span>
-                      <div className="om-sa-browser-menu-seg" role="group" aria-label={t('Appearance')}>
-                        {(['auto', 'light', 'dark'] as BrowserColorScheme[]).map(scheme => (
+                    <Button
+                      variant="plain"
+                      type="button"
+                      data-menu-row=""
+                      className="om-sa-browser-menu-item om-sa-browser-settings-toggle"
+                      aria-expanded={browserSettingsOpen}
+                      data-expanded={browserSettingsOpen || undefined}
+                      onClick={() => setBrowserSettingsOpen(open => !open)}
+                    >
+                      <RemixIcon name="equalizer-line" size={14} className="om-sa-browser-menu-icon" />
+                      <span className="om-sa-browser-settings-title">{t('Page settings')}</span>
+                      <span className="om-sa-browser-settings-summary">
+                        {webColorSchemeLabel} · {Math.round(webZoom * 100)}%
+                      </span>
+                      <RemixIcon
+                        name={browserSettingsOpen ? 'arrow-down-s-line' : 'arrow-right-s-line'}
+                        size={14}
+                        className="om-sa-browser-settings-chevron"
+                      />
+                    </Button>
+
+                    {browserSettingsOpen && (
+                      <div className="om-sa-browser-settings-panel">
+                        <div className="om-sa-browser-menu-row">
+                          <span className="om-sa-browser-menu-label">{t('Appearance')}</span>
+                          <div className="om-sa-browser-appearance-wrap">
+                            <Select
+                              label={t('Appearance')}
+                              value={webColorScheme}
+                              modal={false}
+                              onCommit={next => handleChangeColorScheme(next as BrowserColorScheme)}
+                              className="om-sa-browser-appearance-select"
+                              options={[
+                                { value: 'auto', label: t('Auto'), icon: <RemixIcon name="computer-line" size={13} /> },
+                                { value: 'light', label: t('Light'), icon: <RemixIcon name="sun-fill" size={13} /> },
+                                { value: 'dark', label: t('Dark'), icon: <RemixIcon name="moon-fill" size={13} /> },
+                              ]}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="om-sa-browser-menu-row">
+                          <span className="om-sa-browser-menu-label">{t('Zoom')}</span>
+                          <div className="om-sa-browser-menu-zoom" aria-label={t('Zoom')}>
+                            <IconButton
+                              variant="plain"
+                              className="om-sa-browser-zoom-btn"
+                              aria-label={t('Zoom out')}
+                              disabled={webZoom <= 0.5}
+                              onClick={() => handleChangeZoom(webZoom - 0.1)}
+                              icon={<RemixIcon name="subtract-line" size={13} />}
+                            />
+                            <Button
+                              variant="plain"
+                              type="button"
+                              className="om-sa-browser-zoom-val"
+                              aria-label={t('Reset zoom')}
+                              title={webZoom === 1 ? `${Math.round(webZoom * 100)}%` : t('Reset zoom')}
+                              disabled={webZoom === 1}
+                              onClick={() => handleChangeZoom(1)}
+                            >
+                              {Math.round(webZoom * 100)}%
+                            </Button>
+                            <IconButton
+                              variant="plain"
+                              className="om-sa-browser-zoom-btn"
+                              aria-label={t('Zoom in')}
+                              disabled={webZoom >= 2}
+                              onClick={() => handleChangeZoom(webZoom + 0.1)}
+                              icon={<RemixIcon name="add-line" size={13} />}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="om-sa-browser-settings-actions">
                           <Button
-                            key={scheme}
                             variant="plain"
                             type="button"
-                            className="om-sa-browser-seg-btn"
-                            data-active={webColorScheme === scheme || undefined}
-                            onClick={() => void handleBrowserCommand('set-color-scheme', scheme)}
+                            role="menuitem"
+                            className="om-sa-browser-menu-item om-sa-browser-settings-action"
+                            onClick={() => {
+                              setBrowserMenuOpen(false);
+                              void handleBrowserCommand('clear-cookies', undefined, t('Cleared cookies'));
+                            }}
                           >
-                            {scheme === 'light' && <RemixIcon name="sun-fill" size={12} />}
-                            {scheme === 'dark' && <RemixIcon name="moon-fill" size={12} />}
-                            <span>{t(scheme === 'auto' ? 'Auto' : scheme === 'light' ? 'Light' : 'Dark')}</span>
+                            <RemixIcon name="delete-bin-line" size={13} />
+                            <span>{t('Clear cookies')}</span>
                           </Button>
-                        ))}
+                          <Button
+                            variant="plain"
+                            type="button"
+                            role="menuitem"
+                            className="om-sa-browser-menu-item om-sa-browser-settings-action"
+                            onClick={() => {
+                              setBrowserMenuOpen(false);
+                              void handleBrowserCommand('clear-cache', undefined, t('Cleared cache'));
+                            }}
+                          >
+                            <RemixIcon name="delete-bin-line" size={13} />
+                            <span>{t('Clear cache')}</span>
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="om-sa-browser-menu-row">
-                      <span className="om-sa-browser-menu-label">{t('Zoom')}</span>
-                      <div className="om-sa-browser-menu-zoom">
-                        <IconButton
-                          variant="plain"
-                          className="om-sa-browser-zoom-btn"
-                          aria-label={t('Zoom out')}
-                          disabled={webZoom <= 0.5}
-                          onClick={() => void handleBrowserCommand('set-zoom', Number(Math.max(0.5, webZoom - 0.1).toFixed(2)))}
-                          icon={<RemixIcon name="zoom-out-line" size={13} />}
-                        />
-                        <span className="om-sa-browser-zoom-val">{Math.round(webZoom * 100)}%</span>
-                        <IconButton
-                          variant="plain"
-                          className="om-sa-browser-zoom-btn"
-                          aria-label={t('Zoom in')}
-                          disabled={webZoom >= 2}
-                          onClick={() => void handleBrowserCommand('set-zoom', Number(Math.min(2, webZoom + 0.1).toFixed(2)))}
-                          icon={<RemixIcon name="zoom-in-line" size={13} />}
-                        />
-                        <IconButton
-                          variant="plain"
-                          className="om-sa-browser-zoom-btn"
-                          aria-label={t('Reset zoom')}
-                          disabled={webZoom === 1}
-                          onClick={() => void handleBrowserCommand('set-zoom', 1)}
-                          icon={<RemixIcon name="refresh-line" size={12} />}
-                        />
-                      </div>
-                    </div>
-
-                    <div role="separator" />
-
-                    <Button
-                      variant="plain"
-                      type="button"
-                      role="menuitem"
-                      className="om-sa-browser-menu-item"
-                      onClick={() => {
-                        setBrowserMenuOpen(false);
-                        void handleBrowserCommand('clear-cookies', undefined, t('Cleared cookies'));
-                      }}
-                    >
-                      <RemixIcon name="delete-bin-line" size={14} />
-                      <span>{t('Clear cookies')}</span>
-                    </Button>
-                    <Button
-                      variant="plain"
-                      type="button"
-                      role="menuitem"
-                      className="om-sa-browser-menu-item"
-                      onClick={() => {
-                        setBrowserMenuOpen(false);
-                        void handleBrowserCommand('clear-cache', undefined, t('Cleared cache'));
-                      }}
-                    >
-                      <RemixIcon name="delete-bin-line" size={14} />
-                      <span>{t('Clear cache')}</span>
-                    </Button>
+                    )}
                   </>
                 )}
               </div>
@@ -3331,19 +3461,16 @@ export function ArtifactBrowserPane({
         <div className="om-sa-viewer-stage-body">
           {pendingWebUrl && (showNewTab || !activeArtifact) ? (
           <div className="om-sa-web-skeleton om-sa-web-skeleton-enter" role="status" aria-label={t('Loading…')}>
-            <div className="om-sa-web-skeleton-head">
-              <Skeleton style={{ width: 120, height: 18 }} />
-              <Skeleton style={{ width: '42%', height: 28, borderRadius: 999 }} />
-            </div>
-            <Skeleton style={{ width: '100%', height: 180, borderRadius: 12 }} />
-            <div className="om-sa-web-skeleton-grid">
-              <Skeleton style={{ width: '100%', height: 96, borderRadius: 10 }} />
-              <Skeleton style={{ width: '100%', height: 96, borderRadius: 10 }} />
-            </div>
-            <div className="om-sa-web-skeleton-lines">
-              <Skeleton style={{ width: '68%', height: 14 }} />
-              <Skeleton style={{ width: '88%', height: 14 }} />
-              <Skeleton style={{ width: '54%', height: 14 }} />
+            <div className="om-sa-web-loading-stage">
+              <OpenDesignLoadingMark height={26} />
+              <strong className="om-sa-web-loading-title">{t('Opening page…')}</strong>
+              {(() => {
+                try {
+                  return <span className="om-sa-web-loading-host">{new URL(pendingWebUrl).host}</span>;
+                } catch {
+                  return null;
+                }
+              })()}
             </div>
           </div>
         ) : showNewTab || !activeArtifact ? (
@@ -3414,6 +3541,28 @@ export function ArtifactBrowserPane({
                   );
                 })}
               </div>
+
+              {(newTabFilter === 'all' || newTabFilter === 'web-apps' || newTabFilter === 'browser') && (
+                <Button
+                  variant="plain"
+                  type="button"
+                  className="om-sa-newtab-community-card"
+                  data-newtab-game-community=""
+                  onClick={openGameCommunity}
+                >
+                  <span className="om-sa-newtab-community-icon" aria-hidden="true">
+                    <RemixIcon name="gamepad-line" size={18} />
+                  </span>
+                  <span className="om-sa-newtab-community-copy">
+                    <span className="om-sa-newtab-community-title-row">
+                      <strong>{t('Surprise me')}</strong>
+                      <span className="om-sa-newtab-community-badge">{t('Game Community')}</span>
+                    </span>
+                    <small>{t('Drop into a playable community game, swipe for more & remix in one click')}</small>
+                  </span>
+                  <RemixIcon name="arrow-right-up-line" size={15} className="om-sa-newtab-community-arrow" />
+                </Button>
+              )}
             </div>
 
             {filteredArtifacts.length > 0 && (
@@ -3589,7 +3738,7 @@ export function ArtifactBrowserPane({
             onGameMeta={meta => setGameMetaEntry({ artifactId: activeArtifact.id, ...meta })}
             onBackgroundLoadingChange={setGameFrameBackgroundLoading}
           />
-        ) : activeArtifact.kind === 'web' && activeArtifact.url && chatId ? (
+        ) : activeArtifact.kind === 'web' && activeArtifact.url ? (
           <div className="om-sa-web-stage">
             <div className="om-sa-web-stage-main" data-framed={Boolean(fixedViewport) || undefined}>
               <div
@@ -3600,17 +3749,19 @@ export function ArtifactBrowserPane({
               >
                 <Suspense
                   fallback={
-                    <div className="om-sa-viewer-loading">
-                      <Skeleton style={{ width: '48%', height: 24 }} />
-                      <Skeleton style={{ width: '100%', height: 240 }} />
+                    <div className="om-sa-web-skeleton" role="status" aria-label={t('Loading…')}>
+                      <div className="om-sa-web-loading-stage">
+                        <OpenDesignLoadingMark height={26} />
+                        <strong className="om-sa-web-loading-title">{t('Opening page…')}</strong>
+                      </div>
                     </div>
                   }
                 >
                   <WebBrowser
                     ref={webRef}
-                    sessionId={chatId}
+                    sessionId={(webBrowserChatId === undefined ? chatId : webBrowserChatId) || 'preview'}
                     tabId={safeBrowserTabId(activeArtifact.id)}
-                    endpoint={superAgentBrowserEndpoint(chatId, safeBrowserTabId(activeArtifact.id))}
+                    endpoint={superAgentBrowserEndpoint(webBrowserChatId === undefined ? chatId : webBrowserChatId, safeBrowserTabId(activeArtifact.id))}
                     url={activeArtifact.url}
                     interactive={!annotateActive}
                     fixedViewport={fixedViewport}

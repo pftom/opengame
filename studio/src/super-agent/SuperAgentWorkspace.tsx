@@ -862,8 +862,15 @@ export function SuperAgentWorkspace({
   useEffect(() => {
     if (viewerOpen || (activeChat?.artifacts.length ?? 0) > 0) {
       void ArtifactBrowserPane.preload().catch(() => {});
+      return;
     }
-  }, [viewerOpen, activeChat?.artifacts.length]);
+    if (!active || requestedMode !== 'game') return;
+    // Preload the lazy browser pane during idle time in Game Studio so Surprise me / Try game open without chunk flashes.
+    const timer = window.setTimeout(() => {
+      void ArtifactBrowserPane.preload().catch(() => {});
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [active, requestedMode, viewerOpen, activeChat?.artifacts.length]);
 
   const applyPendingHandoff = useCallback(() => {
     if (!active) return;
@@ -1331,24 +1338,54 @@ export function SuperAgentWorkspace({
     void handleOpenArtifactId(targetId);
   };
 
-  const handleOpenWebUrl = async (url: string) => {
+  const handleOpenWebUrl = async (url: string, options?: { id?: string; title?: string }) => {
     const routedArtifactId = resolveInternalArtifactRouteId(url);
     if (routedArtifactId) {
       await handleOpenArtifactId(routedArtifactId);
       return;
     }
+    const resolvedUrl = url.startsWith('/') && typeof window !== 'undefined'
+      ? `${window.location.origin}${url}`
+      : url;
+    const openLocalWebPreview = () => {
+      const now = Date.now();
+      let fallbackTitle = resolvedUrl;
+      try {
+        fallbackTitle = new URL(resolvedUrl).hostname || resolvedUrl;
+      } catch {
+        /* keep raw url as title */
+      }
+      const tabId = options?.id || `web:${now}`;
+      const existing = previewArtifacts.find(item => item.id === tabId);
+      const presentedAt = Math.max(now, (existing?.presentedAt ?? 0) + 1);
+      openLocalPreviewArtifact({
+        id: tabId,
+        kind: 'web',
+        title: options?.title || fallbackTitle,
+        url: resolvedUrl,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: presentedAt,
+        presentedAt,
+      });
+    };
+    if (!activeChat) {
+      openLocalWebPreview();
+      return;
+    }
     try {
-      const resolvedUrl = url.startsWith('/') && typeof window !== 'undefined'
-        ? `${window.location.origin}${url}`
-        : url;
-      const target = await ensureChatCreated();
-      const res = await updateSuperAgentChat(target.id, {
-        addArtifact: { kind: 'web', url: resolvedUrl },
+      const res = await updateSuperAgentChat(activeChat.id, {
+        addArtifact: {
+          kind: 'web',
+          url: resolvedUrl,
+          ...(options?.id ? { id: options.id } : {}),
+          ...(options?.title ? { title: options.title } : {}),
+        },
       });
       applyChatSnapshot(res.conversation, false);
       setViewerOpen(true);
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : t('Could not open web page'));
+    } catch {
+      /* Keep live web browsing unblocked via the ephemeral preview session if chat persistence fails. */
+      openLocalWebPreview();
     }
   };
 
@@ -1493,13 +1530,16 @@ export function SuperAgentWorkspace({
     showToast(t('Attached "{title}" to prompt', { title: attachment.title }), 'info', 'feedback');
   };
 
-  const handlePlayGame = useCallback(async (game: GameCard) => {
+  const handlePlayGame = useCallback(async (game: GameCard, options?: { requirePersist?: boolean }) => {
     playedGamesRef.current.set(game.id, game);
     const displayTitle = localizedGameTitle(game, locale);
     const patch = toGameArtifact(game, displayTitle);
     const artifactId = patch.id || `game:${game.id}`;
+    const normalizeCompareUrl = (value?: string) => (value ? value.replace(/\/+$/, '') : '');
     if (game.external?.embeddable && viewerOpen && activeTabId === artifactId
-      && (activeChat?.artifacts ?? previewArtifacts).some(item => item.id === artifactId && item.url === patch.url)) {
+      && (activeChat?.artifacts ?? previewArtifacts).some(
+        item => item.id === artifactId && normalizeCompareUrl(item.url) === normalizeCompareUrl(patch.url),
+      )) {
       return artifactId;
     }
     const now = Date.now();
@@ -1525,24 +1565,20 @@ export function SuperAgentWorkspace({
         setViewerOpen(true);
         return artifactId;
       } catch (error) {
-        showToast(error instanceof Error ? error.message : t('Could not preview resource'));
-        return null;
+        if (options?.requirePersist) {
+          showToast(error instanceof Error ? error.message : t('Could not preview resource'));
+          return null;
+        }
+        /* Fall back to local preview artifact state so Try game stays playable even if chat persistence fails. */
       }
     }
 
-    setPreviewArtifacts(prev => {
-      const next = prev.filter(item => item.id !== fullArtifact.id);
-      next.push(fullArtifact);
-      return next;
-    });
-    setOpenTabIds(prev => (prev.includes(fullArtifact.id) ? prev : [...prev, fullArtifact.id]));
-    setActiveTabId(fullArtifact.id);
-    setViewerOpen(true);
+    openLocalPreviewArtifact(fullArtifact);
     return fullArtifact.id;
-  }, [activeChat, activeTabId, applyChatSnapshot, locale, previewArtifacts, showToast, t, viewerOpen]);
+  }, [activeChat, activeTabId, applyChatSnapshot, locale, openLocalPreviewArtifact, previewArtifacts, showToast, t, viewerOpen]);
 
   const handleDeployGame = useCallback(async (game: GameCard) => {
-    const openedArtifactId = await handlePlayGame(game);
+    const openedArtifactId = await handlePlayGame(game, { requirePersist: true });
     if (openedArtifactId) {
       setPendingDeployArtifactId(openedArtifactId);
     }
@@ -1683,8 +1719,9 @@ export function SuperAgentWorkspace({
 
   const handleCloseTab = (tabId: string) => {
     const target = viewerArtifacts.find(item => item.id === tabId);
-    if (target?.kind === 'web' && activeChat?.id) {
-      void closeSuperAgentBrowserTab(activeChat.id, safeBrowserTabId(tabId));
+    if (target?.kind === 'web') {
+      const persistedInChat = Boolean(activeChat?.id && activeChat.artifacts.some(item => item.id === tabId));
+      void closeSuperAgentBrowserTab(persistedInChat ? activeChat!.id : null, safeBrowserTabId(tabId));
     }
     previewArtifactIdsRef.current.delete(tabId);
     setPreviewArtifacts(prev => prev.filter(item => item.id !== tabId));
@@ -2233,7 +2270,7 @@ export function SuperAgentWorkspace({
             onOpenChangedFile={handleOpenChangedFile}
             onPreviewAttachment={att => void handleOpenResource(att)}
             onOpenFilePath={handleOpenFilePath}
-            onOpenWebUrl={url => void handleOpenWebUrl(url)}
+            onOpenWebUrl={(url, options) => void handleOpenWebUrl(url, options)}
             onCopyText={code => void handleCopyText(code)}
             onNotify={(msg, tone) => showToast(msg, tone === 'error' ? 'error' : 'info', 'feedback')}
             onRateTurn={handleRateTurn}
@@ -2340,6 +2377,11 @@ export function SuperAgentWorkspace({
             <ArtifactBrowserPane
               active={active}
               chatId={activeChat?.id ?? null}
+              webBrowserChatId={
+                activeViewerArtifact?.kind === 'web' && !activeChat?.artifacts.some(item => item.id === activeViewerArtifact.id)
+                  ? null
+                  : (activeChat?.id ?? null)
+              }
               workingDir={activeChat?.workingDir}
               artifacts={viewerArtifacts}
               openTabIds={openTabIds}
@@ -2349,7 +2391,7 @@ export function SuperAgentWorkspace({
               onSelectTab={id => void handleOpenArtifactId(id)}
               onCloseTab={handleCloseTab}
               onNewTab={() => setActiveTabId(NEW_VIEWER_TAB_ID)}
-              onOpenWebUrl={url => void handleOpenWebUrl(url)}
+              onOpenWebUrl={(url, options) => void handleOpenWebUrl(url, options)}
               onOpenFilePath={handleOpenFilePath}
               onOpenArtifact={id => void handleOpenArtifactId(id)}
               onOpenResource={item => void handleOpenResource(item)}

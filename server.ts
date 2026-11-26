@@ -15,7 +15,12 @@ import { closeWebPublishFor, webPublishFor } from './gateway/web-publish.ts';
 import { closeDesignDeployFor } from './gateway/design-deploy.ts';
 import { AdaptivePoller } from './shared/lifecycle.ts';
 import { mapWebPublishError, resolveWebPublishTarget } from './gateway/web-publish-ops.ts';
-import { webPublishTargetKinds, type WebPublishMode, type WebPublishTargetKind } from './shared/web-publish.ts';
+import {
+  webPublishTargetKinds,
+  type WebPublishMode,
+  type WebPublishTargetKind,
+  type WebPublishVisibility,
+} from './shared/web-publish.ts';
 import { createAutomationHost } from './gateway/automation-host.ts';
 import { MCP_HTTP_PATH } from './shared/mcp-http.ts';
 import { superAgentConversations } from './gateway/super-agent.ts';
@@ -84,6 +89,76 @@ const workerInstanceId = crypto.randomUUID();
 const collectorId = crypto.randomUUID();
 let lastQueueTelemetry = 0;
 let lastCodexSessionSync = 0;
+
+const LOCAL_AMR_GAME_COMMUNITY_URL = 'http://127.0.0.1:5179/games';
+let localCommunityProbeCache: { url: string | null; at: number } | null = null;
+
+function isLoopbackHostHeader(hostHeader?: string): boolean {
+  if (!hostHeader) return true;
+  const trimmed = hostHeader.trim().toLowerCase();
+  const host = trimmed.startsWith('[')
+    ? trimmed.slice(1, trimmed.indexOf(']') > 0 ? trimmed.indexOf(']') : trimmed.length)
+    : trimmed.split(':')[0];
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.localhost');
+}
+
+function normalizeServerCommunityUrl(raw?: string | null, allowLoopback = true): string | null {
+  const value = raw?.trim();
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    if (!allowLoopback && isLoopbackHostHeader(parsed.hostname)) return null;
+    const cleanPath = parsed.pathname.replace(/\/+$/, '').replace(/\/(?:dashboard|games)$/i, '');
+    return `${parsed.origin}${cleanPath}/games`;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveServerGameCommunityConfig(hostHeader?: string): Promise<{
+  url: string | null;
+  environment: 'local' | 'remote';
+  source: 'env' | 'local-probe' | 'default';
+}> {
+  const isLocal = isLoopbackHostHeader(hostHeader);
+  const envUrl = normalizeServerCommunityUrl(
+    process.env.OPENDESIGN_GAME_COMMUNITY_URL || process.env.OPENDESIGN_CONSOLE_URL,
+    isLocal,
+  );
+  if (envUrl) {
+    return { url: envUrl, environment: isLocal ? 'local' : 'remote', source: 'env' };
+  }
+  if (!isLocal) {
+    return { url: null, environment: 'remote', source: 'default' };
+  }
+  if (localCommunityProbeCache && Date.now() - localCommunityProbeCache.at < 15_000) {
+    return {
+      url: localCommunityProbeCache.url,
+      environment: 'local',
+      source: localCommunityProbeCache.url ? 'local-probe' : 'default',
+    };
+  }
+  let detected: string | null = null;
+  try {
+    const response = await fetch(LOCAL_AMR_GAME_COMMUNITY_URL, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(200),
+    });
+    const contentType = response.headers.get('content-type') || '';
+    if (response.ok && contentType.includes('text/html')) {
+      detected = LOCAL_AMR_GAME_COMMUNITY_URL;
+    }
+  } catch {
+    detected = null;
+  }
+  localCommunityProbeCache = { url: detected, at: Date.now() };
+  return {
+    url: detected,
+    environment: 'local',
+    source: detected ? 'local-probe' : 'default',
+  };
+}
 
 async function emitQueueTelemetry(store: WorkspaceStore, tracking?: OmTracking) {
   if (Date.now() - lastCodexSessionSync >= 60_000) {
@@ -791,6 +866,12 @@ export async function handler(req: IncomingMessage, res: ServerResponse, store =
             const sourcePath = typeof body?.sourcePath === 'string' ? body.sourcePath : undefined;
             const embedUrl = typeof body?.embedUrl === 'string' ? body.embedUrl : undefined;
             const title = typeof body?.name === 'string' ? body.name : typeof body?.title === 'string' ? body.title : undefined;
+            const visibility =
+              targetKind === 'game' && (body?.visibility === 'public' || body?.visibility === 'unlisted')
+                ? (body.visibility as WebPublishVisibility)
+                : undefined;
+            const allowRemix =
+              targetKind === 'game' && typeof body?.allowRemix === 'boolean' ? body.allowRemix : undefined;
             const target = await resolveWebPublishTarget(
               rootStore,
               { targetKind, targetId, sourcePath, filePath, title, embedUrl },
@@ -801,8 +882,40 @@ export async function handler(req: IncomingMessage, res: ServerResponse, store =
               workspaceId: typeof body?.workspaceId === 'string' ? body.workspaceId : undefined,
               mode: body?.deployMode as WebPublishMode | undefined,
               name: title,
+              visibility,
+              allowRemix,
             });
             return json(res, 200, result);
+          }
+          if (req.method === 'PATCH') {
+            if (targetKind !== 'game') {
+              return json(res, 400, {
+                error: {
+                  code: 'INVALID_ARGUMENT',
+                  message: 'Visibility controls are only supported for game deployments',
+                },
+              });
+            }
+            const body = await input(req, 16 * 1024).catch(() => ({}));
+            const visibility =
+              body?.visibility === 'public' || body?.visibility === 'unlisted'
+                ? (body.visibility as WebPublishVisibility)
+                : null;
+            if (!visibility) {
+              return json(res, 400, {
+                error: { code: 'INVALID_ARGUMENT', message: 'visibility must be "public" or "unlisted"' },
+              });
+            }
+            const filePath = typeof body?.filePath === 'string' ? body.filePath : undefined;
+            const sourcePath = typeof body?.sourcePath === 'string' ? body.sourcePath : undefined;
+            const embedUrl = typeof body?.embedUrl === 'string' ? body.embedUrl : undefined;
+            const allowRemix = typeof body?.allowRemix === 'boolean' ? body.allowRemix : undefined;
+            const target = await resolveWebPublishTarget(
+              rootStore,
+              { targetKind, targetId, sourcePath, filePath, embedUrl, readOnly: true },
+              originUrl,
+            );
+            return json(res, 200, await publishService.setVisibility(target, { filePath, visibility, allowRemix }));
           }
           if (req.method === 'DELETE') {
             const body = await input(req, 16 * 1024).catch(() => ({}));
@@ -953,13 +1066,38 @@ export async function handler(req: IncomingMessage, res: ServerResponse, store =
           return json(res, 200, { conversation: await superAgent.create(data) });
         }
       }
-      const saBrowser = url.pathname.match(/^\/api\/super-agent\/chats\/([^/]+)\/browser\/([a-z0-9-]{1,80})(?:\/(events|command|resize|input|inspect|screenshot|console))?$/);
-      if (saBrowser) {
-        const [, chatId, tabId, action] = saBrowser;
-        await superAgent.get(chatId);
-        if (!context.runtimeRoot) throw new Error('浏览器服务尚未就绪');
-        const browser = context.browser ??= new WorkspaceBrowser(context.runtimeRoot);
-        const browserSession = `sa-${chatId}`;
+      if (url.pathname === '/api/super-agent/browser/warm' && req.method === 'POST') {
+        if (context.runtimeRoot) {
+          const browser = context.browser ??= new WorkspaceBrowser(context.runtimeRoot);
+          void browser.warm().catch(() => {});
+        }
+        return json(res, 200, { warming: Boolean(context.runtimeRoot) });
+      }
+      const saChatBrowser = url.pathname.match(/^\/api\/super-agent\/chats\/([^/]+)\/browser\/([a-z0-9-]{1,80})(?:\/(events|command|resize|input|inspect|screenshot|console))?$/);
+      const saPreviewBrowser = saChatBrowser
+        ? null
+        : url.pathname.match(/^\/api\/super-agent\/browser\/tabs\/([a-z0-9-]{1,80})(?:\/(events|command|resize|input|inspect|screenshot|console))?$/);
+      if (saChatBrowser || saPreviewBrowser) {
+        const existingBrowser = context.runtimeRoot ? (context.browser ??= new WorkspaceBrowser(context.runtimeRoot)) : undefined;
+        let browserSession: string;
+        let tabId: string;
+        let action: string | undefined;
+        if (saChatBrowser) {
+          const [, chatId, matchedTabId, matchedAction] = saChatBrowser;
+          browserSession = `sa-${chatId}`;
+          tabId = matchedTabId;
+          action = matchedAction;
+          if (!(action === 'input' && req.method === 'POST' && existingBrowser?.has(browserSession, tabId))) {
+            await superAgent.get(chatId);
+          }
+        } else {
+          const [, matchedTabId, matchedAction] = saPreviewBrowser!;
+          browserSession = 'sa-preview';
+          tabId = matchedTabId;
+          action = matchedAction;
+        }
+        if (!existingBrowser) throw new Error('浏览器服务尚未就绪');
+        const browser = existingBrowser;
         if (!action && req.method === 'POST') {
           const data = await input(req);
           return json(res, 200, (await browser.open(browserSession, tabId, data.url, { width: data.width, height: data.height, dpr: data.dpr })).state);
@@ -1317,6 +1455,10 @@ export async function handler(req: IncomingMessage, res: ServerResponse, store =
         return json(res, 200, await gateway.account.openSubscription(undefined, { hookId: body.hookId, entryId: body.entryId }));
       }
       return json(res, 404, { error: 'Settings endpoint not found' });
+    }
+    if (motionRequest && url.pathname === '/api/game-community/config' && req.method === 'GET') {
+      const config = await resolveServerGameCommunityConfig(req.headers.host);
+      return json(res, 200, config);
     }
     if (motionRequest && url.pathname.startsWith('/api/capabilities')) {
       if (url.pathname === '/api/capabilities' && req.method === 'GET') {

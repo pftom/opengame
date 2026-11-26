@@ -397,7 +397,7 @@ export function ConversationStream({
   onOpenChangedFile?: (file: SuperAgentFileOperation) => void;
   onPreviewAttachment: (attachment: SuperAgentResourceAttachment) => void;
   onOpenFilePath?: (filePath: string, label?: string) => void;
-  onOpenWebUrl?: (url: string) => void;
+  onOpenWebUrl?: (url: string, options?: { id?: string; title?: string }) => void;
   onCopyText: (text: string) => void;
   onNotify?: (message: string, tone?: 'info' | 'error') => void;
   onRateTurn?: (input: SuperAgentTurnFeedbackSubmit) => Promise<void> | void;
@@ -1834,6 +1834,7 @@ export function ConversationStream({
                 setMentionMenuOpen(true);
               }}
               onOpenGameStudio={onOpenGameStudio}
+              onOpenWebUrl={onOpenWebUrl}
               onClose={exitActiveMode}
             />
           ) : (

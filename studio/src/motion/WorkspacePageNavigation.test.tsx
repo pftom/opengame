@@ -72,6 +72,8 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(Date.parse('2026-11-25T12:00:00+08:00'));
   localStorage.clear(); history.replaceState(null, '', firstUrl);
   editor.mounts = 0; editor.fail = false; editor.wait = async () => {};
   container = document.createElement('div'); document.body.append(container); root = createRoot(container);
@@ -96,7 +98,7 @@ beforeEach(() => {
   });
   vi.stubGlobal('fetch', fetcher);
 });
-afterEach(() => { act(() => root.unmount()); container.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals(); history.replaceState(null, '', '/'); });
+afterEach(() => { vi.useRealTimers(); act(() => root.unmount()); container.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals(); history.replaceState(null, '', '/'); });
 
 it('cold-loads whitelisted semantic SPA path URLs directly into the requested surface', async () => {
   history.replaceState(null, '', '/settings/providers');

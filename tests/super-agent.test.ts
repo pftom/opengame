@@ -157,6 +157,28 @@ test('SuperAgentConversations persists CRUD state, recovers interrupted runs, an
     /same-origin/,
   );
 
+  // External community games (no projectId) may use validated HTTP(S) URLs when opened via Try game in an active chat.
+  const withExternalGame = await service.update(created.id, {
+    addArtifact: {
+      id: 'game:community-voxel-musou',
+      kind: 'game-project',
+      title: 'Voxel Musou',
+      url: 'https://voxel-musou.vercel.app',
+    },
+  });
+  const externalGameArtifact = withExternalGame.artifacts.find(item => item.id === 'game:community-voxel-musou');
+  assert.ok(externalGameArtifact);
+  assert.equal(externalGameArtifact.url, 'https://voxel-musou.vercel.app/');
+
+  await assert.rejects(
+    () => service.update(created.id, { addArtifact: { kind: 'game-project', projectId: 'sky-runner', url: 'https://evil.example/' } }),
+    /same-origin/,
+  );
+  await assert.rejects(
+    () => service.update(created.id, { addArtifact: { kind: 'game-project', url: 'javascript:alert(1)' } }),
+    /same-origin/,
+  );
+
   // Persist running state on disk directly to verify restart interruption recovery.
   const file = await service.file(created.id);
   const { writeFile } = await import('node:fs/promises');

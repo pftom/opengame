@@ -58,7 +58,12 @@ class WebTab {
   listeners = new Set<ServerResponse>();
   lastUsed = Date.now();
   private frame = '';
+  private frameMime: 'image/jpeg' | 'image/png' = 'image/jpeg';
   private frameSize = { width: 0, height: 0, deviceScaleFactor: 1 };
+  private lastPublishedState = '';
+  private lastFramePublishedAt = 0;
+  private ackTimers = new Set<ReturnType<typeof setTimeout>>();
+  private mainFrameId: string | null = null;
   private consoleEntries: BrowserConsoleEntry[] = [];
   private consoleSeq = 0;
   private pendingRequests = new Map<string, string>();
@@ -66,6 +71,7 @@ class WebTab {
   private readyForFrames = false;
   private navigating: Promise<void> | null = null;
   private timer?: ReturnType<typeof setTimeout>;
+  private settleTimer?: ReturnType<typeof setTimeout>;
   private heartbeat?: ReturnType<typeof setInterval>;
   private queue: Promise<unknown> = Promise.resolve();
   private lifecycle: Promise<unknown> = Promise.resolve();
@@ -82,12 +88,16 @@ class WebTab {
     const cdp = await page.createCDPSession();
     const viewport = normalizeViewport(initial?.width, initial?.height, initial?.dpr);
     const tab = new WebTab(page, cdp, viewport);
-    await cdp.send('Page.enable');
-    await cdp.send('Runtime.enable').catch(() => {});
-    await cdp.send('Network.enable').catch(() => {});
-    await page.setViewport(viewport);
-    // Keep untrusted pages in a separate browser context; never render their HTML in the app.
-    await page.setRequestInterception(true);
+    await Promise.all([
+      cdp.send('Page.enable'),
+      cdp.send('Runtime.enable').catch(() => {}),
+      cdp.send('Network.enable').catch(() => {}),
+      page.setViewport(viewport),
+      // Keep untrusted pages in a separate browser context; never render their HTML in the app.
+      page.setRequestInterception(true),
+    ]);
+    const tree = await cdp.send('Page.getFrameTree').catch(() => null);
+    tab.mainFrameId = tree?.frameTree?.frame?.id ?? null;
     page.on('request', request => {
       const url = request.url();
       if (request.isNavigationRequest() && !/^(https?:|about:blank)/i.test(url)) void request.abort().catch(() => {});
@@ -100,7 +110,21 @@ class WebTab {
       if (/^https?:/.test(url)) await tab.navigate(url);
     })().catch(() => {}); });
     page.on('framenavigated', frame => { if (frame === page.mainFrame()) tab.changed(); });
-    cdp.on('Page.frameStartedLoading', () => { tab.state.loading = true; tab.publish('state', tab.state); });
+    cdp.on('Page.frameStartedLoading', event => {
+      if (tab.mainFrameId && event.frameId !== tab.mainFrameId) return;
+      tab.state.loading = true;
+      tab.publishState();
+    });
+    cdp.on('Page.frameStoppedLoading', event => {
+      if (tab.mainFrameId && event.frameId !== tab.mainFrameId) return;
+      tab.state.loading = false;
+      tab.changed();
+    });
+    cdp.on('Page.navigatedWithinDocument', event => {
+      if (tab.mainFrameId && event.frameId !== tab.mainFrameId) return;
+      tab.state.loading = false;
+      tab.changed();
+    });
     page.on('load', () => { tab.state.loading = false; tab.changed(); });
     cdp.on('Runtime.consoleAPICalled', event => {
       const kind = event.type;
@@ -166,23 +190,92 @@ class WebTab {
       });
     });
     cdp.on('Page.screencastFrame', event => {
-      void cdp.send('Page.screencastFrameAck', { sessionId: event.sessionId }).catch(() => {});
-      if (!tab.readyForFrames || tab.disposed) return;
+      if (!tab.readyForFrames || tab.disposed || !tab.listeners.size) {
+        void cdp.send('Page.screencastFrameAck', { sessionId: event.sessionId }).catch(() => {});
+        return;
+      }
+      const now = Date.now();
+      if (now - tab.lastFramePublishedAt < 28) {
+        void cdp.send('Page.screencastFrameAck', { sessionId: event.sessionId }).catch(() => {});
+        return;
+      }
+      tab.lastFramePublishedAt = now;
       tab.frame = event.data;
+      tab.frameMime = 'image/jpeg';
       tab.frameSize = { ...tab.viewport };
-      tab.publish('frame', { data: event.data, width: tab.viewport.width, height: tab.viewport.height, dpr: tab.viewport.deviceScaleFactor });
+      const slow = tab.publishRaw(
+        `event: frame\ndata: ${JSON.stringify({ data: event.data, mime: 'image/jpeg', width: tab.viewport.width, height: tab.viewport.height, dpr: tab.viewport.deviceScaleFactor })}\n\n`,
+        256 * 1024,
+      );
+      tab.ackScreencastFrame(event.sessionId, slow);
+      tab.scheduleCrispFrame();
     });
-    tab.heartbeat = setInterval(() => { if (tab.listeners.size) { tab.lastUsed = Date.now(); tab.changed(); } }, 1200);
+    tab.heartbeat = setInterval(() => { if (tab.listeners.size) { tab.lastUsed = Date.now(); tab.changed(); } }, 3000);
     tab.heartbeat.unref();
     return tab;
   }
   private screencastOptions() {
-    const maxWidth = Math.min(3200, Math.round(this.viewport.width * this.viewport.deviceScaleFactor));
-    const maxHeight = Math.min(2400, Math.round(this.viewport.height * this.viewport.deviceScaleFactor));
-    return { format: 'jpeg' as const, quality: 90, maxWidth, maxHeight, everyNthFrame: 1 };
+    const maxWidth = Math.min(3840, Math.round(this.viewport.width * this.viewport.deviceScaleFactor));
+    const maxHeight = Math.min(2880, Math.round(this.viewport.height * this.viewport.deviceScaleFactor));
+    return { format: 'jpeg' as const, quality: 80, maxWidth, maxHeight, everyNthFrame: 2 };
   }
-  private publish(event: string, value: unknown) {
-    for (const response of this.listeners) if (!response.destroyed && response.writableLength < 2 * 1024 * 1024) response.write(`event: ${event}\ndata: ${JSON.stringify(value)}\n\n`);
+  private publishRaw(chunk: string, maxBuffered = 256 * 1024): ServerResponse[] {
+    const slow: ServerResponse[] = [];
+    for (const response of this.listeners) {
+      if (response.destroyed) continue;
+      if (response.writableLength >= maxBuffered) {
+        slow.push(response);
+        continue;
+      }
+      if (!response.write(chunk)) {
+        slow.push(response);
+      }
+    }
+    return slow;
+  }
+  private ackScreencastFrame(sessionId: number, slowListeners: ServerResponse[]) {
+    if (this.disposed) return;
+    if (!slowListeners.length) {
+      void this.cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {});
+      return;
+    }
+    let settled = false;
+    const cleanups: Array<() => void> = [];
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      if (timer) {
+        clearTimeout(timer);
+        this.ackTimers.delete(timer);
+      }
+      for (const cleanup of cleanups) cleanup();
+      if (!this.disposed) {
+        void this.cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => {});
+      }
+    };
+    timer = setTimeout(finish, 100);
+    timer.unref?.();
+    this.ackTimers.add(timer);
+    for (const response of slowListeners) {
+      const onDrain = () => finish();
+      const onClose = () => finish();
+      response.once('drain', onDrain);
+      response.once('close', onClose);
+      cleanups.push(() => {
+        response.off('drain', onDrain);
+        response.off('close', onClose);
+      });
+    }
+  }
+  private publish(event: string, value: unknown, maxBuffered = 1024 * 1024) {
+    this.publishRaw(`event: ${event}\ndata: ${JSON.stringify(value)}\n\n`, maxBuffered);
+  }
+  private publishState(force = false) {
+    const serialized = JSON.stringify(this.state);
+    if (!force && serialized === this.lastPublishedState) return;
+    this.lastPublishedState = serialized;
+    this.publishRaw(`event: state\ndata: ${serialized}\n\n`, 1024 * 1024);
   }
   private changed() {
     if (this.timer || this.disposed) return;
@@ -194,12 +287,13 @@ class WebTab {
       this.state = { ...this.state, url: this.page.url(), title: (await this.page.title()).slice(0, 300),
         canGoBack: history.currentIndex > 0 && history.entries[history.currentIndex - 1].url !== 'about:blank',
         canGoForward: history.currentIndex < history.entries.length - 1 };
-      this.publish('state', this.state);
+      this.publishState();
     } catch { /* A navigation can replace the document during a state read. */ }
   }
   async navigate(address: unknown) {
     const url = webAddress(address); this.lastUsed = Date.now();
-    this.state = { ...this.state, url, loading: true, error: undefined }; this.publish('state', this.state);
+    this.clearSettleTimer();
+    this.state = { ...this.state, url, loading: true, error: undefined }; this.publishState();
     const work = (async () => {
       await this.cdp.send('Page.setWebLifecycleState', { state: 'active' });
       try { await this.page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 }); }
@@ -208,6 +302,7 @@ class WebTab {
         this.readyForFrames = true;
         this.state.loading = false;
         await this.refreshState();
+        this.scheduleCrispFrame();
       }
     })();
     this.navigating = work;
@@ -227,7 +322,7 @@ class WebTab {
     }
     this.syncConsoleCounts();
     this.publish('console', item);
-    this.publish('state', this.state);
+    this.publishState();
   }
   private syncConsoleCounts() {
     this.state.consoleCount = this.consoleEntries.length;
@@ -242,23 +337,75 @@ class WebTab {
     this.consoleEntries = [];
     this.syncConsoleCounts();
     this.publish('console_snapshot', this.consoleEntries);
-    this.publish('state', this.state);
+    this.publishState();
+  }
+  private freshFrameRunning = false;
+  private freshFramePending = false;
+  private clearSettleTimer() {
+    if (this.settleTimer) {
+      clearTimeout(this.settleTimer);
+      this.settleTimer = undefined;
+    }
+  }
+  private scheduleCrispFrame() {
+    this.clearSettleTimer();
+    if (!this.listeners.size || !this.readyForFrames || this.disposed) return;
+    this.settleTimer = setTimeout(() => {
+      this.settleTimer = undefined;
+      if (!this.listeners.size || !this.readyForFrames || this.disposed || this.navigating) return;
+      void this.cdp.send('Page.captureScreenshot', { format: 'png' }).then(snap => {
+        if (!snap?.data || this.disposed || !this.listeners.size || snap.data.length > 1.8 * 1024 * 1024) return;
+        this.lastFramePublishedAt = Date.now();
+        this.frame = snap.data;
+        this.frameMime = 'image/png';
+        this.frameSize = { ...this.viewport };
+        this.publish('frame', {
+          data: snap.data,
+          mime: 'image/png',
+          width: this.viewport.width,
+          height: this.viewport.height,
+          dpr: this.viewport.deviceScaleFactor,
+        }, 2 * 1024 * 1024);
+      }).catch(() => {});
+    }, 300);
+    this.settleTimer.unref?.();
   }
   private async captureFreshFrame() {
     if (!this.listeners.size || !this.readyForFrames || this.disposed) return;
-    const snap = await this.cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 90 }).catch(() => null);
+    const snap = await this.cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 86 }).catch(() => null);
     if (snap && !this.disposed) {
+      this.lastFramePublishedAt = Date.now();
       this.frame = snap.data;
+      this.frameMime = 'image/jpeg';
       this.frameSize = { ...this.viewport };
-      this.publish('frame', { data: snap.data, width: this.viewport.width, height: this.viewport.height, dpr: this.viewport.deviceScaleFactor });
+      this.publish('frame', { data: snap.data, mime: 'image/jpeg', width: this.viewport.width, height: this.viewport.height, dpr: this.viewport.deviceScaleFactor }, 256 * 1024);
+      this.scheduleCrispFrame();
     }
+  }
+  private scheduleFreshFrame() {
+    if (!this.listeners.size || !this.readyForFrames || this.disposed) return;
+    if (this.freshFrameRunning) {
+      this.freshFramePending = true;
+      return;
+    }
+    this.freshFrameRunning = true;
+    void (async () => {
+      try {
+        do {
+          this.freshFramePending = false;
+          await this.captureFreshFrame();
+        } while (this.freshFramePending && !this.disposed);
+      } finally {
+        this.freshFrameRunning = false;
+      }
+    })();
   }
   async command(action: unknown, value?: unknown) {
     this.lastUsed = Date.now(); this.state.error = undefined;
     if (action === 'navigate') { const address = webAddress(value); void this.navigate(address).catch(() => {}); return; }
     if (action === 'stop') { await this.cdp.send('Page.stopLoading'); this.state.loading = false; await this.refreshState(); return; }
-    if (action === 'reload') { this.state.loading = true; this.publish('state', this.state); await this.cdp.send('Page.reload'); return; }
-    if (action === 'hard-reload') { this.state.loading = true; this.publish('state', this.state); await this.cdp.send('Page.reload', { ignoreCache: true }); return; }
+    if (action === 'reload') { this.state.loading = true; this.publishState(); await this.cdp.send('Page.reload'); return; }
+    if (action === 'hard-reload') { this.state.loading = true; this.publishState(); await this.cdp.send('Page.reload', { ignoreCache: true }); return; }
     if (action === 'clear-cookies') { await this.cdp.send('Network.clearBrowserCookies'); return; }
     if (action === 'clear-cache') { await this.cdp.send('Network.clearBrowserCache'); return; }
     if (action === 'set-color-scheme') {
@@ -267,8 +414,8 @@ class WebTab {
         features: value === 'auto' ? [] : [{ name: 'prefers-color-scheme', value }],
       });
       this.state.colorScheme = value;
-      await this.captureFreshFrame();
-      this.publish('state', this.state);
+      this.publishState();
+      this.scheduleFreshFrame();
       return;
     }
     if (action === 'set-zoom') {
@@ -276,8 +423,8 @@ class WebTab {
       const nextZoom = Math.round(Math.max(0.5, Math.min(2, value)) * 100) / 100;
       await this.cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: nextZoom });
       this.state.zoom = nextZoom;
-      await this.captureFreshFrame();
-      this.publish('state', this.state);
+      this.publishState();
+      this.scheduleFreshFrame();
       return;
     }
     if (action === 'set-touch') {
@@ -498,6 +645,7 @@ class WebTab {
     if (typeof width !== 'number' || typeof height !== 'number' || !Number.isFinite(width + height)) throw new Error('无效浏览器尺寸');
     const size = normalizeViewport(width, height, dpr ?? this.viewport.deviceScaleFactor);
     if (size.width === this.viewport.width && size.height === this.viewport.height && size.deviceScaleFactor === this.viewport.deviceScaleFactor) return;
+    this.clearSettleTimer();
     this.viewport = size;
     this.frame = '';
     await this.page.setViewport(size);
@@ -508,11 +656,14 @@ class WebTab {
       } catch (err) {
         if (!/already active/i.test(String(err))) throw err;
       }
-      const snap = await this.cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 90 }).catch(() => null);
+      const snap = await this.cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 86 }).catch(() => null);
       if (snap && !this.disposed) {
+        this.lastFramePublishedAt = Date.now();
         this.frame = snap.data;
+        this.frameMime = 'image/jpeg';
         this.frameSize = { ...this.viewport };
-        this.publish('frame', { data: snap.data, width: this.viewport.width, height: this.viewport.height, dpr: this.viewport.deviceScaleFactor });
+        this.publish('frame', { data: snap.data, mime: 'image/jpeg', width: this.viewport.width, height: this.viewport.height, dpr: this.viewport.deviceScaleFactor }, 256 * 1024);
+        this.scheduleCrispFrame();
       }
     }
   }
@@ -542,13 +693,22 @@ class WebTab {
       await this.cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', ...point, deltaX: Math.max(-2000, Math.min(2000, input.deltaX)), deltaY: Math.max(-2000, Math.min(2000, input.deltaY)) });
     } else {
       if (!['move', 'down', 'up'].includes(input.event) || !['left', 'middle', 'right'].includes(input.button)) throw new Error('无效鼠标操作');
-      await this.cdp.send('Input.dispatchMouseEvent', { type: input.event === 'move' ? 'mouseMoved' : input.event === 'down' ? 'mousePressed' : 'mouseReleased', ...point, button: input.button, clickCount: input.clickCount === 2 ? 2 : 1 });
+      if (input.buttons !== undefined && (!Number.isInteger(input.buttons) || input.buttons < 0 || input.buttons > 31)) throw new Error('无效鼠标按键状态');
+      await this.cdp.send('Input.dispatchMouseEvent', {
+        type: input.event === 'move' ? 'mouseMoved' : input.event === 'down' ? 'mousePressed' : 'mouseReleased',
+        ...point,
+        button: input.button,
+        ...(typeof input.buttons === 'number' ? { buttons: input.buttons } : {}),
+        clickCount: input.clickCount === 2 ? 2 : 1,
+      });
     }
   }
   async watch(response: ServerResponse) {
     this.lastUsed = Date.now(); this.listeners.add(response);
     response.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive' });
-    response.write(`event: state\ndata: ${JSON.stringify(this.state)}\n\n`);
+    const stateJson = JSON.stringify(this.state);
+    this.lastPublishedState = stateJson;
+    response.write(`event: state\ndata: ${stateJson}\n\n`);
     response.write(`event: console_snapshot\ndata: ${JSON.stringify(this.consoleEntries)}\n\n`);
     const cachedMatchesViewport = Boolean(
       this.frame
@@ -559,12 +719,13 @@ class WebTab {
       && this.frameSize.deviceScaleFactor === this.viewport.deviceScaleFactor,
     );
     if (cachedMatchesViewport) {
-      response.write(`event: frame\ndata: ${JSON.stringify({ data: this.frame, width: this.frameSize.width, height: this.frameSize.height, dpr: this.frameSize.deviceScaleFactor })}\n\n`);
+      response.write(`event: frame\ndata: ${JSON.stringify({ data: this.frame, mime: this.frameMime, width: this.frameSize.width, height: this.frameSize.height, dpr: this.frameSize.deviceScaleFactor })}\n\n`);
     }
     response.once('close', () => {
       this.listeners.delete(response);
       this.lifecycle = this.lifecycle.then(async () => {
         if (this.listeners.size || this.disposed) return;
+        this.clearSettleTimer();
         await this.cdp.send('Page.stopScreencast').catch(() => {});
         if (!this.listeners.size) await this.cdp.send('Page.setWebLifecycleState', { state: 'frozen' });
       }).catch(() => {});
@@ -586,21 +747,30 @@ class WebTab {
       } catch (err) {
         if (!/already active/i.test(String(err))) throw err;
       }
-      const first = await this.cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 90 });
-      if (this.state.error) { this.state.error = undefined; this.publish('state', this.state); }
+      if (cachedMatchesViewport) {
+        if (this.state.error) { this.state.error = undefined; this.publishState(); }
+        return;
+      }
+      const first = await this.cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 86 });
+      if (this.state.error) { this.state.error = undefined; this.publishState(); }
+      this.lastFramePublishedAt = Date.now();
       this.frame = first.data;
+      this.frameMime = 'image/jpeg';
       this.frameSize = { ...this.viewport };
-      this.publish('frame', { data: first.data, width: this.viewport.width, height: this.viewport.height, dpr: this.viewport.deviceScaleFactor });
+      this.publish('frame', { data: first.data, mime: 'image/jpeg', width: this.viewport.width, height: this.viewport.height, dpr: this.viewport.deviceScaleFactor }, 256 * 1024);
+      this.scheduleCrispFrame();
     });
     try { await this.lifecycle; }
     catch (error) {
       this.lifecycle = Promise.resolve();
       this.state.error = (error as Error).message.slice(0, 500);
-      this.publish('state', this.state); response.end();
+      this.publishState(); response.end();
     }
   }
   async close() {
-    this.disposed = true; clearTimeout(this.timer); clearInterval(this.heartbeat);
+    this.disposed = true; clearTimeout(this.timer); this.clearSettleTimer(); clearInterval(this.heartbeat);
+    for (const timer of this.ackTimers) clearTimeout(timer);
+    this.ackTimers.clear();
     for (const response of this.listeners) response.end(); this.listeners.clear();
     await this.page.close().catch(() => {});
   }
@@ -616,7 +786,13 @@ export class WorkspaceBrowser {
   private launch() {
     return this.engine ??= (async () => {
       const puppeteer = await browserAutomation(this.runtimeRoot);
-      const browser = await puppeteer.launch({ executablePath: await browserExecutable(), headless: true, pipe: true, defaultViewport: { width: 1100, height: 700 } });
+      const browser = await puppeteer.launch({
+        executablePath: await browserExecutable(),
+        headless: true,
+        pipe: true,
+        args: ['--force-device-scale-factor=2'],
+        defaultViewport: { width: 1100, height: 700, deviceScaleFactor: 2 },
+      });
       browser.once('disconnected', () => {
         this.engine = undefined;
         for (const pending of this.tabs.values()) void pending.then(tab => tab.close()).catch(() => {});
@@ -624,6 +800,9 @@ export class WorkspaceBrowser {
       });
       return browser;
     })().catch(error => { this.engine = undefined; throw error; });
+  }
+  warm(): Promise<void> {
+    return this.launch().then(() => undefined);
   }
   async snapshot(
     address: unknown,
@@ -677,6 +856,9 @@ export class WorkspaceBrowser {
       return existing;
     }
     return pending;
+  }
+  has(sessionId: string, tabId: string): boolean {
+    return this.tabs.has(`${sessionId}:${tabId}`);
   }
   async get(sessionId: string, tabId: string) {
     const tab = this.tabs.get(`${sessionId}:${tabId}`); if (!tab) throw new Error('网页标签已关闭，请重新打开。'); return tab;

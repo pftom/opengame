@@ -355,12 +355,15 @@ export function subscribeSuperAgentChat(
   return () => source.close();
 }
 
-export function superAgentBrowserEndpoint(chatId: string, tabId: string) {
+export function superAgentBrowserEndpoint(chatId: string | null | undefined, tabId: string) {
+  if (!chatId) {
+    return `${SUPER_AGENT_API}/browser/tabs/${encodeURIComponent(tabId)}`;
+  }
   return `${SUPER_AGENT_API}/chats/${encodeURIComponent(chatId)}/browser/${encodeURIComponent(tabId)}`;
 }
 
 /** Releases the server-side headless browser tab when the viewer closes or deletes a web tab. */
-export function closeSuperAgentBrowserTab(chatId: string, tabId: string): Promise<void> {
+export function closeSuperAgentBrowserTab(chatId: string | null | undefined, tabId: string): Promise<void> {
   return fetch(superAgentBrowserEndpoint(chatId, tabId), { method: 'DELETE' }).then(
     () => undefined,
     () => undefined,

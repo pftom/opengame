@@ -5,6 +5,7 @@ import {
   type WebPublishMode,
   type WebPublishStatusResponse,
   type WebPublishTargetKind,
+  type WebPublishVisibility,
 } from '../../../shared/web-publish';
 
 export class WebPublishApiError extends Error {
@@ -73,6 +74,8 @@ export const webPublishClient = {
       name?: string;
       sourcePath?: string;
       embedUrl?: string;
+      visibility?: WebPublishVisibility;
+      allowRemix?: boolean;
     } = {},
   ) =>
     requestJson<{
@@ -82,6 +85,25 @@ export const webPublishClient = {
       updated: boolean;
     }>(webPublishRoutes.target(targetKind, targetId), {
       method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  setVisibility: (
+    targetKind: WebPublishTargetKind,
+    targetId: string,
+    payload: {
+      visibility: WebPublishVisibility;
+      allowRemix?: boolean;
+      filePath?: string;
+      sourcePath?: string;
+      embedUrl?: string;
+    },
+  ) =>
+    requestJson<{
+      publication: WebPublicationRecord;
+      deployment: WebPublicationRecord;
+    }>(webPublishRoutes.target(targetKind, targetId), {
+      method: 'PATCH',
       body: JSON.stringify(payload),
     }),
 

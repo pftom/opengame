@@ -6,15 +6,20 @@ import path from 'node:path';
 import { atomicJson, jsonFile } from '../phase1-versions.ts';
 import { withProcessLock } from '../shared/process-lock.ts';
 import type { AccountSummary } from '../shared/provider-directory.ts';
-import type {
-  WebPublicationRecord,
-  WebPublishAccountState,
-  WebPublishFreshness,
-  WebPublishListResponse,
-  WebPublishMode,
-  WebPublishStatusResponse,
-  WebPublishTarget,
-  WebPublishTargetKind,
+import {
+  isPaidWebPublishPlan,
+  normalizeWebPublishPlanId,
+  type WebPublicationRecord,
+  type WebPublishAccountState,
+  type WebPublishFeedStatus,
+  type WebPublishFreshness,
+  type WebPublishGameMeta,
+  type WebPublishListResponse,
+  type WebPublishMode,
+  type WebPublishStatusResponse,
+  type WebPublishTarget,
+  type WebPublishTargetKind,
+  type WebPublishVisibility,
 } from '../shared/web-publish.ts';
 import { OpenDesignAccount, type OpenDesignWorkspaceInfo } from './account.ts';
 import { buildPublishBundle, stagePublishFiles, type PublishBundle } from './web-publish-bundle.ts';
@@ -66,6 +71,16 @@ export interface WebPublishAccountClient {
     options?: { signal?: AbortSignal; timeoutMs?: number; maxBuffer?: number },
   ): Promise<string>;
   summary?: (refresh?: boolean) => Promise<AccountSummary>;
+  controlApiJson?: <T = Record<string, unknown>>(
+    apiPath: string,
+    options?: {
+      method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+      workspaceId?: string;
+      body?: unknown;
+      signal?: AbortSignal;
+      timeoutMs?: number;
+    },
+  ) => Promise<T>;
 }
 
 type PublishOptions = {
@@ -73,6 +88,65 @@ type PublishOptions = {
   workspaceId?: string;
   mode?: WebPublishMode;
   name?: string;
+  visibility?: WebPublishVisibility;
+  allowRemix?: boolean;
+};
+
+function isUnsupportedGameListingEndpointError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const msg = error instanceof Error ? error.message : String(error);
+  if (/PRIVATE_SHARE_REQUIRES_PAID_PLAN|OPENDESIGN_SIGN_IN_REQUIRED/.test(msg)) {
+    return false;
+  }
+  const status = (error as { status?: unknown }).status;
+  if (typeof status === 'number' && (status === 404 || status === 405 || status === 501)) {
+    return true;
+  }
+  return /\bfailed \((?:404|405|501):/.test(msg) || /"status"\s*:\s*(?:404|405|501)\b/.test(msg);
+}
+
+function isGameListingNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const msg = error instanceof Error ? error.message : String(error);
+  if (/PRIVATE_SHARE_REQUIRES_PAID_PLAN|OPENDESIGN_SIGN_IN_REQUIRED/.test(msg)) {
+    return false;
+  }
+  const status = (error as { status?: unknown }).status;
+  if (typeof status === 'number') {
+    return status === 404;
+  }
+  return /\bfailed \(404:/.test(msg) || /"status"\s*:\s*404\b/.test(msg);
+}
+
+function isPrivateSharePlanError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const msg = error instanceof Error ? error.message : String(error);
+  if (/PRIVATE_SHARE_REQUIRES_PAID_PLAN/.test(msg)) {
+    return true;
+  }
+  const code = (error as { code?: unknown }).code;
+  if (code === 'PRIVATE_SHARE_REQUIRES_PAID_PLAN') {
+    return true;
+  }
+  const status = (error as { status?: unknown }).status;
+  return status === 403 || /\bfailed \(403:/.test(msg) || /"status"\s*:\s*403\b/.test(msg);
+}
+
+function isAuthRequiredError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const msg = error instanceof Error ? error.message : String(error);
+  const status = (error as { status?: unknown }).status;
+  return /OPENDESIGN_SIGN_IN_REQUIRED/.test(msg) || status === 401;
+}
+
+type GameListingControlResponse = {
+  visibility?: WebPublishVisibility;
+  feedStatus?: WebPublishFeedStatus;
+  allowRemix?: boolean;
+  communityPath?: string;
+  communityUrl?: string | null;
+  canUsePrivateShare?: boolean;
+  planTier?: string;
 };
 
 function normalizeEntryPath(raw?: string | null, fallback = 'index.html'): string {
@@ -156,9 +230,10 @@ export function verifiedShareUrl(rawUrl: unknown, projectId: string, slug: strin
 }
 
 /**
- * Game shares are meant to be played, not reviewed: with `kind=game` the cloud
- * share viewer hides its comments UI and shows the "Made with OpenMotion" bar
- * with one-click Remix. Other target kinds keep the default review viewer.
+ * Game shares keep `kind=game` so the cloud viewer launches full-screen for play
+ * with the comments rail collapsed by default and the "Made with OpenDesign"
+ * remix + Comments toggle bar at the bottom. Users can open the bar to comment,
+ * ask follow-up questions, attach images, and reply (1-level) without clutter.
  */
 export const SHARE_VIEWER_KIND_PARAM = 'kind';
 export const SHARE_VIEWER_GAME_KIND = 'game';
@@ -359,7 +434,11 @@ export class WebPublishService {
     const state = await this.readStoredState(kind, targetId);
     if (kind !== 'game') return state;
     for (const record of Object.values(state.publications)) {
-      record.url = shareViewerUrlForTarget(kind, record.url);
+      if (record.communityUrl) {
+        record.url = record.communityUrl;
+      } else {
+        record.url = shareViewerUrlForTarget(kind, record.url);
+      }
     }
     return state;
   }
@@ -556,11 +635,20 @@ export class WebPublishService {
 
   async status(
     target: Pick<WebPublishTarget, 'kind' | 'id' | 'entryPath'>
-      & Partial<Pick<WebPublishTarget, 'sourcePath' | 'title' | 'multiplayer' | 'virtualEntryHtml'>>,
+      & Partial<Pick<WebPublishTarget, 'sourcePath' | 'title' | 'multiplayer' | 'virtualEntryHtml' | 'gameMeta'>>,
     options: { filePath?: string; refresh?: boolean } = {},
   ): Promise<WebPublishStatusResponse> {
     const accountSignedIn = await this.account.isSignedIn();
-    const accountSummary = this.account.summary ? await this.account.summary().catch(() => null) : null;
+    let accountSummary = this.account.summary ? await this.account.summary().catch(() => null) : null;
+    if (
+      target.kind === 'game'
+      && accountSignedIn
+      && this.account.summary
+      && !normalizeWebPublishPlanId(accountSummary?.plan as string | { id?: string | null } | null | undefined)
+      && accountSummary?.billingUnavailable !== true
+    ) {
+      accountSummary = (await this.account.summary(true).catch(() => null)) ?? accountSummary;
+    }
     const accountState: WebPublishAccountState =
       accountSummary?.state ?? (accountSignedIn ? 'signed-in' : 'signed-out');
     const accountEmail = accountSummary?.user?.email;
@@ -571,6 +659,128 @@ export class WebPublishService {
       : normalizeEntryPath(target.entryPath, 'index.html');
     const defaultCloudProjectId = cloudProjectIdFor(target.kind, target.id);
 
+    const accountPlan = normalizeWebPublishPlanId(
+      accountSummary?.plan as string | { id?: string | null } | null | undefined,
+    );
+    let entitlementResolved = Boolean(accountPlan);
+    let canUsePrivateShare = isPaidWebPublishPlan(accountPlan);
+    let resolvedPlan = accountPlan;
+
+    if (target.kind === 'game' && accountSignedIn && this.account.controlApiJson) {
+      const currentPub = state.publications[targetEntry];
+      let hydratedFromListing = false;
+      if (currentPub?.slug && currentPub.status === 'published') {
+        const remoteProjectId = currentPub.cloudProjectId || defaultCloudProjectId;
+        let remoteListing: GameListingControlResponse | null = null;
+        let remoteListingMissing = false;
+        try {
+          remoteListing = await this.account.controlApiJson<GameListingControlResponse>(
+            `/api/v1/collab/shares/${encodeURIComponent(currentPub.slug)}/game-listing?projectId=${encodeURIComponent(remoteProjectId)}`,
+            { method: 'GET', workspaceId: currentPub.workspaceId, timeoutMs: 6_000 },
+          );
+        } catch (error) {
+          remoteListingMissing = isGameListingNotFoundError(error);
+        }
+        let keepListingSyncPending = false;
+        // Only heal publications that actually attempted PUT /game-listing on publish/resume
+        // and failed transiently, and only when GET confirms 404 (never on 5xx/timeout or
+        // pre-existing shares published by earlier builds without listingSyncPending).
+        if (!remoteListing && remoteListingMissing && currentPub.listingSyncPending) {
+          const desiredVisibility = currentPub.pendingVisibility ?? currentPub.visibility ?? 'public';
+          remoteListing = await this.syncGameListing({
+            target,
+            cloudProjectId: remoteProjectId,
+            workspaceId: currentPub.workspaceId,
+            slug: currentPub.slug,
+            displayName: (target.gameMeta?.title || target.title || currentPub.name).trim().slice(0, 120) || currentPub.name,
+            visibility: desiredVisibility,
+            allowRemix: currentPub.allowRemix,
+          }).catch(() => null);
+        } else if (
+          remoteListing
+          && currentPub.listingSyncPending
+          && currentPub.pendingVisibility
+          && remoteListing.visibility
+          && remoteListing.visibility !== currentPub.pendingVisibility
+        ) {
+          try {
+            const retried = await this.syncGameListing({
+              target,
+              cloudProjectId: remoteProjectId,
+              workspaceId: currentPub.workspaceId,
+              slug: currentPub.slug,
+              displayName: (target.gameMeta?.title || target.title || currentPub.name).trim().slice(0, 120) || currentPub.name,
+              visibility: currentPub.pendingVisibility,
+              allowRemix: currentPub.allowRemix,
+            });
+            if (retried) {
+              remoteListing = retried;
+            } else {
+              keepListingSyncPending = true;
+            }
+          } catch (retryError) {
+            if (!isPrivateSharePlanError(retryError)) {
+              keepListingSyncPending = true;
+            }
+          }
+        }
+        if (remoteListing) {
+          hydratedFromListing = true;
+          if (typeof remoteListing.canUsePrivateShare === 'boolean') {
+            entitlementResolved = true;
+            canUsePrivateShare = remoteListing.canUsePrivateShare;
+          }
+          if (typeof remoteListing.planTier === 'string' && remoteListing.planTier.trim()) {
+            resolvedPlan = remoteListing.planTier.trim();
+            entitlementResolved = true;
+          }
+          const changed =
+            (remoteListing.visibility && remoteListing.visibility !== currentPub.visibility)
+            || (remoteListing.feedStatus && remoteListing.feedStatus !== currentPub.feedStatus)
+            || (typeof remoteListing.allowRemix === 'boolean' && remoteListing.allowRemix !== currentPub.allowRemix)
+            || (remoteListing.communityUrl && remoteListing.communityUrl !== currentPub.communityUrl)
+            || (!keepListingSyncPending && (Boolean(currentPub.listingSyncPending) || Boolean(currentPub.pendingVisibility)));
+          if (changed) {
+            await withProcessLock(this.lockFile(target.kind, target.id), async () => {
+              const latest = await this.readState(target.kind, target.id);
+              const entry = latest.publications[targetEntry];
+              if (entry && entry.slug === currentPub.slug) {
+                if (remoteListing.visibility) entry.visibility = remoteListing.visibility;
+                if (remoteListing.feedStatus) entry.feedStatus = remoteListing.feedStatus;
+                if (typeof remoteListing.allowRemix === 'boolean') entry.allowRemix = remoteListing.allowRemix;
+                if (remoteListing.communityUrl) {
+                  entry.communityUrl = remoteListing.communityUrl;
+                  entry.url = remoteListing.communityUrl;
+                }
+                if (!keepListingSyncPending) {
+                  delete entry.listingSyncPending;
+                  delete entry.pendingVisibility;
+                }
+                entry.updatedAt = Date.now();
+                await this.saveState(target.kind, target.id, latest);
+              }
+            });
+          }
+        }
+      }
+      if (!hydratedFromListing) {
+        const workspaceId = currentPub?.workspaceId;
+        const entitlement = await this.account
+          .controlApiJson<{ canUsePrivateShare?: boolean; planTier?: string }>(
+            '/api/v1/collab/game-share-entitlement',
+            { method: 'GET', ...(workspaceId ? { workspaceId } : {}), timeoutMs: 6_000 },
+          )
+          .catch(() => null);
+        if (entitlement && typeof entitlement.canUsePrivateShare === 'boolean') {
+          entitlementResolved = true;
+          canUsePrivateShare = entitlement.canUsePrivateShare;
+          if (typeof entitlement.planTier === 'string' && entitlement.planTier.trim()) {
+            resolvedPlan = entitlement.planTier.trim();
+          }
+        }
+      }
+    }
+
     if (options.refresh && accountSignedIn) {
       const current = state.publications[targetEntry];
       if (current) {
@@ -580,18 +790,44 @@ export class WebPublishService {
             ['share', 'status', current.slug, '--project-id', remoteProjectId, '--json'],
             current.workspaceId,
           );
+          const remoteListing =
+            target.kind === 'game' && this.account.controlApiJson
+              ? await this.account
+                  .controlApiJson<GameListingControlResponse>(
+                    `/api/v1/collab/shares/${encodeURIComponent(current.slug)}/game-listing?projectId=${encodeURIComponent(remoteProjectId)}`,
+                    { method: 'GET', workspaceId: current.workspaceId, timeoutMs: 8_000 },
+                  )
+                  .catch(() => null)
+              : null;
+          if (remoteListing && typeof remoteListing.canUsePrivateShare === 'boolean') {
+            entitlementResolved = true;
+            canUsePrivateShare = remoteListing.canUsePrivateShare;
+            if (remoteListing.planTier) resolvedPlan = remoteListing.planTier;
+          }
           if (remote.status === 'active' || remote.status === 'stopped') {
             const nextStatus = remote.status === 'stopped' ? 'stopped' : 'published';
-            const refreshedUrl = shareViewerUrlForTarget(
+            const artifactUrl = shareViewerUrlForTarget(
               target.kind,
-              parseShareLinkFromRecord(remote, remoteProjectId, current.slug) ?? current.url,
+              parseShareLinkFromRecord(remote, remoteProjectId, current.slug) ?? current.artifactUrl ?? current.url,
             );
+            const communityUrl = remoteListing?.communityUrl ?? current.communityUrl ?? null;
             await withProcessLock(this.lockFile(target.kind, target.id), async () => {
               const latest = await this.readState(target.kind, target.id);
               const entry = latest.publications[targetEntry];
               if (entry && entry.slug === current.slug) {
                 entry.status = nextStatus;
-                entry.url = refreshedUrl;
+                entry.artifactUrl = artifactUrl;
+                if (communityUrl) entry.communityUrl = communityUrl;
+                entry.url = communityUrl ?? artifactUrl;
+                if (remoteListing?.visibility) entry.visibility = remoteListing.visibility;
+                if (remoteListing?.feedStatus) entry.feedStatus = remoteListing.feedStatus;
+                if (typeof remoteListing?.allowRemix === 'boolean') entry.allowRemix = remoteListing.allowRemix;
+                if (remoteListing) {
+                  if (!entry.pendingVisibility || !remoteListing.visibility || remoteListing.visibility === entry.pendingVisibility) {
+                    delete entry.listingSyncPending;
+                    delete entry.pendingVisibility;
+                  }
+                }
                 entry.updatedAt = Date.now();
                 await this.saveState(target.kind, target.id, latest);
               }
@@ -639,6 +875,8 @@ export class WebPublishService {
       accountSignedIn,
       accountState,
       ...(accountEmail ? { accountEmail } : {}),
+      ...(resolvedPlan ? { accountPlan: resolvedPlan } : {}),
+      ...(target.kind === 'game' && entitlementResolved ? { canUsePrivateShare } : {}),
       freshness,
       fileCount: bundle?.fileCount ?? active?.fileCount ?? 0,
       totalBytes: bundle?.totalBytes ?? active?.totalBytes ?? 0,
@@ -654,11 +892,157 @@ export class WebPublishService {
     };
   }
 
+  private async syncGameListing(params: {
+    target: Pick<WebPublishTarget, 'kind' | 'gameMeta'>;
+    cloudProjectId: string;
+    workspaceId: string;
+    slug: string;
+    displayName: string;
+    visibility: WebPublishVisibility;
+    allowRemix?: boolean;
+  }): Promise<GameListingControlResponse | null> {
+    if (params.target.kind !== 'game' || !this.account.controlApiJson) {
+      return null;
+    }
+    const meta: WebPublishGameMeta = {
+      title: params.displayName,
+      description: params.target.gameMeta?.description ?? '',
+      genre: params.target.gameMeta?.genre ?? null,
+      style: params.target.gameMeta?.style ?? null,
+      setting: params.target.gameMeta?.setting ?? null,
+      orientation: params.target.gameMeta?.orientation ?? 'landscape',
+      controls: params.target.gameMeta?.controls ?? '',
+      coverPath: params.target.gameMeta?.coverPath ?? null,
+      i18n: params.target.gameMeta?.i18n ?? null,
+      creatorName: params.target.gameMeta?.creatorName ?? null,
+      templateId: params.target.gameMeta?.templateId ?? null,
+      remixOfSlug: params.target.gameMeta?.remixOfSlug ?? null,
+    };
+    return this.account.controlApiJson<GameListingControlResponse>(
+      `/api/v1/collab/shares/${encodeURIComponent(params.slug)}/game-listing`,
+      {
+        method: 'PUT',
+        workspaceId: params.workspaceId,
+        body: {
+          projectId: params.cloudProjectId,
+          visibility: params.visibility,
+          ...(params.allowRemix !== undefined ? { allowRemix: params.allowRemix } : {}),
+          gameMeta: meta,
+        },
+        timeoutMs: 20_000,
+      },
+    );
+  }
+
   async publish(target: WebPublishTarget, options: PublishOptions = {}) {
     const filePath = normalizeEntryPath(options.filePath, target.entryPath || 'index.html');
     return withProcessLock(this.operationLock(target, filePath), () =>
       this.publishEntry(target, filePath, options),
     );
+  }
+
+  async setVisibility(
+    target: Pick<WebPublishTarget, 'kind' | 'id' | 'entryPath'> & Partial<Pick<WebPublishTarget, 'title' | 'gameMeta'>>,
+    options: { filePath?: string; visibility: WebPublishVisibility; allowRemix?: boolean },
+  ): Promise<{ publication: WebPublicationRecord; deployment: WebPublicationRecord }> {
+    if (target.kind !== 'game') {
+      throw new Error('INVALID_ARGUMENT: Visibility controls are only supported for game deployments');
+    }
+    const filePath = normalizeEntryPath(options.filePath, target.entryPath || 'index.html');
+    return withProcessLock(this.operationLock(target, filePath), async () => {
+      const state = await this.readState(target.kind, target.id);
+      const current = state.publications[filePath];
+      if (!current) {
+        throw new Error(`NOT_FOUND: No live publication found for "${filePath}"`);
+      }
+      if (!this.account.controlApiJson) {
+        throw new Error('DEPLOY_FAILED: OpenDesign account API client is unavailable');
+      }
+      const remoteProjectId = current.cloudProjectId || cloudProjectIdFor(target.kind, target.id);
+      let res: GameListingControlResponse;
+      try {
+        res = await this.account.controlApiJson<GameListingControlResponse>(
+          `/api/v1/collab/shares/${encodeURIComponent(current.slug)}/visibility`,
+          {
+            method: 'PATCH',
+            workspaceId: current.workspaceId,
+            body: {
+              projectId: remoteProjectId,
+              visibility: options.visibility,
+              ...(options.allowRemix !== undefined ? { allowRemix: options.allowRemix } : {}),
+            },
+            timeoutMs: 20_000,
+          },
+        );
+      } catch (error) {
+        if (!isUnsupportedGameListingEndpointError(error)) {
+          throw error;
+        }
+        // A 404 on PATCH /visibility can mean the listing row was never created
+        // (for example after a transient post-publish sync failure). Retry once
+        // via syncGameListing (PUT /game-listing) with full target.gameMeta so
+        // the remote control plane heals or updates the listing without
+        // overwriting cover, description, translations, or template attribution.
+        try {
+          const synced = await this.syncGameListing({
+            target,
+            cloudProjectId: remoteProjectId,
+            workspaceId: current.workspaceId,
+            slug: current.slug,
+            displayName: (target.gameMeta?.title || target.title || current.name).trim().slice(0, 120) || current.name,
+            visibility: options.visibility,
+            allowRemix: options.allowRemix ?? current.allowRemix ?? true,
+          });
+          if (!synced) {
+            throw new Error(
+              'DEPLOY_FAILED: OpenDesign Cloud did not apply the game visibility change because the visibility endpoint is unavailable.',
+            );
+          }
+          res = synced;
+        } catch (putError) {
+          if (!isUnsupportedGameListingEndpointError(putError)) {
+            throw putError;
+          }
+          if (options.visibility === 'unlisted' && this.account.summary) {
+            let summary = await this.account.summary().catch(() => null);
+            if (
+              !normalizeWebPublishPlanId(summary?.plan as string | { id?: string | null } | null | undefined)
+              && summary?.billingUnavailable !== true
+            ) {
+              summary = (await this.account.summary(true).catch(() => null)) ?? summary;
+            }
+            if (!isPaidWebPublishPlan(summary?.plan as string | { id?: string | null } | null | undefined)) {
+              throw new Error(
+                'PRIVATE_SHARE_REQUIRES_PAID_PLAN: Unlisted/private game sharing requires a paid OpenDesign plan (Go or above).',
+              );
+            }
+          }
+          throw new Error(
+            'DEPLOY_FAILED: OpenDesign Cloud did not apply the game visibility change because the visibility endpoint is unavailable.',
+          );
+        }
+      }
+      const {
+        listingSyncPending: _prevListingSyncPending,
+        pendingVisibility: _prevPendingVisibility,
+        ...baseCurrent
+      } = current;
+      const next: WebPublicationRecord = {
+        ...baseCurrent,
+        visibility: res.visibility ?? options.visibility,
+        allowRemix: typeof res.allowRemix === 'boolean' ? res.allowRemix : (options.allowRemix ?? current.allowRemix),
+        feedStatus: res.feedStatus ?? current.feedStatus,
+        communityUrl: res.communityUrl ?? current.communityUrl ?? null,
+        url: res.communityUrl ?? current.communityUrl ?? current.url,
+        updatedAt: Date.now(),
+      };
+      await withProcessLock(this.lockFile(target.kind, target.id), async () => {
+        const latest = await this.readState(target.kind, target.id);
+        latest.publications[filePath] = next;
+        await this.saveState(target.kind, target.id, latest);
+      });
+      return { publication: next, deployment: next };
+    });
   }
 
   private async publishEntry(target: WebPublishTarget, filePath: string, options: PublishOptions): Promise<{
@@ -675,6 +1059,21 @@ export class WebPublishService {
 
     const existingState = await this.readState(target.kind, target.id);
     const existingPublication = existingState.publications[filePath];
+    const requestedVisibility: WebPublishVisibility =
+      options.visibility ?? existingPublication?.visibility ?? 'public';
+
+    // Fail fast before uploading blobs if a Free workspace asks for unlisted/private game sharing.
+    if (target.kind === 'game' && requestedVisibility === 'unlisted' && this.account.controlApiJson) {
+      const entitlement = await this.account
+        .controlApiJson<{ canUsePrivateShare?: boolean }>(
+          '/api/v1/collab/game-share-entitlement',
+          { method: 'GET', workspaceId: workspace.workspaceId, timeoutMs: 8_000 },
+        )
+        .catch(() => null);
+      if (entitlement && entitlement.canUsePrivateShare === false) {
+        throw new Error('PRIVATE_SHARE_REQUIRES_PAID_PLAN: Unlisted/private game sharing requires a paid OpenDesign plan (Go or above).');
+      }
+    }
 
     if (existingPublication?.status === 'stopped' && mode === 'publish') {
       throw new Error(
@@ -705,6 +1104,63 @@ export class WebPublishService {
       && contentMatches
       && existingPublication.workspaceId === workspace.workspaceId
     ) {
+      const displayGameTitle = options.name?.trim() || existingPublication.name || target.title;
+      const requestedAllowRemix = options.allowRemix ?? existingPublication.allowRemix;
+      const fetchCurrentListing = async () =>
+        this.account.controlApiJson
+          ? await this.account
+              .controlApiJson<GameListingControlResponse>(
+                `/api/v1/collab/shares/${encodeURIComponent(existingPublication.slug)}/game-listing?projectId=${encodeURIComponent(existingProjectId)}`,
+                { method: 'GET', workspaceId: workspace.workspaceId, timeoutMs: 8_000 },
+              )
+              .catch(() => null)
+          : null;
+
+      // Never reactivate a stopped share as public before confirming `unlisted` on the server:
+      // if an author previously had a public/curated game, stopping and reopening as Unlisted must
+      // persist/confirm `unlisted` BEFORE `share resume-existing` makes the slug reachable again.
+      let preResumeListing: GameListingControlResponse | null = null;
+      let preResumeLegacyUnsupported = false;
+      if (target.kind === 'game' && requestedVisibility === 'unlisted') {
+        if (!this.account.controlApiJson) {
+          throw new Error(
+            'DEPLOY_FAILED: Could not confirm Unlisted visibility on OpenDesign Cloud before reopening the stopped share link. Please retry.',
+          );
+        }
+        try {
+          preResumeListing = await this.syncGameListing({
+            target,
+            cloudProjectId: existingProjectId,
+            workspaceId: workspace.workspaceId,
+            slug: existingPublication.slug,
+            displayName: displayGameTitle,
+            visibility: 'unlisted',
+            allowRemix: requestedAllowRemix,
+          });
+        } catch (syncError) {
+          if (isPrivateSharePlanError(syncError) || isAuthRequiredError(syncError)) {
+            throw syncError;
+          }
+          if (isUnsupportedGameListingEndpointError(syncError) && !existingPublication.communityUrl) {
+            preResumeLegacyUnsupported = true;
+          } else {
+            const probed = await fetchCurrentListing();
+            if (probed?.visibility === 'unlisted') {
+              preResumeListing = probed;
+            } else {
+              throw new Error(
+                'DEPLOY_FAILED: Could not confirm Unlisted visibility on OpenDesign Cloud before reopening the stopped share link. Please retry.',
+              );
+            }
+          }
+        }
+        if (!preResumeLegacyUnsupported && preResumeListing?.visibility !== 'unlisted') {
+          throw new Error(
+            'DEPLOY_FAILED: Could not confirm Unlisted visibility on OpenDesign Cloud before reopening the stopped share link. Please retry.',
+          );
+        }
+      }
+
       const resumedRecord = await this.runVelaJson(
         [
           'share',
@@ -724,13 +1180,67 @@ export class WebPublishService {
       const resumedUrl = shareViewerUrlForTarget(
         target.kind,
         parseShareLinkFromRecord(resumedRecord, existingProjectId, existingPublication.slug)
+          ?? existingPublication.artifactUrl
           ?? existingPublication.url,
       );
+
+      let resumedListing: GameListingControlResponse | null = preResumeListing;
+      let resumedSyncPending = false;
+      let resumedPendingVisibility: WebPublishVisibility | undefined;
+      if (target.kind === 'game' && requestedVisibility !== 'unlisted') {
+        try {
+          resumedListing = await this.syncGameListing({
+            target,
+            cloudProjectId: existingProjectId,
+            workspaceId: workspace.workspaceId,
+            slug: existingPublication.slug,
+            displayName: displayGameTitle,
+            visibility: requestedVisibility,
+            allowRemix: requestedAllowRemix,
+          });
+        } catch (syncError) {
+          if (!isUnsupportedGameListingEndpointError(syncError)) {
+            const probed = await fetchCurrentListing();
+            if (probed?.visibility === requestedVisibility) {
+              resumedListing = probed;
+            } else {
+              resumedListing = probed;
+              resumedSyncPending = true;
+              resumedPendingVisibility = requestedVisibility;
+            }
+          }
+        }
+      }
+
+      const resumedCommunityUrl =
+        target.kind === 'game'
+          ? (resumedListing?.communityUrl ?? existingPublication.communityUrl ?? null)
+          : null;
+      const {
+        listingSyncPending: _prevListingSyncPending,
+        pendingVisibility: _prevPendingVisibility,
+        ...baseExistingPublication
+      } = existingPublication;
+      const resumedVisibility: WebPublishVisibility =
+        resumedListing?.visibility
+        ?? (preResumeLegacyUnsupported
+          ? 'unlisted'
+          : (resumedSyncPending ? (existingPublication.visibility ?? 'public') : requestedVisibility));
       const resumedPublication: WebPublicationRecord = {
-        ...existingPublication,
+        ...baseExistingPublication,
         cloudProjectId: existingProjectId,
         status: 'published',
-        url: resumedUrl,
+        url: resumedCommunityUrl ?? resumedUrl,
+        ...(target.kind === 'game' && resumedUrl ? { artifactUrl: resumedUrl } : {}),
+        ...(resumedCommunityUrl ? { communityUrl: resumedCommunityUrl } : {}),
+        ...(target.kind === 'game'
+          ? {
+              visibility: resumedVisibility,
+              feedStatus: resumedListing?.feedStatus ?? existingPublication.feedStatus ?? 'pending',
+              allowRemix: resumedListing?.allowRemix ?? requestedAllowRemix ?? true,
+              ...(resumedSyncPending ? { listingSyncPending: true, pendingVisibility: resumedPendingVisibility } : {}),
+            }
+          : {}),
         fileCount: bundle.fileCount,
         totalBytes: bundle.totalBytes,
         bundledAssetCount: bundle.bundledAssetCount,
@@ -934,6 +1444,63 @@ export class WebPublishService {
         await this.stopPublication(existingPublication, existingProjectId);
       }
 
+      // Best-effort community listing sync after `share publish` has already succeeded:
+      // keep legacy 404 compatibility for paid plans on pre-community backends, reject Free 403
+      // mislabeling immediately, and probe/mark pending on transient 5xx/timeout errors.
+      let listingSync: GameListingControlResponse | null = null;
+      let listingSyncPending = false;
+      let pendingVisibility: WebPublishVisibility | undefined;
+      let legacyListingUnsupported = false;
+      let listingPlanRejection: unknown = null;
+      if (target.kind === 'game') {
+        try {
+          listingSync = await this.syncGameListing({
+            target,
+            cloudProjectId,
+            workspaceId: workspace.workspaceId,
+            slug: reservation.slug,
+            displayName,
+            visibility: requestedVisibility,
+            allowRemix: options.allowRemix,
+          });
+        } catch (syncError) {
+          if (isPrivateSharePlanError(syncError)) {
+            listingPlanRejection = syncError;
+          } else if (isUnsupportedGameListingEndpointError(syncError)) {
+            legacyListingUnsupported = true;
+          } else {
+            const probed = this.account.controlApiJson
+              ? await this.account
+                  .controlApiJson<GameListingControlResponse>(
+                    `/api/v1/collab/shares/${encodeURIComponent(reservation.slug)}/game-listing?projectId=${encodeURIComponent(cloudProjectId)}`,
+                    { method: 'GET', workspaceId: workspace.workspaceId, timeoutMs: 6_000 },
+                  )
+                  .catch(() => null)
+              : null;
+            if (probed && (!probed.visibility || probed.visibility === requestedVisibility)) {
+              listingSync = probed;
+            } else {
+              listingSync = probed;
+              listingSyncPending = true;
+              pendingVisibility = requestedVisibility;
+            }
+          }
+        }
+      }
+
+      const resolvedCommunityUrl =
+        target.kind === 'game' ? (listingSync?.communityUrl ?? null) : null;
+      const existingVisibilityForSlug =
+        existingPublication && existingPublication.slug === reservation.slug
+          ? existingPublication.visibility
+          : undefined;
+      const savedVisibility: WebPublishVisibility = listingPlanRejection
+        ? (existingVisibilityForSlug ?? 'public')
+        : (listingSync?.visibility
+          ?? (legacyListingUnsupported
+            ? requestedVisibility
+            : (listingSyncPending ? (existingVisibilityForSlug ?? 'public') : requestedVisibility)));
+
       const record: WebPublicationRecord = {
         schemaVersion: 1,
         targetKind: target.kind,
@@ -953,7 +1520,17 @@ export class WebPublishService {
         version: publishedVersion,
         versionId,
         status: 'published',
-        url: shareUrl,
+        url: resolvedCommunityUrl ?? shareUrl,
+        ...(target.kind === 'game' && shareUrl ? { artifactUrl: shareUrl } : {}),
+        ...(resolvedCommunityUrl ? { communityUrl: resolvedCommunityUrl } : {}),
+        ...(target.kind === 'game'
+          ? {
+              visibility: savedVisibility,
+              allowRemix: listingSync?.allowRemix ?? options.allowRemix ?? true,
+              feedStatus: listingSync?.feedStatus ?? 'pending',
+              ...(listingSyncPending ? { listingSyncPending: true, pendingVisibility } : {}),
+            }
+          : {}),
         publishedAt,
         updatedAt: Date.now(),
         fileCount: bundle.fileCount,
@@ -970,6 +1547,10 @@ export class WebPublishService {
         latest.publications[filePath] = record;
         await this.saveState(target.kind, target.id, latest);
       });
+
+      if (listingPlanRejection) {
+        throw listingPlanRejection;
+      }
 
       return { publication: record, deployment: record, url: record.url, updated: wasExisting };
     } finally {

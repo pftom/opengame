@@ -11,6 +11,7 @@ import type { Modality } from '../../../shared/gateway';
 import type { SuperAgentDesignModuleId, SuperAgentResourceAttachment } from '../../../shared/super-agent';
 import { Select } from '../components/ui/Select';
 import { Skeleton } from '../components/ui/Skeleton';
+import { Tooltip } from '../components/ui/Tooltip';
 import { VideoFrameThumbnail } from '../components/ui/VideoFrameThumbnail';
 import { ScaledPreviewThumb } from '../design/ScaledPreviewThumb';
 import { useI18n } from '../i18n/I18n';
@@ -19,6 +20,8 @@ import { groupBrandSeries, rankDiscoverySeries } from '../motion/brandStoryData'
 import { cinemaTemplates } from '../motion/cinemaTemplates';
 import { gptImageStory, seedanceStory } from '../motion/exploreModelStories';
 import { GameMasonry, interleavePortrait } from '../motion/game/GameMasonry';
+import { openGameCommunityExternal, useGameCommunityUrl } from '../motion/game/gameCommunityUrl';
+import { getDesktopBridge } from '../utils/platformHost';
 import {
   bundledGames,
   communityGames,
@@ -904,11 +907,13 @@ export function ModeResourceShowcase({
   onPickPrompt: (prompt: string, meta?: PickPromptMeta) => void;
   onOpenAllResources: (category: ResourceCategoryTab) => void;
   onOpenGameStudio?: () => void;
+  onOpenWebUrl?: (url: string, options?: { id?: string; title?: string }) => void;
   onClose: () => void;
 }) {
   const { t, locale } = useI18n();
   const isZh = locale === 'zh-CN';
   const templateHeadingId = useId();
+  const gameCommunityUrl = useGameCommunityUrl();
 
   // Motion & Cinema modes share Explore's full covered Motion template catalog.
   const coveredMotion = useCoveredTemplates(locale, mode.id === 'motion' || mode.id === 'media', { showFirstPage: true });
@@ -937,6 +942,7 @@ export function ModeResourceShowcase({
   // Start the hero fan offset from the top waterfall row so both shelves don't open on the exact same cover.
   const [fanIndex, setFanIndex] = useState(() => (communityGames.length + bundledGames.length > 3 ? 3 : 0));
   const [fanPaused, setFanPaused] = useState(false);
+  const [confettiBurst, setConfettiBurst] = useState(0);
   const [tabsOverflow, setTabsOverflow] = useState<{ start: boolean; end: boolean }>({ start: false, end: false });
   const gameTitleRef = useRef<HTMLDivElement>(null);
   const showcaseSectionRef = useRef<HTMLElement | null>(null);
@@ -984,6 +990,10 @@ export function ModeResourceShowcase({
   const fannedGames = useMemo(
     () => publishedGameTemplates.filter(g => Boolean(coverUrl(g))),
     [publishedGameTemplates],
+  );
+  const communityPreviewCovers = useMemo(
+    () => fannedGames.slice(0, 3).map(g => coverUrl(g)).filter((src): src is string => Boolean(src)),
+    [fannedGames],
   );
   const myGames = useMemo(
     () => gameCatalog.filter(g => g.source === 'mine').sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
@@ -1730,6 +1740,49 @@ export function ModeResourceShowcase({
           <h2>{t(effectiveHeroMode.title)}</h2>
           {effectiveHeroMode.subtitle && <p className="om-muted">{t(effectiveHeroMode.subtitle)}</p>}
         </div>
+
+        {mode.id === 'game' && (
+          <div className="om-sa-game-community-hero">
+            <span className="om-sa-game-community-stage">
+              <span
+                key={confettiBurst}
+                className="om-sa-game-community-confetti"
+                data-burst={confettiBurst > 0 ? 'true' : undefined}
+                aria-hidden="true"
+              >
+                {Array.from({ length: 10 }, (_, idx) => (
+                  <span key={idx} className="om-sa-confetti-piece" data-piece={idx} />
+                ))}
+              </span>
+              <a
+                href={gameCommunityUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="om-sa-game-community-btn"
+                data-game-community-entry=""
+                title={t('Jump into a surprise community game — swipe for more')}
+                onClick={event => {
+                  setConfettiBurst(prev => prev + 1);
+                  if (getDesktopBridge()?.openExternal) {
+                    event.preventDefault();
+                    openGameCommunityExternal(gameCommunityUrl);
+                  }
+                }}
+              >
+                {communityPreviewCovers.length > 0 && (
+                  <span className="om-sa-game-community-covers" aria-hidden="true">
+                    {communityPreviewCovers.map((src, idx) => (
+                      <img key={src} src={src} alt="" data-slot={idx} />
+                    ))}
+                  </span>
+                )}
+                <RemixIcon name="sparkling-fill" size={15} className="om-sa-game-community-sparkle" />
+                <span className="om-sa-game-community-label">{t('Surprise me')}</span>
+                <RemixIcon name="arrow-right-up-line" size={14} className="om-sa-game-community-arrow" />
+              </a>
+            </span>
+          </div>
+        )}
 
         {mode.id === 'game' && (
           <div className="om-sa-game-genre-strip" role="group" aria-label={t('Genre')}>

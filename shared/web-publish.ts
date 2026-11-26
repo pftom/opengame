@@ -12,6 +12,45 @@ export type WebPublishMode = 'publish' | 'resume' | 'new_link';
 export type WebPublishStatus = 'published' | 'stopped';
 export type WebPublishFreshness = 'fresh' | 'outdated' | 'unknown';
 export type WebPublishAccountState = 'signed-out' | 'authorizing' | 'signed-in' | 'reauth-required' | 'unavailable';
+export type WebPublishVisibility = 'public' | 'unlisted';
+export type WebPublishFeedStatus = 'pending' | 'approved' | 'featured' | 'rejected';
+
+export type WebPublishGameMeta = {
+  title: string;
+  description?: string;
+  genre?: string | null;
+  style?: string | null;
+  setting?: string | null;
+  orientation?: 'landscape' | 'portrait';
+  controls?: string;
+  coverPath?: string | null;
+  i18n?: Record<string, { title?: string; description?: string; controls?: string }> | null;
+  creatorName?: string | null;
+  templateId?: string | null;
+  remixOfSlug?: string | null;
+};
+
+/** Extract a normalized lowercase plan slug from either a plan string or legacy `{ id }` object. */
+export function normalizeWebPublishPlanId(
+  plan?: string | { id?: string | null } | null,
+): string | undefined {
+  if (typeof plan === 'string') {
+    const trimmed = plan.trim();
+    return trimmed ? trimmed.toLowerCase() : undefined;
+  }
+  if (plan && typeof plan === 'object' && typeof plan.id === 'string') {
+    const trimmed = plan.id.trim();
+    return trimmed ? trimmed.toLowerCase() : undefined;
+  }
+  return undefined;
+}
+
+/** Any paid OpenDesign plan (starting at `go`, up through `plus`, `pro`, `max`, and paid `team_*` tiers) unlocks unlisted/private game shares. */
+export function isPaidWebPublishPlan(plan?: string | { id?: string | null } | null): boolean {
+  const normalized = normalizeWebPublishPlanId(plan);
+  if (!normalized) return false;
+  return normalized !== 'free' && normalized !== 'team_free' && !normalized.endsWith('_free');
+}
 
 export type WebPublishTarget = {
   kind: WebPublishTargetKind;
@@ -24,6 +63,8 @@ export type WebPublishTarget = {
   /** Optional in-memory entry HTML used for read-only freshness checks without mutating disk cache. */
   virtualEntryHtml?: string;
   multiplayer?: boolean;
+  /** Structured game metadata passed to OpenDesign Cloud when publishing a game. */
+  gameMeta?: WebPublishGameMeta;
 };
 
 export type WebPublicationRecord = {
@@ -48,6 +89,17 @@ export type WebPublicationRecord = {
   versionId: string;
   status: WebPublishStatus;
   url: string | null;
+  /** Legacy artifact share URL preserved alongside community `/games/:slug` URLs. */
+  artifactUrl?: string | null;
+  /** Short SEO-friendly community URL (`/games/:slug`) for game shares. */
+  communityUrl?: string | null;
+  visibility?: WebPublishVisibility;
+  allowRemix?: boolean;
+  feedStatus?: WebPublishFeedStatus;
+  /** True only when a publish/resume attempted `PUT /game-listing` and remote sync failed transiently. */
+  listingSyncPending?: boolean;
+  /** Target visibility awaiting remote confirmation when `listingSyncPending` is true. */
+  pendingVisibility?: WebPublishVisibility;
   publishedAt: number;
   updatedAt: number;
   fileCount: number;
@@ -68,6 +120,9 @@ export type WebPublishStatusResponse = {
   accountSignedIn: boolean;
   accountState?: WebPublishAccountState;
   accountEmail?: string;
+  accountPlan?: string;
+  /** True when the signed-in account can switch game visibility to `unlisted` (any paid plan, Go+). */
+  canUsePrivateShare?: boolean;
   freshness?: WebPublishFreshness;
   fileCount?: number;
   totalBytes?: number;
@@ -91,7 +146,7 @@ export const webPublishRoutes = {
 } as const;
 
 export const webPublishToolDescription =
-  ' Use action=web_publish with webPublish={command:"publish"|"status"|"unpublish"|"list", targetKind:"design"|"game"|"html"|"motion", ...} to bundle local referenced assets and publish any HTML-expressed project, playable game (including embedUrl for community HTTPS games), or standalone HTML file/folder to a unique Open Design Cloud share link.';
+  ' Use action=web_publish with webPublish={command:"publish"|"status"|"visibility"|"unpublish"|"list", targetKind:"design"|"game"|"html"|"motion", ...} to bundle local referenced assets and publish any HTML-expressed project, playable game (including embedUrl for community HTTPS games), or standalone HTML file/folder to a unique Open Design Cloud share link. For targetKind="game", pass visibility ("public"|"unlisted") and allowRemix on publish or command="visibility" (unlisted requires a paid OpenDesign Go+ plan).';
 
 export const webPublishToolArguments = {
   type: 'object',
@@ -99,8 +154,8 @@ export const webPublishToolArguments = {
   required: ['command'],
   properties: {
     command: {
-      enum: ['publish', 'status', 'unpublish', 'list'],
-      description: 'Operation to run: publish/update a live HTTPS link, inspect status and content freshness, stop sharing, or list all publications.',
+      enum: ['publish', 'status', 'unpublish', 'list', 'visibility'],
+      description: 'Operation to run: publish/update a live HTTPS link, inspect status and content freshness, update visibility, stop sharing, or list all publications.',
     },
     targetKind: {
       enum: ['design', 'game', 'html', 'motion'],
@@ -149,6 +204,14 @@ export const webPublishToolArguments = {
     refresh: {
       type: 'boolean',
       description: 'When command="status", refresh live status from Open Design Cloud.',
+    },
+    visibility: {
+      enum: ['public', 'unlisted'],
+      description: 'Game share visibility: public (default, eligible for offline community curation) or unlisted (paid plans Go+, link-only and excluded from community feeds/SEO).',
+    },
+    allowRemix: {
+      type: 'boolean',
+      description: 'Whether viewers may use one-click Remix on this game share.',
     },
   },
 };

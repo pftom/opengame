@@ -8,6 +8,7 @@ import { I18nProvider } from '../i18n/I18n';
 import { translate } from '../i18n/messages';
 import { ApplicationHeader } from '../motion/ApplicationChrome';
 import { communityGames } from '../motion/game/gameCatalog';
+import { resetGameCommunityUrlCache } from '../motion/game/gameCommunityUrl';
 import { WorkspaceChromeContext } from '../motion/WorkspaceChromeContext';
 import { SUPER_AGENT_API, summarizeSuperAgentChat } from '../../../shared/super-agent';
 import { buildSuperAgentHandoff } from '../../../shared/capability-hub';
@@ -29,7 +30,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 vi.mock('../motion/WebBrowser', async () => {
   const React = await import('react');
   const WebBrowser = React.forwardRef(function MockWebBrowser(
-    { url, onState }: { url: string; onState?: (state: any) => void },
+    { url, endpoint, onState }: { url: string; endpoint?: string; onState?: (state: any) => void },
     ref: React.ForwardedRef<any>,
   ) {
     const imgRef = React.useRef<HTMLImageElement>(null);
@@ -47,17 +48,23 @@ vi.mock('../motion/WebBrowser', async () => {
       });
     }, [url]);
     React.useImperativeHandle(ref, () => ({
-      command: async (action: string, value?: unknown) => ({
-        url,
-        title: 'Local App',
-        canGoBack: true,
-        canGoForward: false,
-        loading: false,
-        colorScheme: action === 'set-color-scheme' ? value : 'auto',
-        zoom: action === 'set-zoom' && typeof value === 'number' ? value : 1,
-        consoleCount: 0,
-        errorCount: 0,
-      }),
+      command: async (action: string, value?: unknown) => {
+        const nextState = {
+          url: action === 'navigate' && typeof value === 'string' ? value : url,
+          title: action === 'navigate' && typeof value === 'string' ? 'Navigated Page' : 'Local App',
+          canGoBack: true,
+          canGoForward: false,
+          loading: false,
+          colorScheme: action === 'set-color-scheme' ? value : 'auto',
+          zoom: action === 'set-zoom' && typeof value === 'number' ? value : 1,
+          consoleCount: 0,
+          errorCount: 0,
+        };
+        if (action === 'navigate' && typeof value === 'string') {
+          onState?.(nextState);
+        }
+        return nextState;
+      },
       inspectAt: async () => ({
         element: {
           tagName: 'button',
@@ -89,7 +96,7 @@ vi.mock('../motion/WebBrowser', async () => {
       clearConsole: async () => undefined,
     }));
     return (
-      <div data-testid="mock-web-browser">
+      <div data-testid="mock-web-browser" data-endpoint={endpoint ?? ''}>
         <img ref={imgRef} alt={url} />
         {url}
       </div>
@@ -2454,10 +2461,19 @@ it('supports web preview device toolbar, browser options menu, and visual elemen
   expect(menu.parentElement?.matches('[data-menu-panel].motion-positioned-menu')).toBe(true);
   expect(menu.matches('[data-menu-panel]')).toBe(false);
   expect(menu.textContent).toContain('Hard reload');
+  expect(menu.textContent).toContain('Open external');
+  expect(menu.textContent).toContain('Page settings');
+  expect(menu.textContent).toContain('Auto · 100%');
+  expect(menu.textContent).not.toContain('Clear cookies');
+  const settingsToggle = menu.querySelector('.om-sa-browser-settings-toggle') as HTMLButtonElement;
+  expect(settingsToggle).toBeTruthy();
+  await act(async () => settingsToggle.click());
+  await flush();
   expect(menu.textContent).toContain('Appearance');
+  expect(menu.querySelector('.om-sa-browser-appearance-select[role="combobox"]')).toBeTruthy();
+  expect(menu.textContent).toContain('Zoom');
   expect(menu.textContent).toContain('Clear cookies');
   expect(menu.textContent).toContain('Clear cache');
-  expect(menu.textContent).toContain('Open external');
   await act(async () => menuBtn.click());
   await flush();
 
@@ -8329,3 +8345,403 @@ it('folds intermediate progress notes into WorkLogSection, renders 16:9 game cov
     container.remove();
   }
 });
+
+it('exposes the MR random game community entry in both Browser Pane and Game Studio showcase', async () => {
+  resetGameCommunityUrlCache();
+  const noop = () => {};
+  const openedCalls: Array<{ url: string; options?: { id?: string; title?: string } }> = [];
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith('/motion-api/settings/account')) {
+      return new Response(JSON.stringify({ state: 'signed-in', consoleUrl: 'http://127.0.0.1:5179' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify({ games: [] }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }) as typeof fetch;
+
+  try {
+    await act(async () => {
+      root.render(
+        <I18nProvider initialLocale="en">
+          <ArtifactBrowserPane
+            chatId={CHAT_ID}
+            artifacts={[]}
+            openTabIds={[]}
+            activeTabId="__new_tab__"
+            expanded={false}
+            workspaceItems={[]}
+            onSelectTab={noop}
+            onCloseTab={noop}
+            onNewTab={noop}
+            onOpenWebUrl={(url, options) => openedCalls.push({ url, options })}
+            onOpenArtifact={noop}
+            onOpenResource={noop}
+            onToggleExpand={noop}
+            onClosePane={noop}
+            onAttachArtifact={noop}
+            onOpenInDesignStudio={noop}
+            onOpenInMotionStudio={noop}
+            onOpenInAssets={noop}
+            onOpenInBrandKit={noop}
+          />
+        </I18nProvider>,
+      );
+    });
+    await flush();
+    await flush();
+
+    const tabQuickBtn = container.querySelector<HTMLButtonElement>('[data-browser-game-community]');
+    const newTabCard = container.querySelector<HTMLButtonElement>('[data-newtab-game-community]');
+    expect(tabQuickBtn).toBeTruthy();
+    expect(newTabCard).toBeTruthy();
+    expect(tabQuickBtn!.getAttribute('aria-label')).toBe('Surprise me');
+    expect(newTabCard!.textContent).toContain('Surprise me');
+    expect(newTabCard!.textContent).toContain('Community');
+
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    try {
+      await act(async () => newTabCard!.click());
+      await act(async () => tabQuickBtn!.click());
+      expect(openSpy).toHaveBeenCalledTimes(2);
+      expect(openSpy).toHaveBeenNthCalledWith(1, 'http://127.0.0.1:5179/games', '_blank', 'noopener,noreferrer');
+      expect(openSpy).toHaveBeenNthCalledWith(2, 'http://127.0.0.1:5179/games', '_blank', 'noopener,noreferrer');
+      expect(openedCalls).toEqual([]);
+    } finally {
+      openSpy.mockRestore();
+    }
+  } finally {
+    globalThis.fetch = origFetch;
+    resetGameCommunityUrlCache();
+  }
+});
+
+it('opens Surprise me in a new browser tab from Game Studio without opening the built-in browser pane or creating a task', async () => {
+  resetGameCommunityUrlCache();
+  const onChatIdChange = vi.fn();
+  const createdChats: string[] = [];
+  const browserRequests: Array<{ method: string; url: string }> = [];
+  const origFetch = globalThis.fetch;
+
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = (init?.method || 'GET').toUpperCase();
+    if (url.endsWith('/motion-api/settings/account')) {
+      return new Response(JSON.stringify({ state: 'signed-in', consoleUrl: 'http://127.0.0.1:5179' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url === `${SUPER_AGENT_API}/chats` && method === 'POST') {
+      createdChats.push(url);
+      return new Response(JSON.stringify({ conversation: { ...sampleChat, id: 'should-not-create', state: 'idle', messages: [], artifacts: [] } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url === `${SUPER_AGENT_API}/chats` && method === 'GET') {
+      return new Response(JSON.stringify({ conversations: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url.includes('/motion-api/super-agent/browser/tabs/')) {
+      browserRequests.push({ method, url });
+      return new Response(JSON.stringify({
+        url: 'http://127.0.0.1:5179/games/surprise-demo',
+        title: 'Surprise Demo',
+        loading: false,
+        canGoBack: false,
+        canGoForward: false,
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url.includes('/settings/agents')) {
+      return new Response(JSON.stringify({ agents: [], default: null }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url.includes('/runtimes')) {
+      return new Response(JSON.stringify({ runtimes: [], localDirectAvailable: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url.includes('/resources')) {
+      return new Response(JSON.stringify({ items: [], counts: { projects: 0, games: 0, assets: 0, brandKits: 0, chats: 0 } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify({ games: [] }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }) as typeof fetch;
+
+  try {
+    await act(async () => {
+      root.render(
+        <I18nProvider initialLocale="en">
+          <SuperAgentWorkspace
+            active
+            chatId={null}
+            requestedMode="game"
+            onChatIdChange={onChatIdChange}
+            onOpenDesignProject={vi.fn()}
+            onOpenMotionProject={vi.fn()}
+            onOpenAsset={vi.fn()}
+            onOpenBrandKit={vi.fn()}
+            onOpenAgentSettings={vi.fn()}
+            onOpenMcp={vi.fn()}
+          />
+        </I18nProvider>,
+      );
+    });
+
+    await vi.waitFor(async () => {
+      await flush();
+      expect(container.querySelector('[data-game-community-entry]')).toBeTruthy();
+    }, { timeout: 5000 });
+
+    const surpriseLink = container.querySelector<HTMLAnchorElement>('[data-game-community-entry]')!;
+    expect(surpriseLink.tagName).toBe('A');
+    expect(surpriseLink.getAttribute('href')).toBe('http://127.0.0.1:5179/games');
+    expect(surpriseLink.getAttribute('target')).toBe('_blank');
+    expect(surpriseLink.getAttribute('rel')).toBe('noopener noreferrer');
+    await act(async () => {
+      surpriseLink.addEventListener('click', ev => ev.preventDefault(), { once: true });
+      surpriseLink.click();
+    });
+    await flush();
+
+    // Must open in a new native browser tab instead of the built-in viewer, without creating a task or leaving Game Studio
+    expect(container.querySelector('.om-sa-viewer')).toBeNull();
+    expect(container.querySelector('[data-testid="mock-web-browser"]')).toBeNull();
+    expect(browserRequests).toEqual([]);
+    expect(createdChats).toEqual([]);
+    expect(onChatIdChange).not.toHaveBeenCalled();
+    expect(container.textContent).toContain('Build games. Turn play into pay.');
+  } finally {
+    globalThis.fetch = origFetch;
+    resetGameCommunityUrlCache();
+  }
+});
+
+it('falls back to local preview when Try game PATCH fails on an active chat', async () => {
+  const FAIL_CHAT_ID = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
+  const origFetch = globalThis.fetch;
+
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = (init?.method || 'GET').toUpperCase();
+    if (url === `${SUPER_AGENT_API}/chats` && method === 'GET') {
+      return new Response(JSON.stringify({ conversations: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url === `${SUPER_AGENT_API}/chats/${FAIL_CHAT_ID}` && method === 'GET') {
+      return new Response(JSON.stringify({ conversation: { ...sampleChat, id: FAIL_CHAT_ID, state: 'idle', messages: [], artifacts: [], activeArtifactId: undefined } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url === `${SUPER_AGENT_API}/chats/${FAIL_CHAT_ID}` && method === 'PATCH') {
+      return new Response(JSON.stringify({ error: 'Chat persistence unavailable' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url.includes('/settings/agents')) {
+      return new Response(JSON.stringify({ agents: [], default: null }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url.includes('/runtimes')) {
+      return new Response(JSON.stringify({ runtimes: [], localDirectAvailable: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (url.includes('/resources')) {
+      return new Response(JSON.stringify({ items: [], counts: { projects: 0, games: 0, assets: 0, brandKits: 0, chats: 0 } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify({ games: [] }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }) as typeof fetch;
+
+  try {
+    await act(async () => {
+      root.render(
+        <I18nProvider initialLocale="en">
+          <SuperAgentWorkspace
+            active
+            chatId={FAIL_CHAT_ID}
+            requestedMode="game"
+            onChatIdChange={vi.fn()}
+            onOpenDesignProject={vi.fn()}
+            onOpenMotionProject={vi.fn()}
+            onOpenAsset={vi.fn()}
+            onOpenBrandKit={vi.fn()}
+            onOpenAgentSettings={vi.fn()}
+            onOpenMcp={vi.fn()}
+          />
+        </I18nProvider>,
+      );
+    });
+
+    await vi.waitFor(async () => {
+      await flush();
+      expect(container.querySelector('.om-sa-game-tile-cover')).toBeTruthy();
+    }, { timeout: 5000 });
+
+    const playBtn = container.querySelector<HTMLButtonElement>('.om-sa-game-tile-cover')!;
+    await act(async () => playBtn.click());
+
+    await vi.waitFor(async () => {
+      await flush();
+      expect(container.querySelector('.om-sa-viewer')).toBeTruthy();
+      expect(container.querySelector('.om-sa-viewer-tab')).toBeTruthy();
+    }, { timeout: 5000 });
+
+    // No error toast should appear; local preview stays playable
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+}, 15_000);
+
+it('navigates the current web tab in place when submitting a URL in the address bar', async () => {
+  const origFetch = globalThis.fetch;
+  const browserRequests: Array<{ url: string; method: string; body?: Record<string, unknown> }> = [];
+  resetGameCommunityUrlCache();
+
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = (init?.method || 'GET').toUpperCase();
+    if (url.includes('/motion-api/super-agent/browser/tabs/')) {
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      browserRequests.push({ url, method, body });
+      return new Response(
+        JSON.stringify({
+          url: typeof body?.url === 'string' ? body.url : 'https://example.com',
+          title: 'Example Page',
+          canGoBack: true,
+          canGoForward: false,
+          loading: false,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    if (url.includes('/motion-api/web-publish/config')) {
+      return new Response(
+        JSON.stringify({ communityUrl: 'http://127.0.0.1:5179/games' }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+    if (url === `${SUPER_AGENT_API}/chats` && method === 'GET') {
+      return new Response(JSON.stringify({ conversations: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    if (url.includes('/settings/agents')) {
+      return new Response(JSON.stringify({ agents: [], default: null }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    if (url.includes('/runtimes')) {
+      return new Response(JSON.stringify({ runtimes: [], localDirectAvailable: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    if (url.includes('/resources')) {
+      return new Response(JSON.stringify({ items: [], counts: { projects: 0, games: 0, assets: 0, brandKits: 0, chats: 0 } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify({ games: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }) as typeof fetch;
+
+  try {
+    await act(async () => {
+      root.render(
+        <I18nProvider initialLocale="en">
+          <SuperAgentWorkspace
+            active
+            chatId={null}
+            requestedMode="game"
+            onChatIdChange={vi.fn()}
+            onOpenDesignProject={vi.fn()}
+            onOpenMotionProject={vi.fn()}
+            onOpenAsset={vi.fn()}
+            onOpenBrandKit={vi.fn()}
+            onOpenAgentSettings={vi.fn()}
+            onOpenMcp={vi.fn()}
+          />
+        </I18nProvider>,
+      );
+    });
+
+    await vi.waitFor(async () => {
+      await flush();
+      expect(container.querySelector('button[aria-label="Artifact Viewer"]')).toBeTruthy();
+    }, { timeout: 5000 });
+
+    // Open the built-in viewer and submit an initial URL in the address bar
+    await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="Artifact Viewer"]')!.click());
+
+    await vi.waitFor(async () => {
+      await flush();
+      expect(container.querySelector('input[aria-label="Artifact address bar"]')).toBeTruthy();
+    }, { timeout: 5000 });
+
+    const addressInput = container.querySelector<HTMLInputElement>('input[aria-label="Artifact address bar"]')!;
+    const form = addressInput.closest('form')!;
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+
+    await act(async () => {
+      setter.call(addressInput, 'http://127.0.0.1:5179/games/first-game');
+      addressInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await act(async () => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+
+    await vi.waitFor(async () => {
+      await flush();
+      expect(container.querySelectorAll('.om-sa-viewer-tab')).toHaveLength(1);
+      expect(container.querySelector('[data-testid="mock-web-browser"]')).toBeTruthy();
+    }, { timeout: 5000 });
+
+    // Submit a second URL in the address bar on the active web tab
+    await act(async () => {
+      setter.call(addressInput, 'http://127.0.0.1:5179/games/other-game');
+      addressInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await act(async () => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+
+    await vi.waitFor(async () => {
+      await flush();
+      expect(container.querySelector('.om-sa-viewer-tab')?.textContent).toContain('Navigated Page');
+    }, { timeout: 5000 });
+
+    // Must replace the current tab in place rather than opening a second tab
+    expect(container.querySelectorAll('.om-sa-viewer-tab')).toHaveLength(1);
+    expect(addressInput.value).toBe('http://127.0.0.1:5179/games/other-game');
+  } finally {
+    globalThis.fetch = origFetch;
+    resetGameCommunityUrlCache();
+  }
+}, 15_000);

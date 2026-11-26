@@ -225,7 +225,7 @@ You have access to every capability across OpenMotion:
    - Discover scenarios/templates/skills/design-systems with openmotion_design_catalog.
    - When a Design project ("design-project") is already attached or open in this conversation, inspect and edit that existing project in place via openmotion_design_edit(action="write", expectedRevision=..., requestId=...) instead of creating a duplicate project. Otherwise create projects with openmotion_design_project(action="create", scenario=...) and write complete self-contained HTML/CSS/JS with openmotion_design_edit.
    - Call openmotion_present_artifact(kind="design-project", projectId=...) or openmotion_design_project(action="open") so the embedded Design Studio Editor displays the live result immediately.
-   - To publish any HTML-expressed deliverable (Design page, playable Game, Motion HTML bundle, or standalone HTML file/folder) to a live Open Design Cloud share link, call openmotion_assets_use(action="web_publish", webPublish={command:"publish"|"status"|"unpublish"|"list", targetKind:"design"|"game"|"html"|"motion", ...}) (or openmotion_design_project(action="deploy", projectId=...) for Design projects).
+   - To publish any HTML-expressed deliverable (Design page, playable Game, Motion HTML bundle, or standalone HTML file/folder) to a live Open Design Cloud share link, call openmotion_cloud_deploy(action="publish", sourcePath=...) (or openmotion_assets_use(action="web_publish", webPublish={command:"publish"|"status"|"visibility"|"unpublish"|"list", targetKind:"design"|"game"|"html"|"motion", ...}) / openmotion_design_project(action="deploy", projectId=...); for targetKind="game", visibility="public"|"unlisted" and allowRemix are supported on publish or action="visibility"; unlisted requires a paid Go+ plan). To inspect elements, list threads, add element, whole-page, or Game-stage comments, post 1-level replies (with optional images), resolve, or delete comments on your own or another user's deployed /artifact/... or /games/... share URL, call openmotion_cloud_comments(action="inspect_elements"|"list"|"comment"|"reply"|"update"|"delete", ...).
 2. Playable Single-Player Games (Game Studio):
    - Built-in template remix fast path: when <openmotion-task-instructions> states that the workspace game was copied from a complete, playable built-in template, first infer from the user's message, parameter overrides, and attachments whether the user asks for ANY custom modifications.
      * NO custom modifications requested (e.g. empty message, unchanged template description, or generic "build/make/remix this game" as-is): deliver immediately with zero rebuild. Do NOT read openmotion://workflow/game/start, do NOT call openmotion_game_write_files, openmotion_game_validate, openmotion_game_playtest, openmotion_game_simulate, or openmotion_game_capture_cover. Silently call openmotion_game_set_status(id=..., status="ready") and openmotion_present_artifact(kind="game-project", projectId=..., title=...) right away without a pre-tool "opening preview" message (calling openmotion_game_get only if controls/details are missing from context).
@@ -272,7 +272,7 @@ Use the registered OpenMotion MCP tools (mcp__openmotion__*) and injected <openm
    - Discover scenarios/templates/skills/design-systems with openmotion_design_catalog.
    - When a Design project ("design-project") is already attached or open in the conversation, edit it in place via openmotion_design_edit(action="write", expectedRevision=..., requestId=...) instead of creating a duplicate project. Otherwise create projects with openmotion_design_project(action="create", scenario=...) and write complete self-contained HTML/CSS/JS with openmotion_design_edit.
    - Open completed projects with openmotion_design_project(action="open", projectId=...) or openmotion_present_artifact(kind="design-project", projectId=...) so the embedded Design Studio Editor displays the live result.
-   - Publish any HTML-expressed deliverable (Design page, Game, Motion HTML bundle, or standalone HTML file/folder) to a live Open Design Cloud share link via openmotion_assets_use(action="web_publish", webPublish={command:"publish"|"status"|"unpublish"|"list", targetKind:"design"|"game"|"html"|"motion", ...}) or openmotion_design_project(action="deploy", projectId=...) (requires OpenDesign sign-in).
+   - Publish any HTML-expressed deliverable (Design page, Game, Motion HTML bundle, or standalone HTML file/folder) to a live Open Design Cloud share link via openmotion_cloud_deploy(action="publish", sourcePath=...) (or openmotion_assets_use(action="web_publish", webPublish={command:"publish"|"status"|"visibility"|"unpublish"|"list", targetKind:"design"|"game"|"html"|"motion", ...}) / openmotion_design_project(action="deploy", projectId=...); for targetKind="game", visibility="public"|"unlisted" and allowRemix are supported on publish or action="visibility"; unlisted requires a paid Go+ plan), and collaborate on deployed /artifact/... or /games/... shares via openmotion_cloud_comments(action="inspect_elements"|"list"|"comment"|"reply"|"update"|"delete", ...) (requires OpenDesign sign-in for writes).
 2. Playable Single-Player Games (Game Studio):
    - Built-in template remix fast path: when <openmotion-task-instructions> states that the workspace game was copied from a complete, playable built-in template, first infer from the user's message, parameter overrides, and attachments whether the user asks for ANY custom modifications.
      * NO custom modifications requested (e.g. empty message, unchanged template description, or generic "build/make/remix this game" as-is): deliver immediately with zero rebuild. Do NOT read openmotion://workflow/game/start, do NOT call openmotion_game_write_files, openmotion_game_validate, openmotion_game_playtest, openmotion_game_simulate, or openmotion_game_capture_cover. Silently call openmotion_game_set_status(id=..., status="ready") and openmotion_present_artifact(kind="game-project", projectId=..., title=...) right away without a pre-tool "opening preview" message (calling openmotion_game_get only if controls/details are missing from context).
@@ -724,6 +724,18 @@ function sameOriginRelativeUrl(raw: unknown): string | undefined {
   return trimmed;
 }
 
+function validateArtifactUrl(
+  kind: SuperAgentArtifact['kind'],
+  raw: unknown,
+  hasProjectId = false,
+): string | undefined {
+  if (kind === 'web') return webAddress(raw);
+  if (kind === 'game-project' && !hasProjectId && typeof raw === 'string' && /^https?:\/\//i.test(raw.trim())) {
+    return webAddress(raw);
+  }
+  return sameOriginRelativeUrl(raw);
+}
+
 function stripAnsiEscapes(text: string): string {
   return text.replace(/\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g, '');
 }
@@ -850,9 +862,7 @@ function buildValidatedArtifact(input: Partial<SuperAgentArtifact>, now = Date.n
   if (!input.kind || !ALLOWED_ARTIFACT_KINDS.has(input.kind)) {
     throw new Error('Unsupported artifact kind');
   }
-  const validatedUrl = input.kind === 'web'
-    ? webAddress(input.url)
-    : sameOriginRelativeUrl(input.url);
+  const validatedUrl = validateArtifactUrl(input.kind, input.url, Boolean(input.projectId));
   const validatedDownloadUrl = input.kind === 'web'
     ? undefined
     : sameOriginRelativeUrl(input.downloadUrl);
@@ -2970,9 +2980,7 @@ export class SuperAgentConversations {
         }, true);
       } else if (ev.type === 'artifact.upsert' && ev.artifact?.kind && ALLOWED_ARTIFACT_KINDS.has(ev.artifact.kind)) {
         const now = Date.now();
-        const validatedUrl = ev.artifact.kind === 'web'
-          ? webAddress(ev.artifact.url)
-          : sameOriginRelativeUrl(ev.artifact.url);
+        const validatedUrl = validateArtifactUrl(ev.artifact.kind, ev.artifact.url, Boolean(ev.artifact.projectId));
         const validatedDownloadUrl = ev.artifact.kind === 'web'
           ? undefined
           : sameOriginRelativeUrl(ev.artifact.downloadUrl);

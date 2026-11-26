@@ -18,6 +18,8 @@ const actionSets = {
   openmotion_design_project: ['create', 'list', 'get', 'rename', 'duplicate', 'trash', 'restore', 'delete', 'open', 'open_in', 'export', 'import', 'deploy', 'deploy_status', 'unpublish'],
   openmotion_design_edit: ['read_file', 'write', 'list_versions', 'restore_version', 'import_asset'],
   openmotion_design_comments: ['list', 'create', 'update', 'delete'],
+  openmotion_cloud_deploy: ['publish', 'status', 'visibility', 'unpublish', 'list'],
+  openmotion_cloud_comments: ['inspect_elements', 'list', 'comment', 'reply', 'update', 'delete'],
 } as const;
 const targets = ['project', 'templates', 'providers'] as const;
 export const capabilityExecutorKinds = ['model', 'prompt-preset', 'dedicated-model', 'service', 'script'] as const;
@@ -207,11 +209,19 @@ const invalidFields = [
   'scenario.target', 'scenario.alt', 'scenario.projectType', 'scenario.requirements', 'scenario.poolItemIds',
   'scenario.poolItemIds[]', 'scenario.projectId', 'scenario.stepIds', 'scenario.stepIds[]',
   'scenario.activeOnly', 'scenario.includeStandaloneHtml', 'scenario.includeMotionSource',
+  'shareUrl', 'slug', 'parentCommentId', 'note', 'elementId', 'selector', 'htmlHint', 'label',
+  'position', 'position.left', 'position.top', 'position.width', 'position.height',
+  'position.viewportWidth', 'position.viewportHeight', 'includeResolved', 'sinceSeq',
+  'targetKind', 'targetId', 'workspaceId', 'deployMode', 'visibility', 'allowRemix', 'embedUrl', 'expectedVersion', 'idempotencyKey',
+  'replyToCommentId', 'targetType', 'images', 'images[]', 'images[].path', 'images[].filePath', 'images[].alt', 'imagePaths', 'imagePaths[]',
 ] as const;
 export const toolErrorCodes = [
   'CAPABILITY_NOT_FOUND', 'CAPABILITY_COMING_SOON', 'CAPABILITY_DEPRECATED', 'CAPABILITY_CHANNEL_DISABLED',
   'CAPABILITY_UNAVAILABLE', 'CAPABILITY_MODEL_INCOMPATIBLE',
   'COMMENT_TARGET_NOT_FOUND', 'COMMENT_NOT_FOUND', 'COMMENT_CONFLICT', 'COMMENT_LIMIT', 'NOT_FOUND', 'UNSUPPORTED',
+  'ACCOUNT_NOT_SIGNED_IN', 'SHARE_NOT_PUBLISHED', 'SHARE_NOT_FOUND', 'SHARE_STOPPED',
+  'PARENT_NOT_FOUND', 'PARENT_CLOSED', 'REPLY_DEPTH_EXCEEDED', 'STALE_PUBLICATION',
+  'FORBIDDEN', 'UNAUTHORIZED', 'RATE_LIMITED',
   'INVALID_ARGUMENT', 'VERSION_CONFLICT', 'PROJECT_NOT_BOUND', 'PROJECT_NOT_FOUND', 'PROJECT_SESSION_MISMATCH',
   'REQUEST_ID_CONFLICT', 'REQUEST_STATE_UNKNOWN', 'MCP_TOOL_NOT_EXPOSED', 'EXPORT_BUSY', 'EXPORT_NOT_FOUND',
   'EXPORT_NOT_COMPLETED', 'TEMPLATE_NOT_FOUND', 'TEMPLATE_NOT_EDITABLE', 'SOURCE_BATCH_TOO_LARGE',

@@ -8,6 +8,7 @@ import { projectArchiveTool } from './project-archive.ts';
 import { projectManagementTool } from './project-management.ts';
 import { assetLibraryTool, workspaceAssetUseTool } from './asset-tools.ts';
 import { capabilityMetaTools } from './capability-tools.ts';
+import { cloudTools } from './cloud-tools.ts';
 import { designTools } from './design-tools.ts';
 import { providerSetupEntries } from './workspace-url.ts';
 import { canvasPresets } from './composition-canvas.ts';
@@ -69,6 +70,7 @@ export const phase1Tools = [
   { name: 'openmotion_export_cancel', title: 'OpenMotion · Export Cancel', description: 'Cancel the specified export owned by this project. Distinguish cancellation accepted/cancelling from a confirmed cancelled terminal state. A completed task stays completed. Cancellation does not restore source, delete older results or promise a refund. Stopping a host conversation does not automatically call this tool.',
     inputSchema: object({ projectId, requestId: id, jobId: id }, ['projectId', 'requestId', 'jobId']), annotations: write },
   ...designTools,
+  ...cloudTools,
 ];
 
 // Increment for incompatible request/response semantics; optional fields and new Tools are additive.
@@ -79,7 +81,7 @@ export function phase1TransportTool(health: { mcp?: { protocol?: unknown; tools?
   if (typeof name !== 'string' || !phase1McpCapabilities.tools.includes(name)
     || health.mcp?.protocol !== phase1McpCapabilities.protocol || !Array.isArray(health.mcp.tools)) return;
   // Newer domain tools require explicit host/service advertisement rather than legacy aliases.
-  if (['openmotion_assets_use', 'openmotion_capability_discover', 'openmotion_capability_run', 'openmotion_job_manage', 'openmotion_asset_manage'].includes(name)) {
+  if (['openmotion_assets_use', 'openmotion_capability_discover', 'openmotion_capability_run', 'openmotion_job_manage', 'openmotion_asset_manage', 'openmotion_cloud_deploy', 'openmotion_cloud_comments'].includes(name)) {
     return health.mcp.tools.includes(name) ? name : undefined;
   }
   return [name, legacyToolName(name)].find(candidate => (health.mcp!.tools as unknown[]).includes(candidate));

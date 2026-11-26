@@ -35,13 +35,15 @@ const inputs: Record<string, object> = {
   openmotion_design_project: { action: 'list' },
   openmotion_design_edit: { action: 'list_versions', projectId },
   openmotion_design_comments: { action: 'list', projectId },
+  openmotion_cloud_deploy: { action: 'list' },
+  openmotion_cloud_comments: { action: 'list', shareUrl: 'https://open-design.app/artifact/project-1/share-slug' },
 };
 
-test('all twenty-six registered domain names reuse public schemas and forward unchanged inputs and results', async () => {
+test('all twenty-eight registered domain names reuse public schemas and forward unchanged inputs and results', async () => {
   const calls: { url: string; init?: RequestInit }[] = [];
   const result = { projectId, previewHandoff: { state: 'pending' }, nested: { value: 42 } };
   const tools = buildOpenMotionWebMcpTools(async (url, init) => { calls.push({ url, init }); return Response.json(result); });
-  assert.equal(tools.length, 26);
+  assert.equal(tools.length, 28);
   assert.deepEqual(tools.map(tool => tool.name).sort(), Object.keys(inputs).sort());
   // Game tools are external-Agent-only and deliberately excluded from WebMCP.
   const browserTools = phase1Tools.filter(tool => !tool.name.startsWith('openmotion_game_'));

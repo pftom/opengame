@@ -19,6 +19,8 @@ import { projectHref } from '../workspaceRouting';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { GameMasonry, interleavePortrait } from './GameMasonry';
 import { bundledGames, communityGames, communityRemixPrompt, composeBrief, coverUrl, formatPlays, gameApi, gameSource, isTopEarningGame, storedInstruction, genreCovers, genreLabels, settingCovers, styleCovers, genrePlaceholders, isLocalOnly, playableUrl, rememberInstruction, settingLabels, styleLabels, TOP_EARNING_TAG } from './gameCatalog';
+import { openGameCommunityExternal, useGameCommunityUrl } from './gameCommunityUrl';
+import { getDesktopBridge } from '../../utils/platformHost';
 import { buildGameContextTags, buildGameHiddenInstructions, buildGameUserPrompt, toGameArtifact, toGameCapabilityRef } from './gameSuperAgent';
 import { optionId as optionFilter } from '../reporting';
 import { reportGameAction, reportGameClick, reportGameCreate, reportGameDetailShown, reportGameHandoffShown, reportGameSearch } from './gameTracking';
@@ -48,6 +50,7 @@ export function GameStudio({
   const chrome = useOptionalWorkspaceChrome();
   const getGameTitle = useGameTitle();
   const toast = useToast();
+  const gameCommunityUrl = useGameCommunityUrl();
   const [genre, setGenre] = useState<GameGenre | null>('shooter');
   const [style, setStyle] = useState<GameStyle | null>(null);
   const [setting, setSetting] = useState<GameSetting | null>(null);
@@ -359,6 +362,24 @@ export function GameStudio({
             <span className="om-field om-game-search"><RemixIcon name="search-line" size={15} /><input value={query} placeholder={t('Search')} aria-label={t('Search games')} onFocus={() => reportGameClick('game_market', 'search_focus')} onChange={event => setQuery(event.target.value)} /></span>
             <label className="om-field"><RemixIcon name="sort-desc" size={15} /><select value={sort} aria-label={t('Sort')} onChange={event => { reportGameClick('game_market', 'sort_option', null, optionFilter(event.target.value)); setSort(event.target.value as Sort); }}>
               <option value="relevance">{t('Relevance')}</option><option value="plays">{t('Most played')}</option><option value="newest">{t('Newest')}</option></select></label>
+            <a
+              className="om-game-community-link"
+              data-game-studio-community=""
+              href={gameCommunityUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t('Jump into a surprise community game — swipe for more')}
+              onClick={event => {
+                if (getDesktopBridge()?.openExternal) {
+                  event.preventDefault();
+                  openGameCommunityExternal(gameCommunityUrl);
+                }
+              }}
+            >
+              <RemixIcon name="gamepad-line" size={15} />
+              <span>{t('Surprise me')}</span>
+              <RemixIcon name="external-link-line" size={13} />
+            </a>
           </span>
         </div>
         {offline && <p className="om-muted om-game-note">{t('Showing the built-in games. Your games appear once the local game service is running.')}</p>}

@@ -187,6 +187,20 @@ class SignInFailure extends Error {
     super(connector ? connectorMessages[connector.problem] : failureMessages[code]); this.code = code; this.connector = connector;
   }
 }
+
+export class CloudApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+  readonly reason?: string;
+  readonly retryAfterSeconds?: number;
+  constructor(status: number, code: string, message?: string, reason?: string, retryAfterSeconds?: number) {
+    super(message || (reason ? `${code}: ${reason}` : code));
+    this.status = status;
+    this.code = code;
+    this.reason = reason;
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
 /**
  * Classifies an attempt by the furthest point it reached. Credentials that reached disk count as rejected; `authorize`
  * reports `setup_failed` instead when the connector kept them unconfirmed because the service was unreachable.
@@ -465,6 +479,49 @@ export class OpenDesignAccount {
       signal,
     );
   }
+  async controlApiJson<T = Record<string, unknown>>(
+    apiPath: string,
+    options: { method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; workspaceId?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number } = {},
+  ): Promise<T> {
+    const profile = await this.profile();
+    if (!signedInProfile(profile) || !profile?.controlKey) {
+      throw new Error('OPENDESIGN_SIGN_IN_REQUIRED: Sign in with OpenDesign first');
+    }
+    const rawBase = (profile.apiUrl?.trim() || productionApi).replace(/\/+$/, '');
+    const normalizedPath = apiPath.startsWith('/') ? apiPath : `/${apiPath}`;
+    const apiBase = normalizedPath.startsWith('/api/') && rawBase.endsWith('/api')
+      ? rawBase.slice(0, -4)
+      : rawBase;
+    const timeoutSignal = AbortSignal.timeout(options.timeoutMs ?? 20_000);
+    const signal = options.signal ? AbortSignal.any([options.signal, timeoutSignal]) : timeoutSignal;
+    const fetcher = this.options.fetcher ?? fetch;
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${profile.controlKey}`,
+      Accept: 'application/json',
+      ...(options.workspaceId?.trim() ? { 'X-Workspace-Id': options.workspaceId.trim() } : {}),
+      ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    };
+    const response = await fetcher(`${apiBase}${normalizedPath}`, {
+      method: options.method ?? 'GET',
+      headers,
+      ...(options.body !== undefined ? { body: JSON.stringify(options.body) } : {}),
+      redirect: 'error',
+      signal,
+    });
+    const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
+    if (!response.ok) {
+      const errCode = typeof payload?.error === 'string' ? payload.error : `HTTP_${response.status}`;
+      if (response.status === 401) {
+        this.rejectedKeyId = profile.controlKeyId;
+        throw new Error(`OPENDESIGN_SIGN_IN_REQUIRED: ${errCode}`);
+      }
+      if (response.status === 403 && errCode === 'PRIVATE_SHARE_REQUIRES_PAID_PLAN') {
+        throw new Error('PRIVATE_SHARE_REQUIRES_PAID_PLAN: Unlisted/private game sharing requires a paid OpenDesign plan (Go or above).');
+      }
+      throw new Error(`DEPLOY_FAILED: OpenDesign API ${normalizedPath} failed (${response.status}: ${errCode})`);
+    }
+    return (payload ?? {}) as T;
+  }
   private async fetchWorkspaceRecords(profile: Profile, signal?: AbortSignal, timeoutMs = 15_000): Promise<Record<string, unknown>[]> {
     const apiBase = (profile.apiUrl?.trim() || productionApi).replace(/\/$/, '');
     const timeoutSignal = AbortSignal.timeout(timeoutMs);
@@ -572,6 +629,138 @@ export class OpenDesignAccount {
         memberStatus: typeof item.memberStatus === 'string' ? item.memberStatus : 'active',
         lifecycleState: typeof item.lifecycleState === 'string' ? item.lifecycleState : 'active',
       }));
+  }
+  apiBaseUrl(profile?: Profile): string {
+    return (profile?.apiUrl?.trim() || process.env.OPENMOTION_CLOUD_API_URL?.trim() || productionApi).replace(/\/$/, '');
+  }
+  private buildCloudUrl(base: string, endpointPath: string, query?: Record<string, string | number | boolean | undefined>): string {
+    const url = new URL(endpointPath.startsWith('/') ? endpointPath : `/${endpointPath}`, base);
+    if (query) {
+      for (const [key, value] of Object.entries(query)) {
+        if (value !== undefined && value !== '') url.searchParams.set(key, String(value));
+      }
+    }
+    return url.toString();
+  }
+  private async parseCloudError(response: Response): Promise<CloudApiError> {
+    const raw = await response.text().catch(() => '');
+    let parsed: Record<string, unknown> | null = null;
+    try {
+      const candidate: unknown = raw ? JSON.parse(raw) : null;
+      if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) parsed = candidate as Record<string, unknown>;
+    } catch { /* non-JSON error body */ }
+    const rawCode = typeof parsed?.code === 'string' ? parsed.code
+      : typeof parsed?.error === 'string' ? parsed.error
+        : response.status === 401 ? 'UNAUTHORIZED'
+          : response.status === 403 ? 'FORBIDDEN'
+            : response.status === 404 ? 'NOT_FOUND'
+              : response.status === 429 ? 'RATE_LIMITED'
+                : 'TOOL_FAILED';
+    const normalizedCode = rawCode.toUpperCase();
+    const reason = typeof parsed?.reason === 'string' ? parsed.reason : undefined;
+    const retryAfterSeconds = typeof parsed?.retryAfterSeconds === 'number' && Number.isFinite(parsed.retryAfterSeconds)
+      ? parsed.retryAfterSeconds
+      : undefined;
+    const detail = typeof parsed?.message === 'string' ? parsed.message
+      : reason ? `${normalizedCode}: ${reason}` : normalizedCode;
+    return new CloudApiError(response.status, normalizedCode, detail, reason, retryAfterSeconds);
+  }
+  async cloudApiRequest<T = unknown>(
+    endpointPath: string,
+    init: {
+      method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+      body?: unknown;
+      query?: Record<string, string | number | boolean | undefined>;
+      signal?: AbortSignal;
+      timeoutMs?: number;
+    } = {},
+  ): Promise<T> {
+    const profile = await this.profile();
+    if (!signedInProfile(profile) || !profile?.controlKey) {
+      throw new CloudApiError(401, 'ACCOUNT_NOT_SIGNED_IN', 'ACCOUNT_NOT_SIGNED_IN: Sign in to your OpenDesign account in Settings -> Account first.');
+    }
+    const url = this.buildCloudUrl(this.apiBaseUrl(profile), endpointPath, init.query);
+    const timeoutSignal = AbortSignal.timeout(init.timeoutMs ?? 20_000);
+    const combinedSignal = init.signal ? AbortSignal.any([init.signal, timeoutSignal]) : timeoutSignal;
+    const fetcher = this.options.fetcher ?? fetch;
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${profile.controlKey}`,
+      Accept: 'application/json',
+    };
+    const hasBody = init.body !== undefined;
+    if (hasBody) headers['Content-Type'] = 'application/json';
+    const response = await fetcher(url, {
+      method: init.method ?? 'GET',
+      headers,
+      ...(hasBody ? { body: JSON.stringify(init.body) } : {}),
+      redirect: 'error',
+      signal: combinedSignal,
+    });
+    if (!response.ok) throw await this.parseCloudError(response);
+    return await response.json() as T;
+  }
+  async cloudApiUpload<T = unknown>(
+    endpointPath: string,
+    init: {
+      bytes: Uint8Array;
+      contentType: string;
+      query?: Record<string, string | number | boolean | undefined>;
+      signal?: AbortSignal;
+      timeoutMs?: number;
+    },
+  ): Promise<T> {
+    const profile = await this.profile();
+    if (!signedInProfile(profile) || !profile?.controlKey) {
+      throw new CloudApiError(401, 'ACCOUNT_NOT_SIGNED_IN', 'ACCOUNT_NOT_SIGNED_IN: Sign in to your OpenDesign account in Settings -> Account first.');
+    }
+    const url = this.buildCloudUrl(this.apiBaseUrl(profile), endpointPath, init.query);
+    const timeoutSignal = AbortSignal.timeout(init.timeoutMs ?? 20_000);
+    const combinedSignal = init.signal ? AbortSignal.any([init.signal, timeoutSignal]) : timeoutSignal;
+    const fetcher = this.options.fetcher ?? fetch;
+    const response = await fetcher(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${profile.controlKey}`,
+        Accept: 'application/json',
+        'Content-Type': init.contentType,
+      },
+      body: Buffer.from(init.bytes),
+      redirect: 'error',
+      signal: combinedSignal,
+    });
+    if (!response.ok) throw await this.parseCloudError(response);
+    return await response.json() as T;
+  }
+  async cloudPublicRequest<T = unknown>(
+    endpointPath: string,
+    init: {
+      query?: Record<string, string | number | boolean | undefined>;
+      responseType?: 'json' | 'text';
+      signal?: AbortSignal;
+      timeoutMs?: number;
+    } = {},
+  ): Promise<T> {
+    const profile = await this.profile().catch(() => undefined);
+    const url = this.buildCloudUrl(this.apiBaseUrl(profile), endpointPath, init.query);
+    const timeoutSignal = AbortSignal.timeout(init.timeoutMs ?? 20_000);
+    const combinedSignal = init.signal ? AbortSignal.any([init.signal, timeoutSignal]) : timeoutSignal;
+    const fetcher = this.options.fetcher ?? fetch;
+    const response = await fetcher(url, {
+      method: 'GET',
+      credentials: 'omit',
+      headers: { Accept: init.responseType === 'text' ? 'text/html, text/plain;q=0.9, */*;q=0.8' : 'application/json' },
+      redirect: 'error',
+      signal: combinedSignal,
+    });
+    if (!response.ok) throw await this.parseCloudError(response);
+    if (init.responseType === 'text') {
+      const text = await response.text();
+      if (Buffer.byteLength(text, 'utf8') > 5 * 1024 * 1024) {
+        throw new CloudApiError(413, 'PAYLOAD_TOO_LARGE', 'Published HTML document exceeds 5 MiB inspection limit');
+      }
+      return text as T;
+    }
+    return await response.json() as T;
   }
   async summary(refresh = false): Promise<AccountSummary> {
     const generation = this.generation;
