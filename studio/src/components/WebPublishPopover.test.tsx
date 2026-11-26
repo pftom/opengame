@@ -763,3 +763,74 @@ it('lets paid users change draft visibility on a stopped game share and sends it
   expect(postBodies).toHaveLength(1);
   expect(postBodies[0]).toMatchObject({ deployMode: 'resume', visibility: 'unlisted' });
 });
+
+it('shows Not in community pill and declined hint when game feedStatus is rejected', async () => {
+  const rejectedPub = {
+    projectId: 'g_rejected',
+    slug: 'rejected-slug',
+    workspaceId: 'ws_1',
+    url: 'https://open-design.app/artifact/p1/rejected-slug?kind=game',
+    visibility: 'public',
+    feedStatus: 'rejected',
+    allowRemix: true,
+    status: 'published',
+    publishedAt: 1_700_000_000_000,
+    fileCount: 2,
+    totalBytes: 1024,
+  };
+  vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    if (url.endsWith('/motion-api/settings/account')) {
+      return jsonResponse({
+        state: 'signed-in',
+        user: { id: 'u_free', email: 'free@example.com' },
+        plan: { id: 'free', name: 'Free', status: 'active' },
+        consoleUrl: 'https://open-design.app',
+      });
+    }
+    if (url.includes('/motion-api/web-publish/game/g_rejected')) {
+      return jsonResponse({
+        targetKind: 'game',
+        targetId: 'g_rejected',
+        projectId: 'g_rejected',
+        title: 'Rejected Game',
+        accountSignedIn: true,
+        accountState: 'signed-in',
+        accountPlan: 'free',
+        canUsePrivateShare: false,
+        freshness: 'fresh',
+        fileCount: 2,
+        totalBytes: 1024,
+        bundledAssetCount: 1,
+        entryPath: 'index.html',
+        publications: [rejectedPub],
+        deployments: [rejectedPub],
+        active: rejectedPub,
+      });
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  }));
+
+  await act(async () => {
+    root!.render(
+      <I18nProvider initialLocale="en">
+        <WebPublishPopover targetKind="game" targetId="g_rejected" title="Rejected Game" />
+      </I18nProvider>,
+    );
+  });
+  await flushUi();
+
+  const trigger = container!.querySelector('button.om-web-publish-trigger') as HTMLButtonElement;
+  await act(async () => {
+    trigger.click();
+  });
+  await flushUi();
+
+  const popover = document.body.querySelector('.om-web-publish-popover') as HTMLElement;
+  expect(popover.textContent).toContain('Not in community');
+  expect(popover.textContent).toContain('Playable via direct link, but not listed in the community feed.');
+  expect(popover.textContent).not.toContain('In review');
+  const pill = popover.querySelector('[data-game-visibility-control] .om-web-publish-community-pill') as HTMLElement | null;
+  expect(pill).toBeTruthy();
+  expect(pill?.getAttribute('data-tone')).toBeNull();
+});

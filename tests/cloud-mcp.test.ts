@@ -13,7 +13,8 @@ import {
 } from '../shared/cloud-comments.ts';
 import { cloudCommentsOperation, type CloudCommentsAccountClient } from '../gateway/cloud-comments.ts';
 import { cloudDeployOperation } from '../gateway/web-publish-ops.ts';
-import { OpenDesignAccount } from '../gateway/account.ts';
+import { CloudApiError, OpenDesignAccount } from '../gateway/account.ts';
+import { trackingError } from '../tracking/tool-fields.ts';
 import { startServer } from '../server.ts';
 import { MCP_HTTP_PATH, MCP_TOKENS_API } from '../shared/mcp-http.ts';
 import { rpc, releaseRegistry } from '../mcp.ts';
@@ -1029,5 +1030,23 @@ test('parseCloudShareUrl + openmotion_cloud_comments support /games/<slug> short
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('parseCloudShareUrl preserves ?kind=game and trackingError keeps Cloud media and plan error codes', () => {
+  const parsed = parseCloudShareUrl('https://open-design.app/artifact/p1/s1?kind=game&foo=bar');
+  assert.equal(parsed.isGame, true);
+  assert.equal(parsed.shareUrl, 'https://open-design.app/artifact/p1/s1?kind=game');
+  assert.equal(isGameShareUrl(parsed.shareUrl), true);
+
+  for (const code of [
+    'PRIVATE_SHARE_REQUIRES_PAID_PLAN',
+    'INVALID_ATTACHMENT',
+    'UPLOAD_FAILED',
+    'UPLOAD_UNAVAILABLE',
+    'PAYLOAD_TOO_LARGE',
+  ] as const) {
+    assert.equal(trackingError(new CloudApiError(403, code, `${code}: detail`)), code);
+    assert.equal(trackingError(new Error(`${code}: detail`)), code);
   }
 });

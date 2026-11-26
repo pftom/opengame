@@ -156,12 +156,13 @@ export function parseCloudShareUrl(rawUrl: string): {
   if (!isValidShareSegment(projectId) || !isValidShareSegment(slug)) {
     throw new Error('INVALID_ARGUMENT: shareUrl contains an invalid projectId or slug');
   }
+  const isGame = parsed.searchParams.get('kind') === 'game';
   return {
     projectId,
     slug,
     origin: parsed.origin,
-    shareUrl: `${parsed.origin}${prefix}/artifact/${encodeURIComponent(projectId)}/${encodeURIComponent(slug)}`,
-    ...(parsed.searchParams.get('kind') === 'game' ? { isGame: true } : {}),
+    shareUrl: `${parsed.origin}${prefix}/artifact/${encodeURIComponent(projectId)}/${encodeURIComponent(slug)}${isGame ? '?kind=game' : ''}`,
+    ...(isGame ? { isGame: true } : {}),
   };
 }
 

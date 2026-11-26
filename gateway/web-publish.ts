@@ -120,16 +120,12 @@ function isGameListingNotFoundError(error: unknown): boolean {
 
 function isPrivateSharePlanError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
-  const msg = error instanceof Error ? error.message : String(error);
-  if (/PRIVATE_SHARE_REQUIRES_PAID_PLAN/.test(msg)) {
-    return true;
-  }
   const code = (error as { code?: unknown }).code;
-  if (code === 'PRIVATE_SHARE_REQUIRES_PAID_PLAN') {
+  if (typeof code === 'string' && code.trim().toUpperCase() === 'PRIVATE_SHARE_REQUIRES_PAID_PLAN') {
     return true;
   }
-  const status = (error as { status?: unknown }).status;
-  return status === 403 || /\bfailed \(403:/.test(msg) || /"status"\s*:\s*403\b/.test(msg);
+  const msg = error instanceof Error ? error.message : String(error);
+  return /PRIVATE_SHARE_REQUIRES_PAID_PLAN/.test(msg);
 }
 
 function isAuthRequiredError(error: unknown): boolean {

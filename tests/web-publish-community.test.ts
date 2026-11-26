@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { AccountRequestError, type OpenDesignWorkspaceInfo } from '../gateway/account.ts';
+import { AccountRequestError, CloudApiError, OpenDesignAccount, type OpenDesignWorkspaceInfo } from '../gateway/account.ts';
 import {
   WebPublishService,
   cloudProjectIdFor,
@@ -1125,5 +1125,100 @@ test('defaultTemplateDeployDataDir resolves outside the repository checkout', ()
     );
   } finally {
     if (previous !== undefined) process.env.OPENMOTION_TEMPLATE_DEPLOY_DIR = previous;
+  }
+});
+
+test('OpenDesignAccount.controlApiJson only treats explicit PRIVATE_SHARE_REQUIRES_PAID_PLAN 403s as plan rejections', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'og-account-403-'));
+  try {
+    const credDir = path.join(root, 'account', 'credentials');
+    await mkdir(credDir, { recursive: true });
+    await writeFile(
+      path.join(credDir, 'config.json'),
+      JSON.stringify({
+        profiles: {
+          prod: {
+            apiUrl: 'https://api.open-design.test',
+            controlKey: 'ck-test',
+            controlKeyId: 'ck-id',
+            runtimeKey: 'rk-test',
+            user: { id: 'u1', name: 'Tester', email: 't@example.com' },
+          },
+        },
+      }),
+    );
+
+    let next403Payload: Record<string, unknown> = {
+      error: 'FORBIDDEN',
+      message: 'Workspace policy denies mutation',
+    };
+    const account = new OpenDesignAccount(root, {
+      fetcher: async (input) => {
+        const url = String(input);
+        if (url.endsWith('/api/v1/workspaces')) {
+          return new Response(
+            JSON.stringify([{ id: 'ws_1', name: 'Personal', role: 'owner', personal: true, ownerMemberId: 'mem_1' }]),
+            { status: 200, headers: { 'Content-Type': 'application/json' } },
+          );
+        }
+        return new Response(JSON.stringify(next403Payload), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      },
+    });
+
+    await assert.rejects(
+      () => account.controlApiJson('/api/v1/collab/shares/slug-test/game-listing', { method: 'PUT', body: { visibility: 'unlisted' } }),
+      (err: unknown) => err instanceof CloudApiError && err.status === 403 && err.code === 'FORBIDDEN' && !/PRIVATE_SHARE_REQUIRES_PAID_PLAN/.test(err.message),
+    );
+
+    next403Payload = {
+      errorCode: 'PRIVATE_SHARE_REQUIRES_PAID_PLAN',
+      message: 'Paid plan required',
+    };
+    await assert.rejects(
+      () => account.controlApiJson('/api/v1/collab/shares/slug-test/game-listing', { method: 'PUT', body: { visibility: 'unlisted' } }),
+      (err: unknown) => err instanceof CloudApiError && err.status === 403 && err.code === 'PRIVATE_SHARE_REQUIRES_PAID_PLAN',
+    );
+
+    const baseMock = createCommunityMockAccount('go');
+    const gameDir = path.join(root, 'game-dir');
+    await mkdir(gameDir, { recursive: true });
+    await writeFile(path.join(gameDir, 'index.html'), '<!doctype html><title>Game</title>');
+    let forwardPatchToAccount = false;
+    const service = new WebPublishService(root, {
+      ...baseMock.client,
+      controlApiJson: (apiPath, options) => {
+        if (forwardPatchToAccount && apiPath.endsWith('/visibility') && options?.method === 'PATCH') {
+          return account.controlApiJson(apiPath, options);
+        }
+        return baseMock.client.controlApiJson!(apiPath, options);
+      },
+    });
+    const target = {
+      kind: 'game' as const,
+      id: 'game_403_check',
+      title: '403 Check',
+      entryPath: 'index.html',
+      sourceRevision: 'rev-1',
+      sourcePath: gameDir,
+    };
+    await service.publish(target, { visibility: 'public' });
+    forwardPatchToAccount = true;
+
+    next403Payload = { error: 'FORBIDDEN', message: 'No access' };
+    await assert.rejects(
+      () => service.setVisibility(target, { visibility: 'unlisted' }),
+      (err: unknown) => err instanceof CloudApiError && err.code === 'FORBIDDEN' && /^DEPLOY_FAILED:/.test(err.message),
+    );
+
+    next403Payload = { code: 'PRIVATE_SHARE_REQUIRES_PAID_PLAN', message: 'Upgrade required' };
+    await assert.rejects(
+      () => service.setVisibility(target, { visibility: 'unlisted' }),
+      (err: unknown) => err instanceof CloudApiError && err.code === 'PRIVATE_SHARE_REQUIRES_PAID_PLAN' && /^PRIVATE_SHARE_REQUIRES_PAID_PLAN:/.test(err.message),
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
   }
 });

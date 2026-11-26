@@ -510,15 +510,39 @@ export class OpenDesignAccount {
     });
     const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
     if (!response.ok) {
-      const errCode = typeof payload?.error === 'string' ? payload.error : `HTTP_${response.status}`;
+      const rawErrCode =
+        typeof payload?.code === 'string'
+          ? payload.code
+          : typeof payload?.errorCode === 'string'
+            ? payload.errorCode
+            : typeof payload?.error === 'string'
+              ? payload.error
+              : `HTTP_${response.status}`;
+      const errCode = rawErrCode.trim().toUpperCase() || `HTTP_${response.status}`;
+      const reason = typeof payload?.reason === 'string' ? payload.reason : undefined;
       if (response.status === 401) {
         this.rejectedKeyId = profile.controlKeyId;
-        throw new Error(`OPENDESIGN_SIGN_IN_REQUIRED: ${errCode}`);
+        throw new CloudApiError(
+          401,
+          'OPENDESIGN_SIGN_IN_REQUIRED',
+          `OPENDESIGN_SIGN_IN_REQUIRED: ${errCode}`,
+          reason,
+        );
       }
       if (response.status === 403 && errCode === 'PRIVATE_SHARE_REQUIRES_PAID_PLAN') {
-        throw new Error('PRIVATE_SHARE_REQUIRES_PAID_PLAN: Unlisted/private game sharing requires a paid OpenDesign plan (Go or above).');
+        throw new CloudApiError(
+          403,
+          'PRIVATE_SHARE_REQUIRES_PAID_PLAN',
+          'PRIVATE_SHARE_REQUIRES_PAID_PLAN: Unlisted/private game sharing requires a paid OpenDesign plan (Go or above).',
+          reason,
+        );
       }
-      throw new Error(`DEPLOY_FAILED: OpenDesign API ${normalizedPath} failed (${response.status}: ${errCode})`);
+      throw new CloudApiError(
+        response.status,
+        errCode,
+        `DEPLOY_FAILED: OpenDesign API ${normalizedPath} failed (${response.status}: ${errCode})`,
+        reason,
+      );
     }
     return (payload ?? {}) as T;
   }

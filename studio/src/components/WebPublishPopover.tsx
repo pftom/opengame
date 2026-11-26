@@ -495,13 +495,15 @@ export function WebPublishPopover({
                 {isPublished && (
                   <span
                     className="om-web-publish-community-pill"
-                    data-tone={effectiveVisibility === 'public' ? 'public' : undefined}
+                    data-tone={effectiveVisibility === 'public' && pub?.feedStatus !== 'rejected' ? 'public' : undefined}
                   >
                     {effectiveVisibility === 'unlisted'
                       ? t('Link only')
                       : pub?.feedStatus === 'featured' || pub?.feedStatus === 'approved'
                         ? t('In community')
-                        : t('In review')}
+                        : pub?.feedStatus === 'rejected'
+                          ? t('Not in community')
+                          : t('In review')}
                   </span>
                 )}
               </div>
@@ -540,9 +542,11 @@ export function WebPublishPopover({
               <p className="om-web-publish-visibility-hint">
                 {effectiveVisibility === 'unlisted'
                   ? t('Only people with the link can play. Hidden from community and search.')
-                  : canUsePrivateShare
-                    ? t('Eligible for community discovery and Remix. Switch to Unlisted anytime.')
-                    : t('Public by default. Great games may be featured in the community and remixed.')}
+                  : pub?.feedStatus === 'rejected'
+                    ? t('Playable via direct link, but not listed in the community feed.')
+                    : canUsePrivateShare
+                      ? t('Eligible for community discovery and Remix. Switch to Unlisted anytime.')
+                      : t('Public by default. Great games may be featured in the community and remixed.')}
               </p>
               {showUpgradeHint && !canUsePrivateShare && (
                 <div className="om-web-publish-upgrade-note" role="status" data-private-upgrade-hint="">
