@@ -1,0 +1,30 @@
+{
+  "id": "apex-food-chain",
+  "title": "Apex Food Chain",
+  "description": "Start as a tiny critter and devour smaller creatures to evolve step by step—dodge apex predators until you grow into the ultimate king of the food chain.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to steer around the ecosystem, eat smaller targets to level up, and avoid higher-tier predators.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "顶级食物链",
+      "description": "超上头大鱼吃小鱼进化顶级食物链：从小生物开局不断吞噬弱小进化变身，躲避天敌一路吃成称霸全场的顶级掠食者！",
+      "controls": "拖动控制生物移动，吞噬比自己弱小的目标不断进化升级，躲开强敌登顶食物链。"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "cant-catch-me-run",
+  "title": "Can't Catch Me!",
+  "description": "Zigzag through frantic cartoon arenas dodging hungry chasers—lure pursuers into bumping each other and snag power-ups to survive as long as possible.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to weave swiftly around pursuing enemies, trigger traps, and collect bonus coins.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "吃不到我呀",
+      "description": "高画质魔性走位躲避吃不到我呀：在满场追兵围堵下风骚蛇皮走位，诱敌互撞狂捡道具极限存活刷高分！",
+      "controls": "按住拖动灵活蛇皮走位躲避四周追捕，巧用道具与陷阱坚持存活拿高分。"
+    }
+  }
+}

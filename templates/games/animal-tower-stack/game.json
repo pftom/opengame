@@ -1,0 +1,30 @@
+{
+  "id": "animal-tower-stack",
+  "title": "Animal Tower Stack",
+  "description": "Balance quirky elephants, pandas, and giraffes one atop another in charming physics stacking—keep your swaying animal pyramid upright to set sky-high records.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Position and rotate each cute animal overhead, then release gently to balance it atop your towering stack.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "动物叠高楼",
+      "description": "治愈魔性物理堆叠动物叠高楼：把圆滚滚的大象、熊猫和长颈鹿一只只稳稳叠上高空，考验重心平衡笑料十足！",
+      "controls": "调整上方可爱小动物的落点位置与角度，松手稳稳叠在动物高塔上不倒塌。"
+    }
+  }
+}

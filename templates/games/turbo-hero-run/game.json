@@ -1,0 +1,30 @@
+{
+  "id": "turbo-hero-run",
+  "title": "Turbo Hero Sprint",
+  "description": "Dash at breakneck speed across action-packed obstacle tracks—smash crates, collect power boosts, and race past every trap to the finish.",
+  "genre": "platformer",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Swipe to dodge hazards, jump gaps, and grab speed boosts along the track.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "疯跑英雄",
+      "description": "爽快冲刺跑酷疯跑英雄：控制英雄全速狂飙、撞破障碍吃满加速能量，一路狂奔直冲终点！",
+      "controls": "左右滑动闪避障碍并起跳跨越沟壑，拾取道具一路狂飙冲线。"
+    }
+  }
+}

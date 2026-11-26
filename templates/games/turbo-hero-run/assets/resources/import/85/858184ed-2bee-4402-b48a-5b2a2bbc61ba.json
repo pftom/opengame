@@ -1,0 +1,1 @@
+[1,0,0,[["cc.AnimationClip",["_name","_duration","curveData"],0]],[[0,0,1,2,4]],[[0,"slide_down",2,{"props":{"y":[{"frame":0,"value":700,"curve":[0.18,0.89,0.31,1.21]},{"frame":0.5,"value":0,"curve":"cubicOut"},{"frame":0.7333333333333333,"value":-10},{"frame":1.5,"value":-10,"curve":[0.6,-0.27,0.73,0.04]},{"frame":2,"value":-500}]}}]],0,0,[],[],[]]

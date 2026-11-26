@@ -1,0 +1,30 @@
+{
+  "id": "music-ball-3d",
+  "title": "3D Music Ball Hop",
+  "description": "Bounce a glowing rhythm orb across floating neon tiles to the beat—glide smoothly left and right to nail every center landing and keep the melody soaring.",
+  "genre": "casual",
+  "style": "3d",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Press and drag left or right to guide the bouncing ball onto every glowing rhythm tile in sync with the beat.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "3D 音乐球",
+      "description": "超火动感电音节奏 3D 音乐球：跟随节拍单指滑动控制炫光小球精准踩点跳跃，沉浸式踩节拍爽到停不下来！",
+      "controls": "按住左右拖动控制弹跳光球稳稳落到每一块发光音符砖块上，连击飙分。"
+    }
+  }
+}
