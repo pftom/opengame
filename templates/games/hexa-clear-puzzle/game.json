@@ -1,0 +1,30 @@
+{
+  "id": "hexa-clear-puzzle",
+  "title": "Hexa Clear Puzzle",
+  "description": "Fit jewel-like hexagonal block clusters onto a honeycomb board to wipe complete lines in three directions and ignite blazing combo streaks.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag hexagonal shapes from the tray onto open cells to complete full lines across any of the three axes.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "六边形消除",
+      "description": "烧脑解压蜂巢消除六边形消除：拖动多彩六边形拼块填满任意方向一整条直线瞬间清屏，手感丝滑无比！",
+      "controls": "将下方六边形组合拖入蜂巢盘面，沿任意三个方向填满整排即可触发消除。"
+    }
+  }
+}

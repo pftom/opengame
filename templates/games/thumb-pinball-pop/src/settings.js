@@ -1,0 +1,1 @@
+window._CCSettings={platform:"web-mobile",groupList:["default","shell","assistLineBall","New Group 5"],collisionMatrix:[[false,true],[true,false],[false,false,false],[false,false,false,false]],hasResourcesBundle:true,hasStartSceneBundle:false,remoteBundles:[],subpackages:[],launchScene:"db:/"+"/assets/myScene/home.fire",orientation:"",jsList:[]};

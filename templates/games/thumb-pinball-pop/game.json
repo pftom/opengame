@@ -1,0 +1,30 @@
+{
+  "id": "thumb-pinball-pop",
+  "title": "Thumb Pinball Pop",
+  "description": "Play effortless one-thumb arcade pinball—ricochet balls off bouncy geometric shapes, snag extra-ball rings, and climb endless combo stages.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag with one thumb to aim and release to bounce pinballs across target shapes and power rings.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "拇指弹球",
+      "description": "单手畅玩物理弹射拇指弹球：一根大拇指拉线发射弹球，精准弹射几何障碍收割星星轻松闯关！",
+      "controls": "单指按住拖动瞄准并松手发射，借助多次弹跳击碎图形砖块收集额外弹球。"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "farm-match-harvest",
+  "title": "Farm Match Harvest",
+  "description": "Swap ripe carrots, pumpkins, and sunny apples across idyllic countryside grids—unleash harvest boosters to complete every cozy farm goal.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Swap adjacent crops to match three or more in a line and collect all target farm harvests.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "农场消消消",
+      "description": "清新田园风三消农场消消消：滑动交换饱满果蔬触发丰收连锁爆破，解锁特效道具完成每日农场订单！",
+      "controls": "滑动交换相邻农作物凑齐三个及以上消除，集齐目标果蔬轻松通关。"
+    }
+  }
+}
