@@ -1,0 +1,30 @@
+{
+  "id": "ring-unlock-puzzle",
+  "title": "Ring Unlock Puzzle",
+  "description": "Rotate interlocking slotted C-rings to line up gaps and slide every metal hoop cleanly free—a tactile mechanical puzzle straight off Douyin feeds.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to rotate any slotted ring until its gap lines up cleanly to slip off interlocking hoops.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "解锁圆环",
+      "description": "抖音刷屏机械解谜解锁圆环：旋转带缺口的彩色圆环找准角度逐一脱扣解开，宛如把玩真实鲁班锁超上瘾！",
+      "controls": "按住旋转带缺口的圆环对准缝隙，逐个将互相嵌套的圆环全部拆解分离。"
+    }
+  }
+}

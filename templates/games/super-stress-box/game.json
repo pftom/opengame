@@ -1,0 +1,30 @@
+{
+  "id": "super-stress-box",
+  "title": "Super Stress Relief",
+  "description": "Dive into bite-sized satisfying organizing and matching levels—clear cluttered trays with crisp audio pops and zero-stress pacing.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap matching objects and clear cluttered boards smoothly one satisfying combo at a time.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "超级解压馆",
+      "description": "全民休闲减压神器超级解压馆：一分钟一局轻松归类消除，满屏整齐清屏瞬间释放所有压力！",
+      "controls": "点击归类配对并清空杂乱物品，随时随地来一局轻松解压。"
+    }
+  }
+}

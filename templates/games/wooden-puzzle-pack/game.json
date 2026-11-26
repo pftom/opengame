@@ -1,0 +1,30 @@
+{
+  "id": "wooden-puzzle-pack",
+  "title": "Wooden Puzzle Pack",
+  "description": "Enjoy a warm handcrafted wooden tabletop collection featuring classic block-fit, sliding, and logic brain-teasers all in one cozy package.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "retro",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Choose a wooden tabletop puzzle from the menu and drag pieces into place to clear each stage.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "木头益智合集",
+      "description": "高级木质质感多合一木头益智合集：集合拼块、华容道等多款耐玩经典桌游，温润手感一套玩个够！",
+      "controls": "选择喜欢的木质益智模式，拖动木块严丝合缝完成拼接或滑块通关。"
+    }
+  }
+}

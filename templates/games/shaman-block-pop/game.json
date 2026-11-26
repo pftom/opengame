@@ -1,0 +1,30 @@
+{
+  "id": "shaman-block-pop",
+  "title": "Shaman Block Pop",
+  "description": "Drop mystical totem blocks into rhythmic columns and trigger glowing shamanic spell clears across upbeat tribal puzzle stages.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Slide or place totem blocks into aligned rows and groups to ignite tribal clear combos.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "萨满消方块",
+      "description": "魔性奇幻风萨满消方块：巧妙排列图腾方块触发神秘萨满消除咒语，连锁清屏特效炫酷超上头！",
+      "controls": "移动摆放神秘图腾方块凑齐消除条件，触发萨满连锁清屏赢高分。"
+    }
+  }
+}

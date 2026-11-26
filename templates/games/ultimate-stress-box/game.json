@@ -1,0 +1,30 @@
+{
+  "id": "ultimate-stress-box",
+  "title": "Ultimate Stress Relief",
+  "description": "Unwind with an ultra-satisfying collection of tactile sorting, popping, and neat-stacking mini-puzzles engineered for pure ASMR zen.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap and drag items to tidy, match, and clear every relaxing stress-relief puzzle stage.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "最强解压馆",
+      "description": "抖音超火强迫症福音最强解压馆：汇聚整理收纳、清爽消除与趣味解压挑战，每一声清脆反馈都超级治愈！",
+      "controls": "按关卡提示点击或拖动整理消除物品，享受极致丝滑的解压治愈体验。"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "mahjong-chill-sort",
+  "title": "Mahjong Chill Sort",
+  "description": "Stack, sort, and clear crisp Mahjong tiles in a relaxing brain-tickling sorting parlor—clean visual clarity and endlessly replayable layouts.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "retro",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap free Mahjong tiles to group matching pieces and clear the table cleanly.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "麻将解压馆",
+      "description": "国风清爽益智麻将解压馆：整理归类同款麻将牌凑齐消除，清脆碰牌手感配舒缓节奏越玩越上头！",
+      "controls": "点击挑选可移动麻将牌归类配对消除，清空全部牌面即可过关。"
+    }
+  }
+}
