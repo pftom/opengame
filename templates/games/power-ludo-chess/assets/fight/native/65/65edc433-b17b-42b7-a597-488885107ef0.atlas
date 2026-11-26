@@ -1,0 +1,27 @@
+
+wrlq.png
+size: 1578, 379
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+da
+  rotate: true
+  xy: 2, 16
+  size: 363, 932
+  orig: 366, 934
+  offset: 2, 1
+  index: -1
+dff
+  rotate: false
+  xy: 936, 4
+  size: 640, 124
+  orig: 642, 128
+  offset: 1, 2
+  index: -1
+ff
+  rotate: false
+  xy: 936, 130
+  size: 640, 249
+  orig: 642, 251
+  offset: 1, 1
+  index: -1

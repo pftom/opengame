@@ -1,0 +1,62 @@
+
+fsdd.png
+size: 790, 232
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+!
+  rotate: false
+  xy: 510, 99
+  size: 120, 133
+  orig: 122, 135
+  offset: 1, 1
+  index: -1
+dan
+  rotate: true
+  xy: 596, 7
+  size: 90, 116
+  orig: 93, 122
+  offset: 1, 1
+  index: -1
+dao
+  rotate: false
+  xy: 714, 41
+  size: 68, 79
+  orig: 71, 81
+  offset: 1, 1
+  index: -1
+dd
+  rotate: true
+  xy: 712, 122
+  size: 110, 76
+  orig: 114, 81
+  offset: 2, 2
+  index: -1
+f
+  rotate: false
+  xy: 632, 121
+  size: 78, 111
+  orig: 80, 113
+  offset: 1, 1
+  index: -1
+s
+  rotate: false
+  xy: 510, 4
+  size: 84, 93
+  orig: 86, 95
+  offset: 1, 1
+  index: -1
+sddas
+  rotate: false
+  xy: 2, 53
+  size: 506, 179
+  orig: 508, 181
+  offset: 1, 1
+  index: -1
+y
+  rotate: false
+  xy: 2, 5
+  size: 447, 46
+  orig: 449, 48
+  offset: 1, 1
+  index: -1

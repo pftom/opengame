@@ -1,0 +1,125 @@
+
+enemies_item.png
+size: 572,1032
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+elec_1
+  rotate: false
+  xy: 212, 715
+  size: 284, 315
+  orig: 286, 316
+  offset: 1, 0
+  index: -1
+elec_2
+  rotate: false
+  xy: 226, 337
+  size: 319, 167
+  orig: 321, 167
+  offset: 1, 0
+  index: -1
+elec_4
+  rotate: false
+  xy: 498, 881
+  size: 68, 149
+  orig: 70, 149
+  offset: 1, 0
+  index: -1
+elec_fx1
+  rotate: false
+  xy: 329, 102
+  size: 239, 57
+  orig: 241, 57
+  offset: 1, 0
+  index: -1
+elec_fx2
+  rotate: false
+  xy: 242, 36
+  size: 244, 64
+  orig: 245, 65
+  offset: 1, 0
+  index: -1
+elec_fx3
+  rotate: false
+  xy: 2, 2
+  size: 238, 58
+  orig: 239, 60
+  offset: 1, 1
+  index: -1
+fuel
+  rotate: false
+  xy: 329, 161
+  size: 171, 174
+  orig: 171, 174
+  offset: 0, 0
+  index: -1
+item1_1
+  rotate: false
+  xy: 2, 331
+  size: 222, 280
+  orig: 224, 282
+  offset: 1, 1
+  index: -1
+item1_1_fake
+  rotate: false
+  xy: 498, 788
+  size: 46, 91
+  orig: 46, 91
+  offset: 0, 0
+  index: -1
+item1_2
+  rotate: false
+  xy: 2, 613
+  size: 208, 417
+  orig: 208, 417
+  offset: 0, 0
+  index: -1
+item1_3
+  rotate: false
+  xy: 502, 309
+  size: 26, 26
+  orig: 26, 26
+  offset: 0, 0
+  index: -1
+item1_4
+  rotate: false
+  xy: 183, 82
+  size: 26, 26
+  orig: 26, 26
+  offset: 0, 0
+  index: -1
+kim
+  rotate: false
+  xy: 211, 101
+  size: 29, 7
+  orig: 30, 7
+  offset: 1, 0
+  index: -1
+oilet_wp
+  rotate: false
+  xy: 183, 110
+  size: 144, 219
+  orig: 144, 220
+  offset: 0, 1
+  index: -1
+toilet_1
+  rotate: false
+  xy: 2, 62
+  size: 179, 267
+  orig: 179, 269
+  offset: 0, 1
+  index: -1
+toilet_2
+  rotate: false
+  xy: 226, 506
+  size: 298, 207
+  orig: 300, 208
+  offset: 1, 1
+  index: -1
+vach xang
+  rotate: false
+  xy: 242, 29
+  size: 19, 5
+  orig: 19, 5
+  offset: 0, 0
+  index: -1

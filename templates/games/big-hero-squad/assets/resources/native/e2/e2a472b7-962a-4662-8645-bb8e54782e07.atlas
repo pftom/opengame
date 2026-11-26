@@ -1,0 +1,62 @@
+
+hongzha.png
+size: 943,594
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+baozha1
+  rotate: false
+  xy: 224, 2
+  size: 221, 195
+  orig: 221, 195
+  offset: 0, 0
+  index: -1
+baozha2
+  rotate: false
+  xy: 731, 379
+  size: 206, 213
+  orig: 206, 213
+  offset: 0, 0
+  index: -1
+baozha3
+  rotate: false
+  xy: 724, 160
+  size: 217, 217
+  orig: 217, 217
+  offset: 0, 0
+  index: -1
+baozha4
+  rotate: true
+  xy: 2, 355
+  size: 237, 242
+  orig: 237, 242
+  offset: 0, 0
+  index: -1
+baozha5
+  rotate: true
+  xy: 2, 105
+  size: 248, 220
+  orig: 248, 220
+  offset: 0, 0
+  index: -1
+baozha6
+  rotate: false
+  xy: 246, 199
+  size: 257, 224
+  orig: 257, 224
+  offset: 0, 0
+  index: -1
+baozha7
+  rotate: true
+  xy: 505, 202
+  size: 221, 217
+  orig: 221, 217
+  offset: 0, 0
+  index: -1
+bo_1
+  rotate: true
+  xy: 246, 425
+  size: 167, 483
+  orig: 167, 483
+  offset: 0, 0
+  index: -1

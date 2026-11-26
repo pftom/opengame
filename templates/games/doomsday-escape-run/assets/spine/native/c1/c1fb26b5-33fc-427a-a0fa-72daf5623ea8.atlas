@@ -1,0 +1,83 @@
+
+zombie_boss3.png
+size: 700,301
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+1
+  rotate: false
+  xy: 2, 12
+  size: 191, 57
+  orig: 191, 57
+  offset: 0, 0
+  index: -1
+2
+  rotate: true
+  xy: 195, 20
+  size: 58, 113
+  orig: 71, 117
+  offset: 0, 0
+  index: -1
+body
+  rotate: false
+  xy: 310, 6
+  size: 93, 102
+  orig: 95, 104
+  offset: 1, 1
+  index: -1
+hand1
+  rotate: true
+  xy: 471, 178
+  size: 121, 227
+  orig: 123, 231
+  offset: 1, 1
+  index: -1
+hand1-1
+  rotate: false
+  xy: 585, 34
+  size: 113, 142
+  orig: 115, 215
+  offset: 1, 71
+  index: -1
+hand2
+  rotate: false
+  xy: 471, 2
+  size: 112, 174
+  orig: 115, 177
+  offset: 1, 1
+  index: -1
+hand2-1
+  rotate: false
+  xy: 2, 71
+  size: 159, 228
+  orig: 162, 231
+  offset: 2, 2
+  index: -1
+head
+  rotate: false
+  xy: 317, 110
+  size: 152, 189
+  orig: 154, 191
+  offset: 1, 1
+  index: -1
+head2
+  rotate: false
+  xy: 163, 110
+  size: 152, 189
+  orig: 152, 189
+  offset: 0, 0
+  index: -1
+leg1
+  rotate: true
+  xy: 163, 80
+  size: 28, 68
+  orig: 30, 70
+  offset: 1, 1
+  index: -1
+leg2
+  rotate: true
+  xy: 233, 80
+  size: 28, 68
+  orig: 30, 70
+  offset: 1, 1
+  index: -1

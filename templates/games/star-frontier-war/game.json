@@ -1,0 +1,30 @@
+{
+  "id": "star-frontier-war",
+  "title": "Star Frontier War",
+  "description": "Command an interstellar cruiser patrolling the galaxy rim—upgrade twin plasma turrets and blast alien fleets across deep-space sectors.",
+  "genre": "shooter",
+  "style": "anime",
+  "setting": "space",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to pilot your starship, dodge cosmic plasma fire, and grab weapon power-ups.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "星河边境战记",
+      "description": "浩瀚星际弹幕空战星河边境：驾驶星舰守卫银河防线，强化等离子重炮扫荡外星舰队爽感拉满！",
+      "controls": "按住拖动战舰灵活闪避敌弹，拾取星际武装升级火力摧毁敌舰。"
+    }
+  }
+}

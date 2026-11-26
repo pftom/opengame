@@ -1,0 +1,30 @@
+{
+  "id": "corgi-dash-run",
+  "title": "Corgi Dash Run",
+  "description": "Dash down sunny park paths with an adorable short-legged Corgi—leap puddles, grab tasty bone treats, and sprint for cheerful endless scores.",
+  "genre": "platformer",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap or swipe to dodge obstacles, leap hurdles, and scoop up bones along the park lane.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "冲吧柯基小狗",
+      "description": "萌翻全场的治愈系冲吧柯基小狗：操控圆屁股小柯基一路撒欢奔跑、越过障碍叼骨头，开心减压一整天！",
+      "controls": "点击或滑动操控小柯基跳跃变道躲避障碍，一路收集美味狗骨头刷新高分。"
+    }
+  }
+}

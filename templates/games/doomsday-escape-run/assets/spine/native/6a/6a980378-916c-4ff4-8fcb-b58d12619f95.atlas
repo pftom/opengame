@@ -1,0 +1,111 @@
+
+dog.png
+size: 268,59
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+WhiteDog_Head_0
+  rotate: true
+  xy: 2, 20
+  size: 37, 38
+  orig: 39, 40
+  offset: 1, 1
+  index: -1
+WhiteDog_Head_1
+  rotate: true
+  xy: 42, 20
+  size: 37, 38
+  orig: 39, 40
+  offset: 1, 1
+  index: -1
+WhiteDog_Head_2
+  rotate: true
+  xy: 82, 20
+  size: 37, 38
+  orig: 39, 40
+  offset: 1, 1
+  index: -1
+WhiteDog_Legs_0
+  rotate: true
+  xy: 118, 9
+  size: 9, 16
+  orig: 11, 18
+  offset: 1, 1
+  index: -1
+WhiteDog_Legs_0 拷贝
+  rotate: true
+  xy: 136, 9
+  size: 9, 16
+  orig: 11, 18
+  offset: 1, 1
+  index: -1
+WhiteDog_Legs_1
+  rotate: true
+  xy: 2, 2
+  size: 16, 27
+  orig: 18, 29
+  offset: 1, 1
+  index: -1
+WhiteDog_Legs_1 拷贝
+  rotate: true
+  xy: 31, 2
+  size: 16, 27
+  orig: 18, 29
+  offset: 1, 1
+  index: -1
+Zombie_WhiteDogBody
+  rotate: true
+  xy: 202, 10
+  size: 47, 31
+  orig: 47, 31
+  offset: 0, 0
+  index: -1
+Zombie_WhiteDogHead_0
+  rotate: true
+  xy: 122, 20
+  size: 37, 38
+  orig: 39, 40
+  offset: 1, 1
+  index: -1
+Zombie_WhiteDogHead_1
+  rotate: true
+  xy: 162, 20
+  size: 37, 38
+  orig: 39, 40
+  offset: 1, 1
+  index: -1
+Zombie_WhiteDogLegs_0
+  rotate: true
+  xy: 154, 9
+  size: 9, 16
+  orig: 11, 18
+  offset: 1, 1
+  index: -1
+Zombie_WhiteDogLegs_0 拷贝
+  rotate: false
+  xy: 172, 2
+  size: 9, 16
+  orig: 11, 18
+  offset: 1, 1
+  index: -1
+Zombie_WhiteDogLegs_1
+  rotate: true
+  xy: 60, 2
+  size: 16, 27
+  orig: 18, 29
+  offset: 1, 1
+  index: -1
+Zombie_WhiteDogLegs_1 拷贝
+  rotate: true
+  xy: 89, 2
+  size: 16, 27
+  orig: 18, 29
+  offset: 1, 1
+  index: -1
+图层 0
+  rotate: true
+  xy: 235, 10
+  size: 47, 31
+  orig: 47, 31
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,30 @@
+{
+  "id": "flappy-pixel-bird",
+  "title": "Flappy Pixel Bird",
+  "description": "Tap with split-second rhythm to flap a plump pixel bird between endless green warp pipes—simple to start, impossibly addictive to master.",
+  "genre": "platformer",
+  "style": "pixel",
+  "setting": "retro",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap anywhere on screen (or press Space) to flap upward and thread cleanly through every pipe gap.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "像素鸟大冒险",
+      "description": "现象级魔性手残测试像素鸟 Flappy Bird：轻轻一点扇动翅膀穿过绿色水管缝隙，简单到一秒上手却让人狂飙胜负欲！",
+      "controls": "轻点屏幕（或按空格键）控制小鸟扑腾上升，精准穿过每一道水管缺口冲击高分。"
+    }
+  }
+}

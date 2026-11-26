@@ -1,0 +1,30 @@
+{
+  "id": "pill-syringe-sort",
+  "title": "Pill & Syringe Sort",
+  "description": "Sort vibrant medicine capsules into color-matched syringes with crisp liquid-sort logic—quirky medical visuals meet ultra-clean puzzle satisfaction.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap a syringe to pick up its top capsules, then tap a matching or empty syringe to transfer them.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "药丸与针管",
+      "description": "创意爆款分类排序药丸与针管：把五彩小药丸按颜色精准装入对应透明针管，脑洞题材配经典排序超解压！",
+      "controls": "点击针管取出顶部彩色药丸，再点击同色或空针管归类装满即可过关。"
+    }
+  }
+}

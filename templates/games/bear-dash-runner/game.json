@@ -1,0 +1,30 @@
+{
+  "id": "bear-dash-runner",
+  "title": "Bear Dash Runner",
+  "description": "Help an energetic little bear race across scenic forest bridges—bounce off mushrooms, collect sweet honey jars, and outrun mischievous bees.",
+  "genre": "platformer",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap to jump over logs and gaps while grabbing honey jars and speed boosts along the trail.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "小熊快跑",
+      "description": "治愈卡通横版跑酷小熊快跑：陪萌萌小熊在阳光森林一路狂奔跳跃，狂吃蜂蜜罐躲避障碍停不下来！",
+      "controls": "点击屏幕控制小熊跳跃闪避森林路障，收集香甜蜂蜜刷新跑酷得分。"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "space-pinball-neon",
+  "title": "Space Pinball Neon",
+  "description": "Launch glowing energy spheres into a neon cosmic pinball table—smash glowing bumpers, trigger multiplier ramps, and keep the ball alive with crisp flippers.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "space",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Pull to launch the ball and tap left/right screen sides to fire the neon pinball flippers.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "霓虹太空弹球",
+      "description": "炫酷霓虹街机太空弹球：弹射能量光球撞击星际保险杠与加分轨道，左右拨板极限救球刷爆高分榜！",
+      "controls": "拉动发射弹球，点击屏幕左/右侧操控拨板将弹球击回高分区刷爆连击。"
+    }
+  }
+}

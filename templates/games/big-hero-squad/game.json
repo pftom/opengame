@@ -1,0 +1,30 @@
+{
+  "id": "big-hero-squad",
+  "title": "Big Hero Squad",
+  "description": "Assemble a futuristic team of super-powered heroes—unleash energy beams and shield bursts against relentless robotic invaders.",
+  "genre": "shooter",
+  "style": "anime",
+  "setting": "cyberpunk",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to move your hero squad, auto-fire plasma blasts, and trigger ultimate abilities.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "超能英雄战队",
+      "description": "科幻热血动作超能英雄战队：集结高科技超能战士联手释放能量光束，粉碎机械军团入侵守护未来都市！",
+      "controls": "拖动控制超能英雄走位走射，积满能量释放大招消灭一波波机械敌人。"
+    }
+  }
+}

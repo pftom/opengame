@@ -1,0 +1,1 @@
+window._CCSettings={platform:"web-mobile",groupList:["default","bingdu","player"],collisionMatrix:[[true,null,false],[false,false,true],[false,true,false]],hasResourcesBundle:true,hasStartSceneBundle:false,remoteBundles:[],subpackages:[],launchScene:"db:/"+"/assets/scenes/loading.fire",orientation:"",jsList:["assets/scripts/qj.js"]};

@@ -1,0 +1,30 @@
+{
+  "id": "two-player-party",
+  "title": "2-Player Party Arcade",
+  "description": "Challenge a friend on the same screen or battle smart bots across brisk head-to-head mini-games packed with instant laughs and reflex duels.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Pick a mini-game and tap your half of the screen to outplay your opponent or AI rival.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "双人同屏派对",
+      "description": "聚会破冰神器双人同屏派对：一部设备就能同屏互怼 PK，涵盖多款快节奏反应对抗小游戏，越玩越嗨！",
+      "controls": "选择喜欢的对抗玩法，点击各自半区屏幕与好友或电脑展开极速反应对决。"
+    }
+  }
+}

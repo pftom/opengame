@@ -1,0 +1,20 @@
+
+NewProject_1.png
+size: 160,61
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+toxic
+  rotate: false
+  xy: 1, 31
+  size: 157, 28
+  orig: 157, 28
+  offset: 0, 0
+  index: -1
+toxic 拷贝
+  rotate: false
+  xy: 1, 1
+  size: 157, 28
+  orig: 157, 28
+  offset: 0, 0
+  index: -1

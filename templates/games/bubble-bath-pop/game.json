@@ -1,0 +1,30 @@
+{
+  "id": "bubble-bath-pop",
+  "title": "Bubble Bath Pop",
+  "description": "Pop shimmering rainbow soap bubbles rising across a playful bathtub arena—chain sparkling bursts before bubbles float away.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Aim and shoot bubbles into matching color groups to pop sparkling soapy chains.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "浴室打水泡",
+      "description": "清新欢乐休闲浴室打水泡：瞄准升腾的七彩肥皂泡泡连发射击触发满屏爆裂，清脆解压一局接一局！",
+      "controls": "瞄准发射彩色泡泡凑齐同色爆破，清空全场水泡赢取高分。"
+    }
+  }
+}

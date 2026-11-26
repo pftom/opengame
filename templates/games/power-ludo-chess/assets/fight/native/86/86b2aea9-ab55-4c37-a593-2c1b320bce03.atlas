@@ -1,0 +1,153 @@
+
+boom.png
+size: 863, 371
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+boom_00000
+  rotate: false
+  xy: 92, 67
+  size: 30, 30
+  orig: 160, 160
+  offset: 65, 64
+  index: -1
+boom_00001
+  rotate: false
+  xy: 781, 290
+  size: 78, 81
+  orig: 160, 160
+  offset: 45, 38
+  index: -1
+boom_00002
+  rotate: false
+  xy: 2, 6
+  size: 88, 91
+  orig: 160, 160
+  offset: 39, 33
+  index: -1
+boom_00003
+  rotate: false
+  xy: 250, 17
+  size: 101, 98
+  orig: 160, 160
+  offset: 31, 31
+  index: -1
+boom_00004
+  rotate: false
+  xy: 744, 17
+  size: 112, 112
+  orig: 160, 160
+  offset: 24, 24
+  index: -1
+boom_00005
+  rotate: false
+  xy: 504, 4
+  size: 118, 118
+  orig: 160, 160
+  offset: 21, 21
+  index: -1
+boom_00006
+  rotate: true
+  xy: 138, 4
+  size: 111, 110
+  orig: 160, 160
+  offset: 25, 25
+  index: -1
+boom_00007
+  rotate: false
+  xy: 624, 4
+  size: 118, 118
+  orig: 160, 160
+  offset: 21, 21
+  index: -1
+boom_00008
+  rotate: false
+  xy: 534, 249
+  size: 122, 122
+  orig: 160, 160
+  offset: 19, 19
+  index: -1
+boom_00009
+  rotate: false
+  xy: 406, 245
+  size: 126, 126
+  orig: 160, 160
+  offset: 17, 17
+  index: -1
+boom_00010
+  rotate: false
+  xy: 274, 241
+  size: 130, 130
+  orig: 160, 160
+  offset: 15, 15
+  index: -1
+boom_00011
+  rotate: false
+  xy: 140, 239
+  size: 132, 132
+  orig: 160, 160
+  offset: 14, 14
+  index: -1
+boom_00012
+  rotate: false
+  xy: 2, 99
+  size: 134, 134
+  orig: 160, 160
+  offset: 13, 13
+  index: -1
+boom_00013
+  rotate: false
+  xy: 2, 235
+  size: 136, 136
+  orig: 160, 160
+  offset: 12, 12
+  index: -1
+boom_00014
+  rotate: true
+  xy: 625, 129
+  size: 118, 117
+  orig: 160, 160
+  offset: 24, 21
+  index: -1
+boom_00015
+  rotate: true
+  xy: 744, 131
+  size: 118, 117
+  orig: 160, 160
+  offset: 24, 21
+  index: -1
+boom_00016
+  rotate: true
+  xy: 384, 120
+  size: 119, 118
+  orig: 160, 160
+  offset: 24, 21
+  index: -1
+boom_00017
+  rotate: false
+  xy: 504, 124
+  size: 119, 119
+  orig: 160, 160
+  offset: 24, 20
+  index: -1
+boom_00018
+  rotate: true
+  xy: 263, 117
+  size: 120, 119
+  orig: 160, 160
+  offset: 24, 20
+  index: -1
+boom_00019
+  rotate: false
+  xy: 658, 251
+  size: 121, 120
+  orig: 160, 160
+  offset: 23, 20
+  index: -1
+boom_00020
+  rotate: false
+  xy: 140, 117
+  size: 121, 120
+  orig: 160, 160
+  offset: 22, 20
+  index: -1

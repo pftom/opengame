@@ -1,0 +1,279 @@
+
+police.png
+size: 1420,284
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+B0/L_arm1
+  rotate: false
+  xy: 1305, 18
+  size: 42, 74
+  orig: 42, 74
+  offset: 0, 0
+  index: -1
+B0/L_arm1_fake
+  rotate: false
+  xy: 1160, 192
+  size: 58, 90
+  orig: 60, 93
+  offset: 1, 2
+  index: -1
+B0/L_arm2
+  rotate: false
+  xy: 1206, 15
+  size: 38, 59
+  orig: 39, 59
+  offset: 0, 0
+  index: -1
+B0/L_arm2_fake
+  rotate: false
+  xy: 1249, 7
+  size: 54, 75
+  orig: 56, 78
+  offset: 1, 2
+  index: -1
+B0/L_foot
+  rotate: false
+  xy: 179, 2
+  size: 42, 15
+  orig: 42, 15
+  offset: 0, 0
+  index: -1
+B0/L_foot_fake
+  rotate: false
+  xy: 991, 6
+  size: 62, 36
+  orig: 62, 36
+  offset: 0, 0
+  index: -1
+B0/L_hand
+  rotate: false
+  xy: 1160, 142
+  size: 44, 48
+  orig: 44, 48
+  offset: 0, 0
+  index: -1
+B0/L_hand_fake
+  rotate: false
+  xy: 1187, 76
+  size: 60, 64
+  orig: 62, 67
+  offset: 1, 2
+  index: -1
+B0/L_leg1
+  rotate: false
+  xy: 1383, 207
+  size: 28, 75
+  orig: 28, 75
+  offset: 0, 0
+  index: -1
+B0/L_leg1_fake
+  rotate: false
+  xy: 1301, 94
+  size: 48, 95
+  orig: 50, 95
+  offset: 1, 0
+  index: -1
+B0/R_leg1_fake
+  rotate: false
+  xy: 1301, 94
+  size: 48, 95
+  orig: 52, 97
+  offset: 2, 1
+  index: -1
+B0/L_leg2
+  rotate: false
+  xy: 1351, 129
+  size: 28, 76
+  orig: 28, 76
+  offset: 0, 0
+  index: -1
+B0/L_leg2_fake
+  rotate: false
+  xy: 1249, 84
+  size: 50, 97
+  orig: 50, 97
+  offset: 0, 0
+  index: -1
+B0/R_arm1
+  rotate: false
+  xy: 1349, 18
+  size: 39, 74
+  orig: 40, 77
+  offset: 0, 0
+  index: -1
+B0/R_arm1_fake
+  rotate: false
+  xy: 1274, 191
+  size: 52, 91
+  orig: 54, 94
+  offset: 1, 1
+  index: -1
+B0/R_arm2
+  rotate: false
+  xy: 1165, 2
+  size: 39, 62
+  orig: 39, 62
+  offset: 0, 0
+  index: -1
+B0/R_arm2_fake
+  rotate: false
+  xy: 1328, 207
+  size: 53, 75
+  orig: 56, 79
+  offset: 1, 2
+  index: -1
+B0/R_foot
+  rotate: false
+  xy: 223, 2
+  size: 42, 15
+  orig: 42, 15
+  offset: 0, 0
+  index: -1
+B0/R_foot_fake
+  rotate: false
+  xy: 925, 4
+  size: 64, 38
+  orig: 64, 38
+  offset: 0, 0
+  index: -1
+B0/R_hand
+  rotate: false
+  xy: 1117, 7
+  size: 46, 56
+  orig: 46, 56
+  offset: 0, 0
+  index: -1
+B0/R_hand_fake
+  rotate: false
+  xy: 1125, 66
+  size: 60, 70
+  orig: 62, 72
+  offset: 1, 1
+  index: -1
+B0/R_leg1
+  rotate: false
+  xy: 1390, 52
+  size: 28, 75
+  orig: 28, 75
+  offset: 0, 0
+  index: -1
+B0/R_leg2
+  rotate: false
+  xy: 1381, 129
+  size: 28, 76
+  orig: 28, 76
+  offset: 0, 0
+  index: -1
+B0/R_leg2_fake
+  rotate: false
+  xy: 1220, 183
+  size: 52, 99
+  orig: 52, 99
+  offset: 0, 0
+  index: -1
+B0/body
+  rotate: false
+  xy: 179, 19
+  size: 163, 263
+  orig: 163, 263
+  offset: 0, 0
+  index: -1
+B0/body2
+  rotate: false
+  xy: 344, 106
+  size: 163, 176
+  orig: 163, 176
+  offset: 0, 0
+  index: -1
+B0/body3
+  rotate: false
+  xy: 674, 106
+  size: 163, 176
+  orig: 163, 176
+  offset: 0, 0
+  index: -1
+B0/body4
+  rotate: false
+  xy: 509, 106
+  size: 163, 176
+  orig: 163, 176
+  offset: 0, 0
+  index: -1
+B0/body_fake
+  rotate: false
+  xy: 2, 7
+  size: 175, 275
+  orig: 179, 279
+  offset: 2, 2
+  index: -1
+B0/body_fake2
+  rotate: false
+  xy: 344, 5
+  size: 175, 99
+  orig: 177, 101
+  offset: 1, 1
+  index: -1
+B0/glass
+  rotate: false
+  xy: 521, 9
+  size: 134, 95
+  orig: 136, 97
+  offset: 1, 1
+  index: -1
+B0/glass_scary
+  rotate: false
+  xy: 657, 15
+  size: 134, 89
+  orig: 136, 90
+  offset: 1, 0
+  index: -1
+B0/hand_gun
+  rotate: false
+  xy: 793, 17
+  size: 130, 87
+  orig: 130, 88
+  offset: 0, 0
+  index: -1
+B0/hand_push
+  rotate: false
+  xy: 1055, 8
+  size: 60, 55
+  orig: 60, 55
+  offset: 0, 0
+  index: -1
+B0/hand_push_fake
+  rotate: false
+  xy: 1047, 65
+  size: 76, 71
+  orig: 76, 72
+  offset: 0, 0
+  index: -1
+B0/hat
+  rotate: false
+  xy: 839, 155
+  size: 193, 127
+  orig: 193, 127
+  offset: 0, 0
+  index: -1
+B0/key (merged)
+  rotate: false
+  xy: 925, 44
+  size: 120, 76
+  orig: 120, 76
+  offset: 0, 0
+  index: -1
+B0/key_dim
+  rotate: false
+  xy: 839, 122
+  size: 101, 31
+  orig: 101, 31
+  offset: 0, 0
+  index: -1
+emoji
+  rotate: false
+  xy: 1034, 138
+  size: 124, 144
+  orig: 124, 144
+  offset: 0, 0
+  index: -1

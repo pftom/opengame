@@ -1,0 +1,30 @@
+{
+  "id": "fire-water-duo",
+  "title": "Fire & Water Duo",
+  "description": "Switch seamlessly between Fire and Water heroes to trigger color levers, cross opposing pools safely, and unlock temple exit doors together.",
+  "genre": "platformer",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Move, jump, and switch between the red and blue characters to solve switches and reach both temple doors.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "红蓝最强搭档",
+      "description": "童年封神双人解谜红蓝最强搭档：灵活切换冰火双角色互踩机关、避开相克池水收集宝石，默契配合闯关！",
+      "controls": "操控红蓝搭档轮流走跳踩机关，收集对应宝石并双双抵达终点大门过关。"
+    }
+  }
+}

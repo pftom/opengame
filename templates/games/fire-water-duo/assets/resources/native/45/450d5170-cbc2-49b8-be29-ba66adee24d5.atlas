@@ -1,0 +1,20 @@
+
+NewProject.png
+size: 160,63
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+nuoc 拷贝
+  rotate: false
+  xy: 1, 1
+  size: 157, 29
+  orig: 157, 29
+  offset: 0, 0
+  index: -1
+nuoc
+  rotate: false
+  xy: 1, 32
+  size: 157, 29
+  orig: 157, 29
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,30 @@
+{
+  "id": "duck-king-arena",
+  "title": "Duck King Arena",
+  "description": "Waddle into a hilarious cartoon showdown—train, gear up, and battle quirky rival ducks to claim the golden crown of the pond.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap action buttons and upgrades to train your duck fighter and defeat every challenger.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "最强鸭王",
+      "description": "爆笑魔性竞技最强鸭王：武装你的战斗鸭一路过关斩将、爆锤奇葩对手鸭，霸气登顶池塘最强鸭王宝座！",
+      "controls": "升级强化战斗鸭装备与招式，点击出击击败各路对手冲击最强鸭王。"
+    }
+  }
+}

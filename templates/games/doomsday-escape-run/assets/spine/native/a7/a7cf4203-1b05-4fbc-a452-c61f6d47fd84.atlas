@@ -1,0 +1,62 @@
+
+wujing.png
+size: 456,56
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+gun_gatlin
+  rotate: false
+  xy: 2, 2
+  size: 89, 52
+  orig: 91, 54
+  offset: 1, 1
+  index: -1
+gun_gatlinmg
+  rotate: false
+  xy: 352, 7
+  size: 91, 47
+  orig: 93, 49
+  offset: 1, 1
+  index: -1
+wujing_body
+  rotate: false
+  xy: 93, 2
+  size: 80, 52
+  orig: 82, 54
+  offset: 1, 1
+  index: -1
+wujing_head_1
+  rotate: false
+  xy: 175, 3
+  size: 57, 51
+  orig: 59, 53
+  offset: 1, 1
+  index: -1
+wujing_head_2
+  rotate: false
+  xy: 234, 3
+  size: 57, 51
+  orig: 59, 53
+  offset: 1, 1
+  index: -1
+wujing_head_3
+  rotate: false
+  xy: 293, 3
+  size: 57, 51
+  orig: 59, 53
+  offset: 1, 1
+  index: -1
+wujing_leg_1a
+  rotate: false
+  xy: 445, 34
+  size: 9, 20
+  orig: 11, 22
+  offset: 1, 1
+  index: -1
+wujing_leg_2a
+  rotate: false
+  xy: 445, 34
+  size: 9, 20
+  orig: 11, 22
+  offset: 1, 1
+  index: -1

@@ -1,0 +1,30 @@
+{
+  "id": "tofu-princess-jump",
+  "title": "Tofu Princess Jump",
+  "description": "Time crisp one-tap jumps to stack wobbly slices of silky tofu higher and higher beneath an adorable princess—nail center landings for golden combo boosts.",
+  "genre": "platformer",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap anywhere to make the princess leap straight onto each incoming tofu block and stack sky-high.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "豆腐公主",
+      "description": "微信爆款魔性一指跳跃豆腐公主：看准左右滑来的嫩豆腐一键起跳稳稳踩正中心，越堆越高解锁可爱公主皮肤！",
+      "controls": "在豆腐块滑入脚下的瞬间点击屏幕起跳稳稳踩住，连续踩中中心触发完美高分。"
+    }
+  }
+}

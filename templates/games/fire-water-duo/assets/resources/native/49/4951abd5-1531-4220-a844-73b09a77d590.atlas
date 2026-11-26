@@ -1,0 +1,83 @@
+
+rescue_switch.png
+size: 320,308
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Layer 3
+  rotate: false
+  xy: 2, 2
+  size: 93, 45
+  orig: 97, 49
+  offset: 2, 2
+  index: -1
+OPEN
+  rotate: false
+  xy: 243, 15
+  size: 67, 15
+  orig: 67, 15
+  offset: 0, 0
+  index: -1
+RED_text
+  rotate: false
+  xy: 197, 169
+  size: 121, 135
+  orig: 121, 135
+  offset: 0, 0
+  index: -1
+blue_text
+  rotate: false
+  xy: 197, 32
+  size: 121, 135
+  orig: 121, 135
+  offset: 0, 0
+  index: -1
+body
+  rotate: false
+  xy: 2, 111
+  size: 193, 193
+  orig: 197, 197
+  offset: 2, 2
+  index: -1
+btn
+  rotate: false
+  xy: 102, 64
+  size: 59, 45
+  orig: 63, 49
+  offset: 2, 2
+  index: -1
+heart
+  rotate: false
+  xy: 163, 100
+  size: 10, 9
+  orig: 12, 11
+  offset: 1, 1
+  index: -1
+line1
+  rotate: false
+  xy: 97, 8
+  size: 71, 16
+  orig: 71, 22
+  offset: 0, 1
+  index: -1
+line2
+  rotate: false
+  xy: 170, 13
+  size: 71, 17
+  orig: 71, 22
+  offset: 0, 1
+  index: -1
+line3
+  rotate: false
+  xy: 97, 26
+  size: 71, 21
+  orig: 71, 22
+  offset: 0, 1
+  index: -1
+nap2
+  rotate: false
+  xy: 2, 49
+  size: 98, 60
+  orig: 100, 62
+  offset: 1, 1
+  index: -1

@@ -1,0 +1,55 @@
+
+ymsj.png
+size: 577, 256
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+0
+  rotate: false
+  xy: 2, 58
+  size: 124, 198
+  orig: 130, 199
+  offset: 3, 1
+  index: -1
+1
+  rotate: false
+  xy: 387, 86
+  size: 128, 170
+  orig: 130, 199
+  offset: 1, 29
+  index: -1
+2
+  rotate: false
+  xy: 257, 67
+  size: 128, 189
+  orig: 130, 199
+  offset: 1, 8
+  index: -1
+3
+  rotate: false
+  xy: 128, 63
+  size: 127, 193
+  orig: 130, 199
+  offset: 1, 5
+  index: -1
+ef_001_p_gl_583
+  rotate: true
+  xy: 517, 35
+  size: 221, 58
+  orig: 256, 64
+  offset: 5, 5
+  index: -1
+ef_001_p_gl_584
+  rotate: false
+  xy: 2, 4
+  size: 217, 52
+  orig: 256, 64
+  offset: 5, 11
+  index: -1
+ef_001_p_gl_585
+  rotate: false
+  xy: 257, 18
+  size: 219, 47
+  orig: 256, 64
+  offset: 5, 15
+  index: -1

@@ -1,0 +1,30 @@
+{
+  "id": "fruit-link-match",
+  "title": "Fruit Link Match",
+  "description": "Connect juicy pairs of strawberries, lemons, and kiwis using paths with at most two turns—race the clock to clear bright orchard boards.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap two matching fruit tiles that can connect with a clear path of up to three straight segments.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "水果连连看",
+      "description": "国民经典益智水果连连看：眼疾手快连接两个相同水果且拐弯不超过两次即可闪电消除，清爽脆甜越玩越上头！",
+      "controls": "依次点击两张相同水果牌，只要连线折弯不超过两次即可闪电消除，清空棋盘过关。"
+    }
+  }
+}

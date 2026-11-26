@@ -1,0 +1,30 @@
+{
+  "id": "snowball-rush-io",
+  "title": "Snowball Rush IO",
+  "description": "Roll a giant snowball across frosty arenas, scoop up snow to grow massive, and bump rival players right off the ice rink!",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to roll your snowball bigger across the ice and release to hurl or bump rivals off the edge.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "奔跑吧雪球",
+      "description": "魔性 IO 竞技奔跑吧雪球：滚起巨无霸雪球把对手统统撞飞冰面，活到最后成为冰雪王者！",
+      "controls": "按住拖动滚大雪球，松手发射或正面冲撞把所有对手顶出冰台即可获胜。"
+    }
+  }
+}

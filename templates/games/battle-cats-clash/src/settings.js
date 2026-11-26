@@ -1,0 +1,1 @@
+window._CCSettings={platform:"web-mobile",groupList:["default","battle"],collisionMatrix:[[false],[false,false]],hasResourcesBundle:true,hasStartSceneBundle:false,remoteBundles:[],subpackages:[],launchScene:"db:/"+"/assets/Scene/load.fire",orientation:"",jsList:["assets/Script/protobuf/protobuf.js"]};

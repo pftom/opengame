@@ -1,0 +1,30 @@
+{
+  "id": "blade-clash-arena",
+  "title": "Blade Clash Arena",
+  "description": "Enter a frantic IO sword-fighting arena—collect spinning blades, slash rivals from the flank, and grow an unstoppable ring of legendary steel.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "medieval",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to glide across the arena, pick up scattered swords to grow your blade ring, and cut down rivals.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "刀剑争霸",
+      "description": "魔性冷兵器乱斗刀剑争霸：在竞技场收集飞剑壮大刀阵，走位拉扯收割对手，化身满屏剑气的无敌剑圣！",
+      "controls": "按住拖动走位拾取场上散落刀剑扩充剑阵，灵活贴身收割其他对手登顶榜首。"
+    }
+  }
+}

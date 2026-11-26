@@ -1,0 +1,55 @@
+
+qxqf.png
+size: 1249, 165
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+1
+  rotate: false
+  xy: 1075, 68
+  size: 170, 42
+  orig: 177, 48
+  offset: 5, 4
+  index: -1
+2
+  rotate: false
+  xy: 901, 68
+  size: 172, 42
+  orig: 177, 48
+  offset: 5, 4
+  index: -1
+3
+  rotate: false
+  xy: 901, 24
+  size: 172, 42
+  orig: 177, 48
+  offset: 5, 4
+  index: -1
+4
+  rotate: false
+  xy: 1075, 24
+  size: 172, 42
+  orig: 177, 48
+  offset: 5, 3
+  index: -1
+dd
+  rotate: false
+  xy: 584, 112
+  size: 642, 53
+  orig: 642, 53
+  offset: 0, 0
+  index: -1
+ff
+  rotate: false
+  xy: 2, 4
+  size: 580, 161
+  orig: 607, 181
+  offset: 20, 10
+  index: -1
+wz
+  rotate: false
+  xy: 584, 5
+  size: 315, 105
+  orig: 321, 110
+  offset: 3, 2
+  index: -1

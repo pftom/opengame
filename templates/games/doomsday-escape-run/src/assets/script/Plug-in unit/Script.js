@@ -1,0 +1,1 @@
+window.Script=cc.Class({name:"Script",extends:cc.Component});

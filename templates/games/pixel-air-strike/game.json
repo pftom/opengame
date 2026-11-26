@@ -1,0 +1,30 @@
+{
+  "id": "pixel-air-strike",
+  "title": "Pixel Air Strike",
+  "description": "Blast retro pixel squadrons out of crisp arcade skies—crisp chiptune energy, snappy controls, and endless high-score dogfights.",
+  "genre": "shooter",
+  "style": "pixel",
+  "setting": "retro",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to steer your pixel fighter, dodge enemy shots, and pick up firepower stars.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "像素飞机大战",
+      "description": "复古街机像素飞机大战：纯粹硬核的像素风空战体验，丝滑操控狂射敌机刷新个人最高分！",
+      "controls": "按住拖动像素战机躲避敌机与子弹，不断射击敌军编队刷新高分。"
+    }
+  }
+}

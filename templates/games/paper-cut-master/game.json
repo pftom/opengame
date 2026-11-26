@@ -1,0 +1,30 @@
+{
+  "id": "paper-cut-master",
+  "title": "Paper Cut Master",
+  "description": "Slice colored origami sheets with one clean geometric cut to match exact target silhouettes and drop excess pieces cleanly away.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Press and drag across the paper sheet to draw a straight cut line and carve out the required shape.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "剪纸大师",
+      "description": "创意物理切割益智剪纸大师：看准目标虚线一刀利落裁开彩色折纸，考验空间直觉与精准手感超级解压！",
+      "controls": "按住拖动拉出直线一刀裁剪彩纸，精准切出目标图案与比例即可完美过关。"
+    }
+  }
+}

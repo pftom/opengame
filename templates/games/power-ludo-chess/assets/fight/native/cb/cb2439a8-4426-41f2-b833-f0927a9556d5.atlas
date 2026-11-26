@@ -1,0 +1,20 @@
+
+ting.png
+size: 207, 103
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+hong
+  rotate: true
+  xy: 2, 4
+  size: 99, 139
+  orig: 99, 139
+  offset: 0, 0
+  index: -1
+ting
+  rotate: false
+  xy: 143, 39
+  size: 62, 64
+  orig: 62, 64
+  offset: 0, 0
+  index: -1

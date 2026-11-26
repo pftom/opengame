@@ -1,0 +1,30 @@
+{
+  "id": "pudding-boy-hop",
+  "title": "Pudding Boy Hop",
+  "description": "Bounce a jiggly caramel pudding hero upward across sweet dessert platforms—chain springs and fruit boosts sky-high.",
+  "genre": "platformer",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap or drag to guide Pudding Boy onto each higher platform while dodging hazards.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "Q弹布丁男孩",
+      "description": "软萌 Q 弹跳跃闯关布丁男孩：操控弹力十足的小布丁在甜品平台上步步高升，踩弹簧吃糖果直冲云霄！",
+      "controls": "滑动控制 Q 弹布丁精准落向更高层甜品平台，收集糖果刷新攀登纪录。"
+    }
+  }
+}

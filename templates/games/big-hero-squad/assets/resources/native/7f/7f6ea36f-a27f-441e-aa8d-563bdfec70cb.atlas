@@ -1,0 +1,27 @@
+
+xinshoujiaoxue.png
+size: 150,180
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+quan
+  rotate: false
+  xy: 2, 73
+  size: 109, 105
+  orig: 109, 105
+  offset: 0, 0
+  index: -1
+shangshou
+  rotate: true
+  xy: 73, 4
+  size: 67, 75
+  orig: 67, 75
+  offset: 0, 0
+  index: -1
+xiashou
+  rotate: false
+  xy: 2, 2
+  size: 69, 69
+  orig: 69, 69
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,30 @@
+{
+  "id": "king-brick-breaker",
+  "title": "King Brick Breaker",
+  "description": "Master precision bank shots across hundreds of geometric brick fortresses—chain 50+ bouncing balls behind the top wall for pure visual bliss.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "retro",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to aim your launch trajectory and release to fire a stream of balls that chip down numbered bricks.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "王者打砖块",
+      "description": "经典强迫症爽游王者打砖块：找准死角把几十颗弹球送上砖块上方疯狂连弹，清脆碎砖音效超级治愈！",
+      "controls": "按住拖动虚线瞄准最佳反弹角度，松手齐射弹球串清空全场数字砖块。"
+    }
+  }
+}

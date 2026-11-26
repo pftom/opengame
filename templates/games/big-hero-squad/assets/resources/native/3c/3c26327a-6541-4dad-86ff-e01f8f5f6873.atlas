@@ -1,0 +1,27 @@
+
+nuosijianglin.png
+size: 739,336
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+jiqiren
+  rotate: false
+  xy: 2, 168
+  size: 649, 166
+  orig: 649, 166
+  offset: 0, 0
+  index: -1
+tiao
+  rotate: false
+  xy: 2, 2
+  size: 462, 164
+  orig: 462, 164
+  offset: 0, 0
+  index: -1
+zi
+  rotate: false
+  xy: 466, 90
+  size: 271, 76
+  orig: 271, 76
+  offset: 0, 0
+  index: -1

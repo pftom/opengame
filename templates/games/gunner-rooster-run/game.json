@@ -1,0 +1,30 @@
+{
+  "id": "gunner-rooster-run",
+  "title": "Gunner Rooster",
+  "description": "Strap an oversized blaster onto a fearless cartoon rooster and storm wacky platform stages—blast goofy baddies, leap hazards, and collect golden feathers.",
+  "genre": "shooter",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Use move, jump, and fire controls to blast through side-scrolling stages as the heroic rooster.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "枪弹雄鸡",
+      "description": "魔性搞笑横版射击枪弹雄鸡：给暴躁大公鸡配上重机枪横冲直撞，跳台狂射奇葩小怪笑点密集爽感十足！",
+      "controls": "操控大公鸡奔跑跳跃并开火射击阻路敌人，一路闯关赢取丰厚奖励。"
+    }
+  }
+}

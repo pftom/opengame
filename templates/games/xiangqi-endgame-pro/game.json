@@ -1,0 +1,30 @@
+{
+  "id": "xiangqi-endgame-pro",
+  "title": "Xiangqi Endgame Puzzles",
+  "description": "Solve legendary Chinese Chess endgame masterpieces—calculate sharp chariot sacrifices, double-cannon checkmates, and clever knight forks.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "medieval",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap a red piece and choose a highlighted square to deliver forced checkmate in the classic endgame puzzle.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "象棋经典残局",
+      "description": "国粹烧脑精品象棋经典残局：收录海量古谱名局与街边绝杀残局，弃车保帅步步将军，棋艺瞬间精进！",
+      "controls": "点击红方棋子选择落点，算准步数步步紧逼绝杀黑方老将即可破解残局。"
+    }
+  }
+}

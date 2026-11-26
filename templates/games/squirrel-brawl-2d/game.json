@@ -1,0 +1,30 @@
+{
+  "id": "squirrel-brawl-2d",
+  "title": "Squirrel Brawl",
+  "description": "Relive beloved classic platformer charm—leap across treetop stages, lift and toss acorns and crates at cheeky foes, and collect sparkling nuts.",
+  "genre": "platformer",
+  "style": "pixel",
+  "setting": "retro",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Move, jump, pick up crates, and toss them at enemies across lively retro stages.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "松鼠大战",
+      "description": "怀旧红白机情怀松鼠大战：操控敏捷小松鼠跑跳搬箱子砸小怪，重温经典横版动作闯关的纯粹快乐！",
+      "controls": "控制小松鼠左右移动、跳跃并举起木箱投掷击败小怪，一路闯关通关。"
+    }
+  }
+}

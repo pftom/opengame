@@ -1,0 +1,30 @@
+{
+  "id": "battle-cats-clash",
+  "title": "Battle Cats Clash",
+  "description": "Deploy bizarre, lovable cat warriors from your home tower to push across the lane, smash quirky enemy waves, and topple the rival fortress.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap cat unit icons as your funds refill to summon squads and fire your base cannon at enemy lines.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "猫咪大作战",
+      "description": "魔性横版推塔猫咪大作战：召唤各具奇葩绝技的萌猫大军出击对推，攒能量放基地大炮一举推翻敌方堡垒！",
+      "controls": "随资金增长点击召唤不同兵种的猫咪出击推线，击破敌方基地即可获胜。"
+    }
+  }
+}

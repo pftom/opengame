@@ -1,0 +1,30 @@
+{
+  "id": "tetris-classic-pro",
+  "title": "Classic Tetris Pro",
+  "description": "Rotate and drop crisp falling tetrominoes to clear four-line Tetrises in silky-smooth arcade physics—pure timeless block-stacking mastery.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "retro",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap rotate, left, right, and drop buttons (or arrow keys) to fit falling blocks into complete horizontal lines.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "经典俄罗斯方块",
+      "description": "国民永恒益智经典俄罗斯方块：旋转落块严丝合缝码齐整行瞬间消除，丝滑手感随时来一局消磨时光！",
+      "controls": "点击左右移动、旋转与速降按钮将下落方块码齐整行即可消除得分。"
+    }
+  }
+}

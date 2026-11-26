@@ -1,0 +1,20 @@
+
+djgx.png
+size: 128, 64
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+ty
+  rotate: false
+  xy: 2, 4
+  size: 49, 49
+  orig: 49, 49
+  offset: 0, 0
+  index: -1
+xxx
+  rotate: false
+  xy: 53, 24
+  size: 28, 29
+  orig: 34, 35
+  offset: 3, 3
+  index: -1

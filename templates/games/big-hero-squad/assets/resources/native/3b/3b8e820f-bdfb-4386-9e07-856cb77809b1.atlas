@@ -1,0 +1,34 @@
+
+xian.png
+size: 26,334
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+xian1
+  rotate: false
+  xy: 10, 100
+  size: 6, 232
+  orig: 6, 232
+  offset: 0, 0
+  index: -1
+xian2
+  rotate: false
+  xy: 2, 68
+  size: 6, 264
+  orig: 6, 264
+  offset: 0, 0
+  index: -1
+xian3
+  rotate: false
+  xy: 18, 2
+  size: 5, 160
+  orig: 5, 160
+  offset: 0, 0
+  index: -1
+xian4
+  rotate: false
+  xy: 18, 164
+  size: 6, 168
+  orig: 6, 168
+  offset: 0, 0
+  index: -1

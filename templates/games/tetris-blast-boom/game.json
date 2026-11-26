@@ -1,0 +1,30 @@
+{
+  "id": "tetris-blast-boom",
+  "title": "Tetris Blast Boom",
+  "description": "Drag vibrant polyomino pieces onto a clean 8x8 grid to blast full rows and columns in dazzling chain combos—no timer stress, pure brainy flow.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag each block shape onto the board to complete full horizontal or vertical lines and trigger combo blasts.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "俄罗斯方块大爆炸",
+      "description": "抖音超火拖拽方块消除俄罗斯方块大爆炸：自由摆放彩色积木填满整行或整列瞬间引爆清屏，连消爽到停不下来！",
+      "controls": "拖动下方彩色方块放入棋盘空位，填满任意一整行或一整列即可触发爆炸消除。"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+window._CCSettings={platform:"web-mobile",groupList:["default","top"],collisionMatrix:[[false],[false,false]],hasResourcesBundle:true,hasStartSceneBundle:false,remoteBundles:[],subpackages:[],launchScene:"db:/"+"/assets/scene/loginScene.fire",orientation:"portrait",jsList:["assets/common/clientScript/basic/astar.js","assets/common/clientScript/basic/globals.js"]};

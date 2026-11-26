@@ -1,0 +1,30 @@
+{
+  "id": "planet-knife-battle",
+  "title": "Planet Knife Battle",
+  "description": "Hurl razor knives into spinning cosmic planets without nicking embedded blades—crack each rotating core open to collect rare galactic daggers.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "space",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap anywhere to launch a knife straight into the spinning planet while avoiding already stuck blades.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "星球飞刀大作战",
+      "description": "抖音魔性手速星球飞刀大作战：看准旋转星球空隙精准扎入飞刀，绝不撞刀一举劈开星球解锁炫酷神兵！",
+      "controls": "瞅准空隙点击屏幕射出飞刀扎入旋转星球，避开已插飞刀劈碎星球即可通关。"
+    }
+  }
+}

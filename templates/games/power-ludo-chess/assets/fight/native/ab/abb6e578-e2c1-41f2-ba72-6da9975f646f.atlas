@@ -1,0 +1,62 @@
+
+bbwy.png
+size: 1146, 173
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+b
+  rotate: false
+  xy: 1037, 23
+  size: 54, 72
+  orig: 56, 74
+  offset: 1, 1
+  index: -1
+b2
+  rotate: false
+  xy: 1037, 23
+  size: 54, 72
+  orig: 56, 74
+  offset: 1, 1
+  index: -1
+d
+  rotate: false
+  xy: 2, 18
+  size: 442, 155
+  orig: 444, 157
+  offset: 1, 1
+  index: -1
+ddd
+  rotate: false
+  xy: 446, 4
+  size: 419, 169
+  orig: 421, 171
+  offset: 1, 1
+  index: -1
+stop
+  rotate: false
+  xy: 1093, 81
+  size: 51, 14
+  orig: 53, 16
+  offset: 1, 1
+  index: -1
+w
+  rotate: false
+  xy: 974, 23
+  size: 61, 72
+  orig: 63, 74
+  offset: 1, 1
+  index: -1
+x
+  rotate: false
+  xy: 867, 97
+  size: 277, 76
+  orig: 279, 78
+  offset: 1, 1
+  index: -1
+y
+  rotate: true
+  xy: 867, 8
+  size: 87, 105
+  orig: 89, 107
+  offset: 1, 1
+  index: -1

@@ -1,0 +1,30 @@
+{
+  "id": "cliff-escape-jump",
+  "title": "Cliff Escape Run",
+  "description": "Leap across crumbling canyon cliffs and narrow stone ledges—one crisp tap turns corners and jumps chasms in high-stakes endless running.",
+  "genre": "platformer",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap at exact corners and gaps to turn or leap safely along the winding cliff path.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "峭壁极限逃亡",
+      "description": "极简魔性一指跑酷峭壁极限逃亡：在悬崖峭壁窄道间极速疾驰，看准拐角精准点击转向跳跃绝不掉崖！",
+      "controls": "在窄道转角和断崖瞬间精准点击转向跳跃，挑战极限奔跑距离。"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "sausage-runner-2d",
+  "title": "Sausage Runner",
+  "description": "Dash through a hilarious kitchen gauntlet as a bendy cartoon sausage—duck under slicing knives, leap sizzling frying pans, and reach the finish unburnt.",
+  "genre": "platformer",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Hold to lean/slide under kitchen hazards and release to sprint cleanly past slicers and burners.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "香肠跑酷",
+      "description": "爆笑魔性跑酷香肠跑酷：化身软萌大香肠在厨房案板生死狂奔，极限下腰躲菜刀、跨过热油锅冲向终点！",
+      "controls": "按住弯腰滑行躲避菜刀与机关，松手恢复全速冲刺逃离危险厨房。"
+    }
+  }
+}

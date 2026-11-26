@@ -1,0 +1,90 @@
+
+bbjx.png
+size: 1400, 520
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+!1
+  rotate: false
+  xy: 981, 26
+  size: 81, 74
+  orig: 85, 77
+  offset: 2, 1
+  index: -1
+WARNING
+  rotate: false
+  xy: 2, 9
+  size: 105, 16
+  orig: 107, 18
+  offset: 1, 1
+  index: -1
+aaa
+  rotate: false
+  xy: 2, 322
+  size: 640, 198
+  orig: 642, 200
+  offset: 1, 1
+  index: -1
+ss
+  rotate: true
+  xy: 1286, 50
+  size: 470, 112
+  orig: 472, 114
+  offset: 1, 1
+  index: -1
+sss
+  rotate: false
+  xy: 2, 167
+  size: 640, 153
+  orig: 642, 155
+  offset: 1, 1
+  index: -1
+sss1
+  rotate: false
+  xy: 1064, 26
+  size: 81, 74
+  orig: 85, 77
+  offset: 2, 1
+  index: -1
+ww
+  rotate: false
+  xy: 1147, 71
+  size: 116, 29
+  orig: 119, 31
+  offset: 2, 1
+  index: -1
+wz
+  rotate: false
+  xy: 644, 4
+  size: 335, 96
+  orig: 338, 100
+  offset: 1, 2
+  index: -1
+x1
+  rotate: false
+  xy: 644, 382
+  size: 640, 138
+  orig: 642, 140
+  offset: 1, 1
+  index: -1
+x2
+  rotate: false
+  xy: 2, 27
+  size: 640, 138
+  orig: 642, 140
+  offset: 1, 1
+  index: -1
+x3
+  rotate: false
+  xy: 644, 242
+  size: 640, 138
+  orig: 642, 140
+  offset: 1, 1
+  index: -1
+x4
+  rotate: false
+  xy: 644, 102
+  size: 640, 138
+  orig: 642, 140
+  offset: 1, 1
+  index: -1

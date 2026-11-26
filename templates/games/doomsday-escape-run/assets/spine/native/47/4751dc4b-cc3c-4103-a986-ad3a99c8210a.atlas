@@ -1,0 +1,55 @@
+
+zhaoyun.png
+size: 125,212
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+wq_bigsword
+  rotate: true
+  xy: 72, 86
+  size: 124, 51
+  orig: 126, 53
+  offset: 1, 1
+  index: -1
+zhaoyun_01_head
+  rotate: false
+  xy: 2, 142
+  size: 68, 68
+  orig: 70, 70
+  offset: 1, 1
+  index: -1
+zhaoyun_01_leg_1A
+  rotate: true
+  xy: 72, 5
+  size: 9, 20
+  orig: 11, 22
+  offset: 1, 1
+  index: -1
+zhaoyun_01_leg_2A
+  rotate: true
+  xy: 72, 5
+  size: 9, 20
+  orig: 11, 22
+  offset: 1, 1
+  index: -1
+zhaoyun_02_head
+  rotate: false
+  xy: 2, 72
+  size: 68, 68
+  orig: 70, 70
+  offset: 1, 1
+  index: -1
+zhaoyun_03_head
+  rotate: false
+  xy: 2, 2
+  size: 68, 68
+  orig: 70, 70
+  offset: 1, 1
+  index: -1
+zhaoyun_body
+  rotate: true
+  xy: 72, 16
+  size: 68, 50
+  orig: 70, 52
+  offset: 1, 1
+  index: -1

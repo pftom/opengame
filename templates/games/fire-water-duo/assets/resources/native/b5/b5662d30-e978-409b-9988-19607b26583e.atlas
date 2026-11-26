@@ -1,0 +1,27 @@
+
+NewProject_1.png
+size: 180,61
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+f3
+  rotate: false
+  xy: 1, 31
+  size: 139, 28
+  orig: 139, 28
+  offset: 0, 0
+  index: -1
+f2
+  rotate: false
+  xy: 142, 1
+  size: 36, 28
+  orig: 36, 28
+  offset: 0, 0
+  index: -1
+f1
+  rotate: false
+  xy: 1, 1
+  size: 139, 28
+  orig: 139, 28
+  offset: 0, 0
+  index: -1

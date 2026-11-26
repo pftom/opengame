@@ -1,0 +1,30 @@
+{
+  "id": "panda-bubble-pop",
+  "title": "Panda Bubble Pop",
+  "description": "Aim with an adorable kung-fu panda to bank colorful bubbles off bamboo walls, pop clusters of three or more, and free trapped baby cubs.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to aim the dotted trajectory and release to shoot bubbles into matching clusters.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "熊猫泡泡龙",
+      "description": "萌系经典射击消除熊猫泡泡龙：帮功夫小熊猫精准弹射彩色泡泡，击落整串泡泡救出被困萌娃超有成就感！",
+      "controls": "按住拖动虚线瞄准同色泡泡群，松手发射凑齐三个及以上消除并营救小熊猫。"
+    }
+  }
+}

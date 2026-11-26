@@ -1,0 +1,30 @@
+{
+  "id": "tiny-hero-quest",
+  "title": "Tiny Hero Quest",
+  "description": "Explore vibrant pixel dungeons as a brave miniature knight—leap pitfalls, slash slimes, and uncover hidden treasure chests.",
+  "genre": "platformer",
+  "style": "pixel",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Use arrow keys / WASD (or on-screen controls) to move, jump, and swing your sword at dungeon foes.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "小小勇者大冒险",
+      "description": "复古像素横版冒险小小勇者：化身勇敢小骑士挥剑斩史莱姆、跨越机关陷阱探索神秘地牢宝藏！",
+      "controls": "使用键盘方向键/WASD（或屏幕按钮）控制小勇者移动跳跃挥剑斩怪通关。"
+    }
+  }
+}

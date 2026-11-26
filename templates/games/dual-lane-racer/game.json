@@ -1,0 +1,30 @@
+{
+  "id": "dual-lane-racer",
+  "title": "Dual Lane Racer",
+  "description": "Command two speeding sports cars simultaneously on parallel neon highways—dodge roadblocks and scoop every fuel circle in an intense split-brain reflex test.",
+  "genre": "racing",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap the left half to switch the left car's lane and tap the right half to switch the right car's lane.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "双手极速赛车",
+      "description": "魔性左右脑互搏挑战双手极速赛车：同时操控红蓝两辆跑车在四车道狂飙，吃金币躲路障，极度考验反应力！",
+      "controls": "点击左侧屏幕切换左车车道、点击右侧切换右车车道，同时避开方障收集圆点。"
+    }
+  }
+}

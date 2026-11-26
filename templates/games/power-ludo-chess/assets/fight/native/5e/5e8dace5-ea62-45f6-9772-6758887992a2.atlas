@@ -1,0 +1,122 @@
+
+chuansongmen.png
+size: 871, 785
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+_0004_du_06
+  rotate: true
+  xy: 431, 4
+  size: 394, 438
+  orig: 518, 482
+  offset: 44, 27
+  index: -1
+_0005_du_05
+  rotate: true
+  xy: 2, 9
+  size: 389, 427
+  orig: 518, 482
+  offset: 49, 38
+  index: -1
+dark01@2x
+  rotate: false
+  xy: 307, 400
+  size: 402, 385
+  orig: 409, 396
+  offset: 3, 5
+  index: -1
+darkxuanwo@2x
+  rotate: false
+  xy: 67, 552
+  size: 238, 233
+  orig: 245, 241
+  offset: 3, 5
+  index: -1
+guanzuo
+  rotate: true
+  xy: 2, 728
+  size: 57, 63
+  orig: 62, 74
+  offset: 1, 8
+  index: -1
+
+chuansongmen_2.png
+size: 927, 817
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+_0000_du_10
+  rotate: false
+  xy: 447, 4
+  size: 462, 407
+  orig: 518, 482
+  offset: 33, 32
+  index: -1
+_0003_du_07
+  rotate: true
+  xy: 2, 8
+  size: 406, 443
+  orig: 518, 482
+  offset: 43, 23
+  index: -1
+_0007_du_03
+  rotate: false
+  xy: 2, 416
+  size: 448, 401
+  orig: 518, 482
+  offset: 63, 44
+  index: -1
+_0008_du_02
+  rotate: false
+  xy: 452, 413
+  size: 473, 404
+  orig: 518, 482
+  offset: 29, 39
+  index: -1
+
+chuansongmen_3.png
+size: 911, 848
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+_0001_du_09
+  rotate: true
+  xy: 476, 413
+  size: 435, 433
+  orig: 518, 482
+  offset: 38, 33
+  index: -1
+_0002_du_08
+  rotate: false
+  xy: 2, 9
+  size: 415, 430
+  orig: 518, 482
+  offset: 41, 35
+  index: -1
+_0009_du_01
+  rotate: false
+  xy: 2, 441
+  size: 472, 407
+  orig: 518, 482
+  offset: 30, 35
+  index: -1
+_0010_du_00
+  rotate: false
+  xy: 419, 4
+  size: 461, 407
+  orig: 518, 482
+  offset: 34, 34
+  index: -1
+
+chuansongmen_4.png
+size: 458, 418
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+_0006_du_04
+  rotate: false
+  xy: 2, 4
+  size: 454, 414
+  orig: 518, 482
+  offset: 57, 41
+  index: -1

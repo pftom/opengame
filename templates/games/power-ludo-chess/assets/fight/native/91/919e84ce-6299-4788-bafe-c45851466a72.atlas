@@ -1,0 +1,27 @@
+
+kzzy.png
+size: 369, 418
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+1
+  rotate: true
+  xy: 275, 199
+  size: 219, 92
+  orig: 227, 92
+  offset: 7, 0
+  index: -1
+hzj
+  rotate: true
+  xy: 2, 44
+  size: 374, 271
+  orig: 375, 272
+  offset: 0, 1
+  index: -1
+hzjbeijing
+  rotate: true
+  xy: 275, 4
+  size: 193, 90
+  orig: 193, 90
+  offset: 0, 0
+  index: -1

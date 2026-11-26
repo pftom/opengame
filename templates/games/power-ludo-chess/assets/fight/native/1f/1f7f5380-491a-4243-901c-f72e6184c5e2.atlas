@@ -1,0 +1,13 @@
+
+nzqk.png
+size: 333, 268
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+反转
+  rotate: false
+  xy: 2, 4
+  size: 329, 264
+  orig: 333, 266
+  offset: 2, 1
+  index: -1

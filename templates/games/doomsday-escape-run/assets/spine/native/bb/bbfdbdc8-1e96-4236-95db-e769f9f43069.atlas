@@ -1,0 +1,55 @@
+
+zombie_noble3.png
+size: 163,83
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Zombie_BigArm1_0
+  rotate: true
+  xy: 109, 4
+  size: 29, 52
+  orig: 34, 54
+  offset: 2, 1
+  index: -1
+Zombie_BigArm2_0
+  rotate: true
+  xy: 57, 2
+  size: 31, 50
+  orig: 33, 52
+  offset: 1, 1
+  index: -1
+Zombie_BigBody_0
+  rotate: false
+  xy: 2, 23
+  size: 53, 58
+  orig: 55, 60
+  offset: 1, 1
+  index: -1
+Zombie_BigHead_1
+  rotate: false
+  xy: 57, 35
+  size: 51, 46
+  orig: 53, 48
+  offset: 1, 1
+  index: -1
+Zombie_BigLeg
+  rotate: true
+  xy: 2, 12
+  size: 9, 21
+  orig: 11, 23
+  offset: 1, 1
+  index: -1
+Zombie_BigLeg 拷贝
+  rotate: true
+  xy: 25, 12
+  size: 9, 21
+  orig: 11, 23
+  offset: 1, 1
+  index: -1
+图层 0
+  rotate: false
+  xy: 110, 35
+  size: 51, 46
+  orig: 53, 48
+  offset: 1, 1
+  index: -1

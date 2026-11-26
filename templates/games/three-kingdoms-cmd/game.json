@@ -1,0 +1,30 @@
+{
+  "id": "three-kingdoms-cmd",
+  "title": "Three Kingdoms Commander",
+  "description": "Lead legendary Three Kingdoms generals in punchy tactical skirmishes—summon cavalry, archers, and siege units at the right beat to storm rival castles.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "medieval",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap troop cards and general skills to deploy formations and overwhelm enemy armies.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "三国听我指挥",
+      "description": "热血Q版策略对战三国听我指挥：率领关羽张飞赵云排兵布阵，调遣步骑弓兵一路攻城拔寨横扫三国战场！",
+      "controls": "点击底部兵种与名将技能卡牌出兵冲锋，克制敌阵攻破敌方大本营。"
+    }
+  }
+}

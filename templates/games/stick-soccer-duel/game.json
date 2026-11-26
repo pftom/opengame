@@ -1,0 +1,30 @@
+{
+  "id": "stick-soccer-duel",
+  "title": "Stick Soccer Duel",
+  "description": "Dash across a lively pitch in snappy arcade soccer clashes—dribble past defenders, hammer curving power shots, and bury goals top-corner.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Move your striker with on-screen controls and tap shoot/jump buttons to outscore your rival.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "棒棒足球",
+      "description": "畅快街机绿茵竞技棒棒足球：灵巧盘带过人、大力抽射轰出世界波，一分钟爽踢一局随时开赛！",
+      "controls": "使用屏幕方向与射门按钮控球突破，精准起脚攻破对手球门赢下比赛。"
+    }
+  }
+}

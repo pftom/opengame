@@ -1,0 +1,55 @@
+
+zombie_noble2.png
+size: 103,80
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Zombie_ProfessionLeg_2
+  rotate: false
+  xy: 42, 9
+  size: 9, 20
+  orig: 11, 22
+  offset: 1, 1
+  index: -1
+Zombie_ProfessionLeg_3
+  rotate: false
+  xy: 84, 6
+  size: 9, 20
+  orig: 11, 22
+  offset: 1, 1
+  index: -1
+Zombie_SpeedArm
+  rotate: true
+  xy: 53, 13
+  size: 13, 29
+  orig: 17, 31
+  offset: 3, 1
+  index: -1
+Zombie_SpeedArm 拷贝
+  rotate: true
+  xy: 53, 13
+  size: 13, 29
+  orig: 17, 31
+  offset: 3, 1
+  index: -1
+Zombie_SpeedBody
+  rotate: true
+  xy: 2, 2
+  size: 27, 38
+  orig: 29, 40
+  offset: 1, 1
+  index: -1
+Zombie_SpeedHead_1
+  rotate: true
+  xy: 2, 31
+  size: 47, 50
+  orig: 49, 52
+  offset: 1, 1
+  index: -1
+图层 0
+  rotate: false
+  xy: 54, 28
+  size: 47, 50
+  orig: 49, 52
+  offset: 1, 1
+  index: -1

@@ -1,0 +1,30 @@
+{
+  "id": "tribal-jungle-run",
+  "title": "Tribal Jungle Run",
+  "description": "Sprint across vibrant totem canyons and jungle vines—vault over rolling boulders, double-jump chasms, and gather gleaming tribal relics.",
+  "genre": "platformer",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap jump (double-tap for higher leaps) and slide controls to dodge jungle hazards and collect coins.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "印第安快跑",
+      "description": "畅快横版卡通跑酷印第安快跑：化身部落勇士穿越峡谷图腾赛道，二段跳躲巨石收集宝石冲刺极限距离！",
+      "controls": "点击跳跃与下滑按钮灵巧翻越沿途陷阱与巨石，狂收金币挑战最远纪录。"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "classic-sudoku-pro",
+  "title": "Classic Sudoku Pro",
+  "description": "Sharpen your logic across crisp 9x9 Sudoku grids with clean pencil notes, instant conflict checks, and multiple difficulty tiers from breezy to expert.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap an empty cell and select digits 1–9 so every row, column, and 3x3 box contains each number once.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "经典数独",
+      "description": "全民脑力锻炼经典数独：清爽护眼 9x9 棋盘配智能笔记与多档难度，随时随地静心推理填满数字超解压！",
+      "controls": "点击空白格并选择 1 至 9 填入，确保每行、每列与每个九宫格数字均不重复。"
+    }
+  }
+}

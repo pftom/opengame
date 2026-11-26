@@ -1,0 +1,62 @@
+
+wxyj.png
+size: 822,237
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bian
+  rotate: false
+  xy: 2, 70
+  size: 474, 16
+  orig: 474, 16
+  offset: 0, 0
+  index: -1
+dian
+  rotate: false
+  xy: 771, 72
+  size: 30, 30
+  orig: 30, 30
+  offset: 0, 0
+  index: -1
+heit
+  rotate: false
+  xy: 669, 104
+  size: 153, 91
+  orig: 153, 91
+  offset: 0, 0
+  index: -1
+ht01
+  rotate: false
+  xy: 404, 88
+  size: 263, 107
+  orig: 263, 107
+  offset: 0, 0
+  index: -1
+ht02
+  rotate: false
+  xy: 2, 88
+  size: 400, 107
+  orig: 400, 107
+  offset: 0, 0
+  index: -1
+kulou
+  rotate: false
+  xy: 669, 2
+  size: 100, 100
+  orig: 100, 100
+  offset: 0, 0
+  index: -1
+wfg
+  rotate: false
+  xy: 2, 197
+  size: 800, 40
+  orig: 800, 43
+  offset: 0, 3
+  index: -1
+wz02
+  rotate: false
+  xy: 2, 18
+  size: 162, 50
+  orig: 162, 50
+  offset: 0, 0
+  index: -1

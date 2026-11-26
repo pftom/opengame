@@ -1,0 +1,55 @@
+
+zombie_noble1.png
+size: 170,61
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Zombie_Leg_0
+  rotate: true
+  xy: 108, 2
+  size: 9, 20
+  orig: 11, 22
+  offset: 1, 1
+  index: -1
+Zombie_Leg_1
+  rotate: true
+  xy: 130, 2
+  size: 9, 20
+  orig: 11, 22
+  offset: 1, 1
+  index: -1
+Zombie_LongRangeArm 1
+  rotate: true
+  xy: 135, 16
+  size: 24, 31
+  orig: 26, 33
+  offset: 1, 1
+  index: -1
+Zombie_LongRangeArm0
+  rotate: true
+  xy: 135, 42
+  size: 17, 33
+  orig: 19, 35
+  offset: 1, 1
+  index: -1
+Zombie_LongRangeBody
+  rotate: false
+  xy: 108, 13
+  size: 25, 46
+  orig: 27, 48
+  offset: 1, 1
+  index: -1
+Zombie_LongRangeHead_0
+  rotate: false
+  xy: 2, 2
+  size: 51, 57
+  orig: 53, 59
+  offset: 1, 1
+  index: -1
+Zombie_LongRangeHead_1
+  rotate: false
+  xy: 55, 2
+  size: 51, 57
+  orig: 53, 59
+  offset: 1, 1
+  index: -1

@@ -1,0 +1,55 @@
+
+wuliuqi.png
+size: 122,139
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+wlq_01_head
+  rotate: false
+  xy: 2, 2
+  size: 45, 58
+  orig: 47, 60
+  offset: 1, 1
+  index: -1
+wlq_02_head
+  rotate: false
+  xy: 75, 79
+  size: 45, 58
+  orig: 47, 60
+  offset: 1, 1
+  index: -1
+wlq_03_head
+  rotate: false
+  xy: 49, 2
+  size: 45, 58
+  orig: 47, 60
+  offset: 1, 1
+  index: -1
+wlq_body
+  rotate: true
+  xy: 97, 56
+  size: 21, 22
+  orig: 23, 24
+  offset: 1, 1
+  index: -1
+wlq_leg_1a
+  rotate: true
+  xy: 75, 68
+  size: 9, 20
+  orig: 11, 22
+  offset: 1, 1
+  index: -1
+wlq_leg_2a
+  rotate: false
+  xy: 96, 34
+  size: 8, 20
+  orig: 11, 22
+  offset: 1, 1
+  index: -1
+wq_CKSSword
+  rotate: false
+  xy: 2, 62
+  size: 71, 75
+  orig: 73, 77
+  offset: 1, 1
+  index: -1

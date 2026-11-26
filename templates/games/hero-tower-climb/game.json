@@ -1,0 +1,30 @@
+{
+  "id": "hero-tower-climb",
+  "title": "Hero Tower Climb",
+  "description": "Outcalculate every floor in viral number-battle tower puzzles—drag your knight to defeat weaker monsters, absorb their power, and slay the top boss.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag your hero into enemy rooms with lower power numbers to absorb their strength and clear the entire tower.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "勇者爬塔",
+      "description": "买量顶流数字战力策略勇者爬塔：精算每层怪物战力，拖动勇者先吃弱怪疯狂叠加战力数值，一路横扫屠龙登顶！",
+      "controls": "拖动勇者进入战力比自己低的房间消灭怪物叠加数值，步步变强击败顶层大 Boss。"
+    }
+  }
+}

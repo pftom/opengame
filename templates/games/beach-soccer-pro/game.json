@@ -1,0 +1,30 @@
+{
+  "id": "beach-soccer-pro",
+  "title": "Beach Soccer Pro",
+  "description": "Kick up golden sand under sunny palm skies—time acrobatic bicycle volleys and crisp flick shots to dominate tropical beach football matches.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Swipe or tap controls to aim kicks, pass along the sand, and score past the goalkeeper.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "阳光沙滩足球",
+      "description": "清凉夏日风阳光沙滩足球：在椰林沙滩上来场爽快足球对决，凌空倒钩精准射门拿下夏日冠军杯！",
+      "controls": "滑动或点击操控球员传射，找准角度踢出弧线球攻破球门得分。"
+    }
+  }
+}

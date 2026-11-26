@@ -1,0 +1,30 @@
+{
+  "id": "whack-a-mole-2d",
+  "title": "Whack-a-Mole Arcade",
+  "description": "Grab your cartoon mallet and bop cheeky helmeted moles popping out of meadow burrows—chain fever combos while sparing innocent critters and bombs.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap rapidly on popping moles to score combo streaks while avoiding bombs and penalty targets.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "欢乐打地鼠",
+      "description": "全民童年街机欢乐打地鼠：拿起大木槌眼疾手快猛敲冒头捣蛋地鼠，连击狂暴加分注意别敲到炸弹哦！",
+      "controls": "眼疾手快点击冒出洞口的调皮地鼠得分，避开炸弹刷新限时最高纪录。"
+    }
+  }
+}

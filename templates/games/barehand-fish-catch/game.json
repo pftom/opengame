@@ -1,0 +1,30 @@
+{
+  "id": "barehand-fish-catch",
+  "title": "Barehand Fish Catch",
+  "description": "Time your lightning-fast grab in crystal-clear river streams to catch darting trout, crabs, and golden koi barehanded for massive combo hauls.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap at the exact moment a fish swims into your reach zone to snatch it cleanly from the stream.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "徒手抓鱼",
+      "description": "魔性手速解压徒手抓鱼：盯紧溪水里游来游去的肥鱼与锦鲤，瞅准时机快准狠一把抓起爽感爆棚！",
+      "controls": "看准游鱼进入抓捕区域的瞬间迅速点击出手，连抓稀有大鱼冲击高分。"
+    }
+  }
+}

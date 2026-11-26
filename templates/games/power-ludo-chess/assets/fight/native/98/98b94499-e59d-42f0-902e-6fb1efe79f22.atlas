@@ -1,0 +1,62 @@
+
+nzqk.png
+size: 1881, 214
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+d
+  rotate: false
+  xy: 2, 32
+  size: 401, 182
+  orig: 403, 184
+  offset: 1, 1
+  index: -1
+h
+  rotate: false
+  xy: 405, 4
+  size: 293, 210
+  orig: 295, 212
+  offset: 1, 1
+  index: -1
+h2
+  rotate: false
+  xy: 700, 4
+  size: 293, 210
+  orig: 293, 210
+  offset: 0, 0
+  index: -1
+l
+  rotate: false
+  xy: 995, 4
+  size: 293, 210
+  orig: 295, 212
+  offset: 1, 1
+  index: -1
+l2
+  rotate: false
+  xy: 1290, 4
+  size: 293, 210
+  orig: 293, 210
+  offset: 0, 0
+  index: -1
+nizuan
+  rotate: false
+  xy: 1585, 118
+  size: 167, 96
+  orig: 169, 98
+  offset: 1, 1
+  index: -1
+qiankun
+  rotate: false
+  xy: 1585, 26
+  size: 164, 90
+  orig: 166, 92
+  offset: 1, 1
+  index: -1
+waiquan
+  rotate: false
+  xy: 1754, 91
+  size: 125, 123
+  orig: 127, 124
+  offset: 1, 1
+  index: -1

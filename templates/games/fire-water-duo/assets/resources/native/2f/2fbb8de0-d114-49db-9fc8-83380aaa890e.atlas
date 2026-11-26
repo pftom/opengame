@@ -1,0 +1,27 @@
+
+chest.png
+size: 196,352
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+lottery1
+  rotate: false
+  xy: 2, 200
+  size: 191, 149
+  orig: 198, 152
+  offset: 4, 3
+  index: -1
+lottery2
+  rotate: false
+  xy: 2, 110
+  size: 189, 88
+  orig: 189, 88
+  offset: 0, 0
+  index: -1
+lottery3
+  rotate: false
+  xy: 2, 2
+  size: 160, 106
+  orig: 164, 110
+  offset: 2, 0
+  index: -1

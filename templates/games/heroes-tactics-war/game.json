@@ -1,0 +1,30 @@
+{
+  "id": "heroes-tactics-war",
+  "title": "Heroes Tactics War",
+  "description": "Assemble fantasy legions of paladins, griffins, and spellcasters—outflank enemy armies across classic hex-style tactical skirmishes.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Arrange troop formations, tap skills and targets during combat, and upgrade your army between battles.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "英雄无敌战棋",
+      "description": "经典奇幻战棋策略英雄无敌：招募骑士、法师与传奇魔兽组建军团，运筹帷幄克敌制胜称霸魔幻大陆！",
+      "controls": "战前排兵布阵，战斗中释放英雄魔法与战术指令击溃敌军扩大领地。"
+    }
+  }
+}

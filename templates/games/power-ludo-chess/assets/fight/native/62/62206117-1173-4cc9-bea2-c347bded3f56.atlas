@@ -1,0 +1,41 @@
+
+fsdd.png
+size: 131, 79
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+huoyan_00000
+  rotate: false
+  xy: 2, 7
+  size: 30, 72
+  orig: 38, 75
+  offset: 5, 3
+  index: -1
+huoyan_00001
+  rotate: false
+  xy: 34, 11
+  size: 25, 68
+  orig: 38, 75
+  offset: 7, 0
+  index: -1
+huoyan_00002
+  rotate: true
+  xy: 61, 4
+  size: 20, 61
+  orig: 38, 75
+  offset: 10, 0
+  index: -1
+huoyan_00003
+  rotate: true
+  xy: 61, 26
+  size: 24, 68
+  orig: 38, 75
+  offset: 8, 0
+  index: -1
+导弹
+  rotate: true
+  xy: 61, 52
+  size: 27, 62
+  orig: 27, 62
+  offset: 0, 0
+  index: -1

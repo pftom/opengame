@@ -1,0 +1,30 @@
+{
+  "id": "stay-in-the-bowl",
+  "title": "Stay in the Bowl",
+  "description": "Juggle tumbling marbles, candies, and quirky shapes inside a tilting ceramic bowl—keep every piece balanced inside until the timer ticks down.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to aim each drop gently into the bowl so nothing spills over the rim.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "别离开碗",
+      "description": "魔性脑洞物理平衡别离开碗：精准把控落点把各式搞怪物品全装进小碗里，倒计时结束一颗不掉才算赢！",
+      "controls": "调整上方物品位置轻轻投放进碗中，保持堆叠平衡直到倒计时结束不溢出。"
+    }
+  }
+}

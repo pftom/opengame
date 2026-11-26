@@ -1,0 +1,111 @@
+
+wind.png
+size: 1098, 564
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+10
+  rotate: false
+  xy: 238, 194
+  size: 206, 185
+  orig: 288, 263
+  offset: 18, 2
+  index: -1
+12
+  rotate: false
+  xy: 210, 6
+  size: 234, 186
+  orig: 288, 263
+  offset: 0, 0
+  index: -1
+14
+  rotate: false
+  xy: 446, 5
+  size: 206, 186
+  orig: 288, 263
+  offset: 34, 1
+  index: -1
+16
+  rotate: false
+  xy: 654, 5
+  size: 234, 186
+  orig: 288, 263
+  offset: 16, 0
+  index: -1
+18
+  rotate: false
+  xy: 890, 4
+  size: 206, 187
+  orig: 288, 263
+  offset: 50, 0
+  index: -1
+20
+  rotate: false
+  xy: 446, 193
+  size: 234, 185
+  orig: 288, 263
+  offset: 32, 1
+  index: -1
+22
+  rotate: false
+  xy: 682, 193
+  size: 206, 185
+  orig: 288, 263
+  offset: 66, 2
+  index: -1
+24
+  rotate: false
+  xy: 601, 380
+  size: 234, 184
+  orig: 288, 263
+  offset: 48, 3
+  index: -1
+26
+  rotate: false
+  xy: 890, 193
+  size: 206, 185
+  orig: 288, 263
+  offset: 82, 2
+  index: -1
+28
+  rotate: false
+  xy: 2, 383
+  size: 191, 181
+  orig: 288, 263
+  offset: 90, 3
+  index: -1
+5
+  rotate: false
+  xy: 195, 381
+  size: 201, 183
+  orig: 288, 263
+  offset: 28, 3
+  index: -1
+6
+  rotate: false
+  xy: 2, 8
+  size: 206, 185
+  orig: 288, 263
+  offset: 26, 2
+  index: -1
+7
+  rotate: false
+  xy: 837, 380
+  size: 225, 184
+  orig: 288, 263
+  offset: 15, 3
+  index: -1
+8
+  rotate: false
+  xy: 2, 195
+  size: 234, 184
+  orig: 288, 263
+  offset: 0, 3
+  index: -1
+9
+  rotate: false
+  xy: 398, 381
+  size: 201, 183
+  orig: 288, 263
+  offset: 24, 3
+  index: -1

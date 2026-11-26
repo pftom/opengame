@@ -1,0 +1,30 @@
+{
+  "id": "doomsday-escape-run",
+  "title": "Doomsday Escape",
+  "description": "Sprint through crumbling apocalyptic streets—blast zombies blocking your path, rescue survivors, and reach the extraction chopper.",
+  "genre": "shooter",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to steer your survivor squad, shoot approaching threats, and gather ammo boosts.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "末日大逃生",
+      "description": "紧张刺激末日求生大逃生：在危机四伏的废土街道一路突围，开火清怪营救幸存者冲向安全区！",
+      "controls": "拖动控制幸存者小队灵活走位并自动开火清怪，一路冲出末日险境。"
+    }
+  }
+}

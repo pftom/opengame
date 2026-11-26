@@ -1,0 +1,30 @@
+{
+  "id": "memory-journey-card",
+  "title": "Memory Journey Match",
+  "description": "Flip scenic illustrated postcards to pair matching travel memories across charming global destinations—train your recall in relaxing stages.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "fantasy",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap two cards to flip them over and match identical travel scenes until the board is cleared.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "记忆旅行翻牌",
+      "description": "清新治愈翻牌益智记忆旅行：翻开绝美风景明信片两两配对消除，边锻炼记忆力边畅游梦幻世界！",
+      "controls": "点击翻转两张记忆卡片，记住位置将相同图案全部配对消除通关。"
+    }
+  }
+}

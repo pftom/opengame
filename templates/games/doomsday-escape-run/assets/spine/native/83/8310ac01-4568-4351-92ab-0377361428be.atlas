@@ -1,0 +1,55 @@
+
+thor.png
+size: 486,82
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+thor_01_head
+  rotate: true
+  xy: 245, 3
+  size: 77, 72
+  orig: 79, 74
+  offset: 1, 1
+  index: -1
+thor_01_leg_1A
+  rotate: false
+  xy: 467, 51
+  size: 17, 29
+  orig: 19, 31
+  offset: 1, 1
+  index: -1
+thor_01_leg_2A
+  rotate: false
+  xy: 467, 51
+  size: 17, 29
+  orig: 19, 31
+  offset: 1, 1
+  index: -1
+thor_02_head
+  rotate: true
+  xy: 319, 3
+  size: 77, 72
+  orig: 79, 74
+  offset: 1, 1
+  index: -1
+thor_03_body
+  rotate: false
+  xy: 146, 2
+  size: 97, 78
+  orig: 99, 80
+  offset: 1, 1
+  index: -1
+thor_03_head
+  rotate: true
+  xy: 393, 3
+  size: 77, 72
+  orig: 79, 74
+  offset: 1, 1
+  index: -1
+wq_quake
+  rotate: false
+  xy: 2, 8
+  size: 142, 72
+  orig: 144, 74
+  offset: 1, 1
+  index: -1

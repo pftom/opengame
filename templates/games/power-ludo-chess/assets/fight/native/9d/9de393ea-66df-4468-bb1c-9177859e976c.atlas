@@ -1,0 +1,62 @@
+
+lt666.png
+size: 1060, 150
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+d
+  rotate: false
+  xy: 2, 4
+  size: 377, 146
+  orig: 379, 148
+  offset: 1, 1
+  index: -1
+s1
+  rotate: false
+  xy: 989, 12
+  size: 69, 138
+  orig: 94, 157
+  offset: 25, 0
+  index: -1
+s2
+  rotate: false
+  xy: 693, 19
+  size: 123, 131
+  orig: 123, 131
+  offset: 0, 0
+  index: -1
+s3
+  rotate: false
+  xy: 910, 5
+  size: 77, 145
+  orig: 77, 145
+  offset: 0, 0
+  index: -1
+s4
+  rotate: false
+  xy: 818, 20
+  size: 90, 130
+  orig: 90, 130
+  offset: 0, 0
+  index: -1
+wz
+  rotate: false
+  xy: 381, 30
+  size: 310, 120
+  orig: 312, 122
+  offset: 1, 1
+  index: -1
+x1
+  rotate: true
+  xy: 399, 12
+  size: 16, 15
+  orig: 18, 17
+  offset: 1, 1
+  index: -1
+x2
+  rotate: false
+  xy: 381, 12
+  size: 16, 16
+  orig: 18, 18
+  offset: 1, 1
+  index: -1

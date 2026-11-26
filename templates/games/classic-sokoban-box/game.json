@@ -1,0 +1,30 @@
+{
+  "id": "classic-sokoban-box",
+  "title": "Classic Sokoban",
+  "description": "Think three moves ahead inside tight warehouse mazes—push every wooden crate cleanly onto its glowing floor target without trapping a single box.",
+  "genre": "casual",
+  "style": "pixel",
+  "setting": "retro",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Swipe or tap directional controls to walk and push crates onto every designated goal tile.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "经典推箱子",
+      "description": "永恒逻辑益智神作经典推箱子：在精巧仓库迷宫中步步规划，别把箱子推进死角，全部推上标记点即通关！",
+      "controls": "使用方向按钮或滑动屏幕控制角色把所有木箱推到指定目标点上即可过关。"
+    }
+  }
+}

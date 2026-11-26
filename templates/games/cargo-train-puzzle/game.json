@@ -1,0 +1,30 @@
+{
+  "id": "cargo-train-puzzle",
+  "title": "Cargo Train Puzzle",
+  "description": "Switch railway junctions, lay smooth curved tracks, and guide cheerful steam locomotives safely to their matching station platforms.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap track switches or tiles to route each locomotive cleanly into its color-matched station.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "小火车货运",
+      "description": "温馨益智轨道规划小火车货运：拨动道岔连接铁路轨道，护送满载货物的小火车平稳驶入终点车站！",
+      "controls": "点击调整轨道方向与道岔，顺利引导货运小火车避开碰撞安全抵达车站。"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "assault-duel-combat",
+  "title": "Assault Duel",
+  "description": "Take cover, sprint across tactical combat arenas, and outshoot elite squads in fast-paced arcade firefights packed with power-up drops.",
+  "genre": "shooter",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Move with touch controls to dodge enemy fire and lock onto targets to clear each combat arena.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "突击对决",
+      "description": "快节奏战术射击突击对决：依托掩体闪转腾挪，精准点射与手雷齐发击败精英特工小队！",
+      "controls": "滑动走位躲避弹雨并瞄准反击，拾取补给道具消灭场上全部对手。"
+    }
+  }
+}

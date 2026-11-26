@@ -1,0 +1,41 @@
+
+kzzy.png
+size: 1371, 195
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+hei1
+  rotate: false
+  xy: 2, 86
+  size: 640, 109
+  orig: 642, 112
+  offset: 1, 2
+  index: -1
+hei2
+  rotate: false
+  xy: 644, 4
+  size: 378, 191
+  orig: 380, 193
+  offset: 1, 1
+  index: -1
+qq
+  rotate: true
+  xy: 518, 4
+  size: 80, 82
+  orig: 84, 86
+  offset: 2, 2
+  index: -1
+wz
+  rotate: false
+  xy: 1024, 59
+  size: 345, 136
+  orig: 352, 143
+  offset: 4, 3
+  index: -1
+x
+  rotate: false
+  xy: 2, 4
+  size: 514, 80
+  orig: 526, 86
+  offset: 6, 3
+  index: -1

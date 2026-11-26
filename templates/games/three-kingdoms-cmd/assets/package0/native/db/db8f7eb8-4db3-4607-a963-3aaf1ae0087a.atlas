@@ -1,0 +1,48 @@
+
+yanyuedao.png
+size: 748, 342
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+1
+  rotate: true
+  xy: 2, 7
+  size: 174, 217
+  orig: 176, 219
+  offset: 0, 1
+  index: -1
+2
+  rotate: true
+  xy: 480, 175
+  size: 167, 241
+  orig: 170, 243
+  offset: 1, 0
+  index: -1
+3
+  rotate: true
+  xy: 229, 178
+  size: 164, 249
+  orig: 166, 252
+  offset: 1, 1
+  index: -1
+4
+  rotate: true
+  xy: 221, 4
+  size: 169, 261
+  orig: 171, 263
+  offset: 1, 1
+  index: -1
+5
+  rotate: true
+  xy: 484, 4
+  size: 169, 262
+  orig: 171, 264
+  offset: 1, 1
+  index: -1
+6
+  rotate: true
+  xy: 2, 183
+  size: 159, 225
+  orig: 161, 227
+  offset: 1, 1
+  index: -1

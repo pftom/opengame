@@ -1,0 +1,30 @@
+{
+  "id": "tank-drift-ace",
+  "title": "Tank Drift Ace",
+  "description": "Steer a nimble mini-tank around destructible battlefields—dodge mortar shells, upgrade double cannons, and blast rival armor into smithereens.",
+  "genre": "shooter",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag to maneuver your tank while auto-aiming and firing shells at enemy turrets and tanks.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "我坦克开得贼溜",
+      "description": "抖音爆款动作射击我坦克开得贼溜：单指灵活操控小坦克风骚走位躲炮弹，升级双管加农炮横扫敌军装甲团！",
+      "controls": "拖动摇杆操控坦克灵活闪避弹幕，自动瞄准开火摧毁全场敌军坦克与炮台。"
+    }
+  }
+}

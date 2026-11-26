@@ -1,0 +1,30 @@
+{
+  "id": "target-range-shot",
+  "title": "Target Range Pro",
+  "description": "Steady your sights across shifting bullseyes and swinging targets—nail crisp 10-ring streaks before ammo runs dry.",
+  "genre": "shooter",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Aim the reticle over moving bullseye targets and tap to fire clean center shots.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "landscape",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "神枪手打靶射击",
+      "description": "清爽减压横版打靶射击：瞄准移动标靶稳准扣动扳机，枪枪十环红心触发爆分连击！",
+      "controls": "移动准星锁定标靶红心点击射击，连续命中靶心刷新神枪手高分纪录。"
+    }
+  }
+}

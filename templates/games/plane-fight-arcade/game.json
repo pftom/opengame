@@ -1,0 +1,30 @@
+{
+  "id": "plane-fight-arcade",
+  "title": "Plane Fight Arcade",
+  "description": "Pilot an ace fighter jet through classic vertical bullet-hell skies—grab twin-wing spread upgrades, trigger screen-clearing bombs, and smash giant airships.",
+  "genre": "shooter",
+  "style": "anime",
+  "setting": "space",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Drag anywhere on screen to pilot your jet, collect weapon upgrades, and dodge enemy bullet curtains.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "雷霆飞机大战",
+      "description": "国民经典竖版弹幕雷霆飞机大战：单指驾驭王牌战机穿梭密集弹雨，吃道具暴走满屏散射轰爆巨型母舰！",
+      "controls": "按住屏幕拖动战机灵活走位躲弹幕，拾取火力强化道具击溃敌机编队与 Boss。"
+    }
+  }
+}

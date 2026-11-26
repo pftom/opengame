@@ -1,0 +1,30 @@
+{
+  "id": "lipstick-pin-hit",
+  "title": "Lipstick Pin Hit",
+  "description": "Fire glossy lipsticks into a spinning beauty wheel without clipping another tube—nail three escalating rounds to win the glamorous grand prize.",
+  "genre": "casual",
+  "style": "minimal",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Tap anywhere to shoot a lipstick cleanly into an open gap on the rotating wheel.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "口红见缝插针",
+      "description": "抖音曾经刷屏全网的口红机见缝插针：瞅准转盘空档连射口红，连闯三关稳稳不碰刀直接带走大奖！",
+      "controls": "看准旋转圆盘上的空位点击屏幕射出口红，成功插满且不碰撞即可闯关。"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+window._CCSettings={platform:"web-mobile",groupList:["ball","wall","floor"],collisionMatrix:[[false,true,true],[true,false],[true,false,false]],hasResourcesBundle:true,hasStartSceneBundle:false,remoteBundles:[],subpackages:[],launchScene:"db:/"+"/assets/resources/launcher/LauncherScene.fire",orientation:"",jsList:[]};

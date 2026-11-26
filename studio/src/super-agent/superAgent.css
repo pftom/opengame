@@ -6085,6 +6085,32 @@
   font-weight: var(--motion-weight-semibold);
 }
 
+.om-sa-showcase-tab[data-featured] {
+  background: color-mix(in srgb, var(--motion-warning) 16%, transparent);
+  color: var(--motion-warning);
+  border: 1px solid color-mix(in srgb, var(--motion-warning) 36%, transparent);
+  font-weight: var(--motion-weight-semibold);
+}
+
+.om-sa-showcase-tab[data-featured]:hover,
+:root[data-motion-ui][data-motion-studio] .om-sa-showcase-tab[data-featured]:not([data-active]):is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--motion-warning) 24%, transparent);
+  color: var(--motion-warning);
+}
+
+.om-sa-showcase-tab[data-featured][data-active],
+:root[data-motion-ui][data-motion-studio] .om-sa-showcase-tab[data-featured][data-active]:is(:hover, :focus-visible) {
+  background: linear-gradient(135deg, var(--motion-warning), var(--motion-danger));
+  border-color: transparent;
+  color: var(--motion-bg);
+  box-shadow: var(--motion-shadow-sm);
+}
+
+.om-sa-showcase-tab[data-featured] .om-sa-tab-count {
+  color: currentColor;
+  opacity: 0.9;
+}
+
 .om-sa-tab-count {
   font-size: var(--motion-text-xs);
   font-weight: var(--motion-weight-medium);
@@ -11147,6 +11173,26 @@
   font-size: var(--motion-text-sm);
   font-weight: var(--motion-weight-semibold);
   text-align: center;
+}
+
+.om-sa-game-top-badge {
+  position: absolute;
+  top: var(--motion-space-8);
+  inset-inline-start: var(--motion-space-8);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--motion-space-4);
+  padding: 3px var(--motion-space-8);
+  border-radius: var(--motion-radius-full);
+  background: linear-gradient(135deg, var(--motion-warning), var(--motion-danger));
+  color: var(--motion-bg);
+  font-size: var(--motion-text-xs);
+  font-weight: var(--motion-weight-semibold);
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  box-shadow: var(--motion-shadow-sm);
+  pointer-events: none;
 }
 
 .om-sa-game-status {

@@ -1,0 +1,30 @@
+{
+  "id": "power-ludo-chess",
+  "title": "Power-Up Ludo",
+  "description": "Supercharge classic Aeroplane Chess with explosive power-up cards, turbo boosts, and shield skills for wildly unpredictable tabletop comebacks.",
+  "genre": "casual",
+  "style": "anime",
+  "setting": "modern",
+  "multiplayer": false,
+  "maxPlayers": 1,
+  "status": "published",
+  "cover": "cover.webp",
+  "entry": "index.html",
+  "controls": "Roll the dice, deploy special power cards, and move your fleet around the board first to win.",
+  "plays": 0,
+  "likes": 0,
+  "dislikes": 0,
+  "createdAt": "2026-11-25T00:00:00.000Z",
+  "updatedAt": "2026-11-25T00:00:00.000Z",
+  "orientation": "portrait",
+  "tags": [
+    "TOP赚钱"
+  ],
+  "i18n": {
+    "zh-CN": {
+      "title": "飞行棋大招版",
+      "description": "爽快升级桌游飞行棋大招版：在经典摇骰起飞基础上加入酷炫道具大招，逆风翻盘轰飞对手棋子欢乐加倍！",
+      "controls": "点击摇骰子移动飞机，巧用加速护盾等大招卡片抢先全员抵达终点夺冠。"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+window._CCSettings={platform:"web-mobile",groupList:["default","map"],collisionMatrix:[[true],[false,false]],hasResourcesBundle:true,hasStartSceneBundle:false,remoteBundles:[],subpackages:[],launchScene:"db:/"+"/assets/Scene/AppCtrl.fire",orientation:"portrait",jsList:["assets/Script/Lib/I18nInit.js","assets/Script/Lib/seedrandom.min.js"]};
