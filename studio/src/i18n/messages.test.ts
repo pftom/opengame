@@ -134,13 +134,25 @@ describe('editor language resources', () => {
 });
 
 it('keeps Chinese additions interpolated and preserves fallback for unexposed advanced controls', () => {
+  const otherLocales = languages.filter(language => language.locale !== 'zh-CN');
+  const additionsByLocale = new Map<string, Record<string, string>>(
+    otherLocales.map(({ locale }) => [
+      locale,
+      {
+        ...errorUi[locale as keyof typeof errorUi],
+        ...templateUi[locale as keyof typeof templateUi],
+        ...settingsUi[locale as keyof typeof settingsUi],
+        ...superAgentUi[locale as keyof typeof superAgentUi],
+      },
+    ]),
+  );
   for (const [source, translated] of Object.entries(mvpMessages['zh-CN']!)) {
     expect(isKnownMessage(source)).toBe(true);
     expect(typeof translated).toBe('string');
     const values = Object.fromEntries([...source.matchAll(/\{(\w+)\}/g)].map(match => [match[1], 'sample']));
     expect(translate('zh-CN', source, values)).not.toMatch(/\{\w+\}/);
-    for (const { locale } of languages.filter(language => language.locale !== 'zh-CN')) {
-      const additions: Record<string, string> = { ...errorUi[locale as keyof typeof errorUi], ...templateUi[locale as keyof typeof templateUi], ...settingsUi[locale as keyof typeof settingsUi], ...superAgentUi[locale as keyof typeof superAgentUi] };
+    for (const { locale } of otherLocales) {
+      const additions = additionsByLocale.get(locale)!;
       if (!additions[source] && !mvpMessages[locale]?.[source] && (locale === 'en' || !dictionaries[locale]?.[source])) expect(translate(locale, source, values)).toBe(translate('en', source, values));
     }
   }
